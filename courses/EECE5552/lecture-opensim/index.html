@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EECE 5552 — Musculoskeletal Modeling & OpenSim</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
+<style>
+/* ── THEME VARIABLES ─────────────────────────────── */
+:root {
+  --title-color:    #2c3e50;
+  --subtitle-color: #5a6c7d;
+  --body-text:      #333;
+  --accent:         #34495e;
+  --bar-color:      #34495e;
+  --tag-bg:         #ecf0f1;
+  --tag-text:       #34495e;
+  --box-bg:         #f8f9fa;
+  --box-border:     #dee2e6;
+  --callout-bg:     #f0f3f5;
+  --callout-border: #34495e;
+}
+[data-theme="steel-blue"] {
+  --title-color:    #1a3a5c;
+  --subtitle-color: #5b7fa5;
+  --body-text:      #2c3e50;
+  --accent:         #2980b9;
+  --bar-color:      #2980b9;
+  --tag-bg:         #e8f4fd;
+  --tag-text:       #1a3a5c;
+  --box-bg:         #f0f7fd;
+  --box-border:     #aed6f1;
+  --callout-bg:     #e8f4fd;
+  --callout-border: #2980b9;
+}
+[data-theme="warm-charcoal"] {
+  --title-color:    #1a1a2e;
+  --subtitle-color: #666;
+  --body-text:      #2d2d2d;
+  --accent:         #c0392b;
+  --bar-color:      #c0392b;
+  --tag-bg:         #fdf2f2;
+  --tag-text:       #922b21;
+  --box-bg:         #fdfafa;
+  --box-border:     #f1948a;
+  --callout-bg:     #fdf2f2;
+  --callout-border: #c0392b;
+}
+
+/* ── BASE ────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+.reveal {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--body-text); font-size: 16px;
+}
+.reveal .slides { text-align: left; }
+.reveal .slides section { padding: 28px 48px 36px; height: 100%; overflow: hidden; }
+.reveal .slides section::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+  height: 4px; background: var(--bar-color); transition: background 0.4s;
+}
+
+/* ── TYPOGRAPHY ──────────────────────────────────── */
+.reveal h1, .reveal h2, .reveal h3 {
+  text-transform: none; letter-spacing: 0; margin: 0 0 12px;
+  color: var(--title-color); line-height: 1.2;
+}
+.reveal h1 { font-size: 1.5em; font-weight: 300; }
+.reveal h2 {
+  font-size: 1.05em; font-weight: 600;
+  border-bottom: 2px solid var(--bar-color);
+  padding-bottom: 7px; margin-bottom: 14px;
+}
+.reveal h3 { font-size: 0.75em; font-weight: 700; color: var(--accent); margin-bottom: 7px; }
+.reveal p  { font-size: 0.75em; line-height: 1.55; color: var(--body-text); margin: 0 0 8px; }
+.reveal code { font-size: 0.85em; background: var(--tag-bg); padding: 1px 5px; border-radius: 3px; }
+
+/* ── COURSE TAG ──────────────────────────────────── */
+.course-tag {
+  display: inline-block; font-size: 0.52em; font-weight: 600;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--tag-text); background: var(--tag-bg);
+  padding: 3px 10px; border-radius: 3px; margin-bottom: 10px;
+}
+
+/* ── BADGE — used everywhere instead of emoji ─────── */
+.badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--bar-color); color: #fff;
+  font-size: 0.65em; font-weight: 700; flex-shrink: 0;
+  transition: background 0.4s; line-height: 1;
+}
+.badge-sq {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 22px; border-radius: 3px;
+  background: var(--bar-color); color: #fff;
+  font-size: 0.58em; font-weight: 700; flex-shrink: 0;
+  transition: background 0.4s; letter-spacing: 0.3px;
+  text-transform: uppercase; line-height: 1;
+}
+
+/* ── HINT & FLASH ────────────────────────────────── */
+#theme-hint {
+  position: fixed; bottom: 14px; left: 16px; z-index: 9999;
+  font-family: 'Segoe UI', sans-serif; font-size: 11px; color: #aaa;
+  background: rgba(255,255,255,0.88); padding: 4px 10px;
+  border-radius: 4px; border: 1px solid #ddd; pointer-events: none;
+}
+#flash {
+  position: fixed; bottom: 44px; left: 16px; z-index: 9999;
+  font-family: 'Segoe UI', sans-serif; font-size: 12px; font-weight: 600;
+  color: var(--bar-color); background: rgba(255,255,255,0.94);
+  padding: 4px 12px; border-radius: 4px; border: 1px solid var(--box-border);
+  opacity: 0; transition: opacity 0.4s;
+}
+
+/* ── TITLE SLIDE ─────────────────────────────────── */
+.slide-title {
+  text-align: center !important; display: flex !important;
+  flex-direction: column; justify-content: center; align-items: center;
+}
+.slide-title .title-divider {
+  width: 56px; height: 3px; background: var(--bar-color);
+  margin: 14px auto; transition: background 0.4s;
+}
+.slide-title .instructor { font-size: 0.55em; color: var(--subtitle-color); margin-top: 6px; }
+
+/* ── SECTION DIVIDER ─────────────────────────────── */
+.slide-section {
+  display: flex !important; flex-direction: column;
+  justify-content: center !important;
+  background: var(--title-color) !important; transition: background 0.4s;
+}
+.slide-section::after { background: rgba(255,255,255,0.2) !important; }
+.slide-section h2 {
+  color: #fff !important; font-size: 1.3em !important; font-weight: 300 !important;
+  border-bottom: 1px solid rgba(255,255,255,0.2) !important;
+  padding-bottom: 12px !important; margin-bottom: 10px !important;
+}
+.slide-section .section-sub { color: rgba(255,255,255,0.55); font-size: 0.7em; margin: 0; }
+.section-number {
+  font-size: 4em; font-weight: 700; color: rgba(255,255,255,0.1);
+  position: absolute; top: 20px; right: 48px; line-height: 1;
+}
+
+/* ── SLIDE NUMBER ─────────────────────────────────── */
+.slide-number { position: absolute; bottom: 10px; right: 16px; font-size: 0.5em; color: #bbb; }
+
+/* ── BULLET LIST ─────────────────────────────────── */
+.reveal ul.bullet-list { list-style: none; padding: 0; margin: 0; }
+.reveal ul.bullet-list li {
+  font-size: 0.76em; padding: 6px 0 6px 18px; position: relative;
+  color: var(--body-text); border-bottom: 1px solid var(--box-border); line-height: 1.45;
+}
+.reveal ul.bullet-list li:last-child { border-bottom: none; }
+.reveal ul.bullet-list li::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--bar-color); transition: background 0.4s;
+}
+
+/* ── TWO COLUMN ──────────────────────────────────── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.col-box {
+  background: var(--box-bg); border: 1px solid var(--box-border);
+  border-radius: 5px; padding: 13px 15px;
+}
+.col-box ul { list-style: none; padding: 0; margin: 0; }
+.col-box ul li {
+  font-size: 0.72em; padding: 4px 0 4px 16px; position: relative;
+  color: var(--body-text); line-height: 1.4;
+}
+.col-box ul li::before {
+  content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--bar-color); transition: background 0.4s;
+}
+
+/* ── CALLOUT ─────────────────────────────────────── */
+.callout {
+  background: var(--callout-bg); border-left: 4px solid var(--callout-border);
+  border-radius: 0 5px 5px 0; padding: 9px 14px; font-size: 0.72em;
+  color: var(--body-text); margin-top: 12px; line-height: 1.5;
+}
+
+/* ── FLOW STEPS ──────────────────────────────────── */
+.flow-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.flow-step {
+  background: var(--box-bg); border: 1px solid var(--box-border);
+  border-top: 3px solid var(--bar-color); transition: border-color 0.4s;
+  border-radius: 5px; padding: 12px 10px; text-align: center; flex: 1;
+}
+.flow-step .step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--bar-color); color: #fff;
+  font-size: 0.7em; font-weight: 700; margin: 0 auto 7px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.4s;
+}
+.flow-step .step-label { font-size: 0.65em; font-weight: 700; color: var(--title-color); }
+.flow-step .step-sub   { font-size: 0.58em; color: var(--subtitle-color); margin-top: 2px; }
+.flow-arrow { font-size: 1em; color: var(--accent); flex-shrink: 0; font-weight: 700; }
+
+/* ── PIPELINE ────────────────────────────────────── */
+.pipeline-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: var(--box-bg); border: 1px solid var(--box-border);
+  border-radius: 5px; padding: 9px 14px; margin-bottom: 7px;
+}
+.pipe-num {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65em; font-weight: 700; color: #fff;
+  background: var(--bar-color); flex-shrink: 0; margin-top: 1px;
+  transition: background 0.4s;
+}
+.pipe-name { font-size: 0.73em; font-weight: 700; color: var(--title-color); margin-bottom: 2px; }
+.pipe-desc { font-size: 0.65em; color: var(--subtitle-color); line-height: 1.4; }
+.pipe-io   { font-size: 0.58em; color: #999; margin-top: 3px; }
+
+/* ── COMPONENT GRID ──────────────────────────────── */
+.comp-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 4px; }
+.comp-card {
+  background: var(--box-bg); border: 1px solid var(--box-border);
+  border-top: 3px solid var(--bar-color); border-radius: 5px; padding: 11px 12px;
+  transition: border-color 0.4s;
+}
+.comp-label {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bar-color); color: #fff;
+  font-size: 0.55em; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 3px;
+  margin-bottom: 7px; transition: background 0.4s;
+}
+.comp-name { font-size: 0.67em; font-weight: 700; color: var(--title-color); margin-bottom: 4px; }
+.comp-desc { font-size: 0.6em; color: var(--subtitle-color); line-height: 1.45; }
+
+/* ── DOF CARDS ───────────────────────────────────── */
+.dof-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.dof-card {
+  flex: 1; background: var(--box-bg); border: 1px solid var(--box-border);
+  border-top: 3px solid var(--bar-color); border-radius: 5px; padding: 10px 8px;
+  text-align: center; transition: border-color 0.4s;
+}
+.dof-joint  { font-size: 0.65em; font-weight: 600; color: var(--title-color); }
+.dof-num    { font-size: 1.2em; font-weight: 700; color: var(--bar-color); margin: 3px 0; transition: color 0.4s; }
+.dof-motion { font-size: 0.56em; color: var(--subtitle-color); line-height: 1.35; }
+
+/* ── MAPPING TABLE ───────────────────────────────── */
+.map-table { width: 100%; border-collapse: collapse; font-size: 0.7em; margin-top: 4px; }
+.map-table th {
+  text-align: left; padding: 7px 10px;
+  background: var(--title-color); color: #fff; font-weight: 600; font-size: 0.9em;
+  transition: background 0.4s;
+}
+.map-table td {
+  padding: 7px 10px; border-bottom: 1px solid var(--box-border);
+  color: var(--body-text); vertical-align: top; line-height: 1.4;
+}
+.map-table tr:nth-child(even) td { background: var(--box-bg); }
+.map-table .col-edu { color: var(--accent); font-weight: 600; }
+
+/* ── LAB STEPS ───────────────────────────────────── */
+.lab-step { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 7px; }
+.lab-n {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--bar-color); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.6em; font-weight: 700; flex-shrink: 0; transition: background 0.4s;
+}
+.lab-text { font-size: 0.72em; color: var(--body-text); padding-top: 3px; line-height: 1.4; }
+
+/* ── SUMMARY GRID ────────────────────────────────── */
+.summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.sum-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--box-bg); border: 1px solid var(--box-border);
+  border-radius: 5px; padding: 9px 11px;
+  font-size: 0.7em; color: var(--body-text); line-height: 1.45;
+}
+
+/* ── PAGE NUMBER ─────────────────────────────────── */
+.page-num {
+  position: absolute; bottom: 10px;
+  left: 50%; transform: translateX(-50%);
+  font-size: 0.42em; color: #bbb;
+  letter-spacing: 0.5px; font-weight: 400;
+  pointer-events: none;
+}
+
+/* ── NAV ARROWS ──────────────────────────────────── */
+.reveal .controls {
+  bottom: 12px; right: 12px;
+}
+.reveal .controls button {
+  color: var(--bar-color) !important;
+  opacity: 0.18 !important;
+  transform: scale(0.55);
+  transition: opacity 0.2s, transform 0.2s;
+}
+.reveal .controls button:hover {
+  opacity: 0.55 !important;
+  transform: scale(0.62);
+}
+
+.resource-links { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 8px; }
+.res-link {
+  font-size: 0.62em; background: var(--tag-bg); color: var(--tag-text);
+  border: 1px solid var(--box-border); border-radius: 4px;
+  padding: 4px 10px; text-decoration: none; font-weight: 500;
+}
+.next-box {
+  background: var(--callout-bg); border-left: 4px solid var(--callout-border);
+  border-radius: 0 5px 5px 0; padding: 8px 13px;
+  font-size: 0.7em; color: var(--body-text); margin-bottom: 10px;
+}
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<div class="reveal">
+<div class="slides">
+
+<!-- ══ SLIDE 1 — TITLE ══════════════════════════════ -->
+<section class="slide-title">
+  <div class="course-tag">EECE 5552 · Assistive Robotics</div>
+  <h1>Musculoskeletal Modeling<br>&amp; Simulation</h1>
+  <div class="title-divider"></div>
+  <p style="font-size:0.6em;color:var(--subtitle-color);text-align:center;margin:0;">An Introduction Using OpenSim</p>
+  <p class="instructor">Xian Li, Ph.D. &nbsp;·&nbsp; Northeastern University, Seattle</p>
+</section>
+
+<!-- ══ SLIDE 2 — SECTION: MOTIVATION ══════════════ -->
+<section class="slide-section">
+  <div class="section-number">01</div>
+  <h2>Motivation</h2>
+  <p class="section-sub">Why do we need computational models?</p>
+</section>
+
+<!-- ══ SLIDE 3 — WHY CAN'T WE MEASURE ════════════ -->
+<section>
+  <div class="course-tag">Motivation</div>
+  <h2>Why Can't We Just Measure Muscles Directly?</h2>
+  <div class="two-col">
+    <div class="col-box">
+      <h3>The Problem</h3>
+      <ul>
+        <li>Muscles are deep inside the body</li>
+        <li>We can measure joint angles &amp; ground forces</li>
+        <li>We <strong>cannot</strong> directly measure individual muscle forces in vivo</li>
+        <li>Yet clinicians &amp; engineers need to know them</li>
+      </ul>
+    </div>
+    <div class="col-box">
+      <h3>Real-World Questions</h3>
+      <ul>
+        <li>Why does a patient walk with a crouch gait?</li>
+        <li>How much does an exoskeleton reduce biceps load?</li>
+        <li>Which muscles prevent ACL injury during landing?</li>
+        <li>Should a surgeon lengthen the hamstrings?</li>
+      </ul>
+    </div>
+  </div>
+  <span class="slide-number">3</span>
+</section>
+
+<!-- ══ SLIDE 4 — THE SOLUTION ═════════════════════ -->
+<section>
+  <div class="course-tag">Motivation</div>
+  <h2>The Solution: Computational Modeling</h2>
+  <div class="flow-row">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-label">Measure Motion</div>
+      <div class="step-sub">Markers, IMU, video</div>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-label">Build a Model</div>
+      <div class="step-sub">Bones, joints, muscles</div>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-label">Simulate</div>
+      <div class="step-sub">Physics + optimization</div>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-label">Estimate Forces</div>
+      <div class="step-sub">Per muscle, per joint</div>
+    </div>
+  </div>
+  <div class="callout"><strong>OpenSim</strong> automates steps 3 &amp; 4 — free and open-source, developed at Stanford University.</div>
+  <span class="slide-number">4</span>
+</section>
+
+<!-- ══ SLIDE 5 — SECTION: WHAT IS OPENSIM ═════════ -->
+<section class="slide-section">
+  <div class="section-number">02</div>
+  <h2>What is OpenSim?</h2>
+  <p class="section-sub">Overview of the platform and model structure</p>
+</section>
+
+<!-- ══ SLIDE 6 — WHAT IS OPENSIM ══════════════════ -->
+<section>
+  <div class="course-tag">What is OpenSim?</div>
+  <h2>What is OpenSim?</h2>
+  <div class="callout" style="margin-bottom:13px;font-style:italic;">
+    "A free, open-source platform for modeling the musculoskeletal system and simulating human and animal movement."
+  </div>
+  <ul class="bullet-list">
+    <li>Developed at Stanford University (Delp Lab); maintained by the Mobilize Center (NIH)</li>
+    <li>Used by 50,000+ researchers, clinicians, and engineers worldwide</li>
+    <li>Models bones, joints, muscles, tendons, ligaments, and contact forces</li>
+    <li>Runs on Windows, macOS, and Linux — free at <strong>opensim.stanford.edu</strong></li>
+    <li>Includes sample models: gait, arm, shoulder, spine, and more</li>
+  </ul>
+  <span class="slide-number">6</span>
+</section>
+
+<!-- ══ SLIDE 7 — MODEL ANATOMY ════════════════════ -->
+<section>
+  <div class="course-tag">What is OpenSim?</div>
+  <h2>What Does a Musculoskeletal Model Contain?</h2>
+  <div class="comp-grid">
+    <div class="comp-card">
+      <div class="comp-label">Body</div>
+      <div class="comp-name">Rigid Segments</div>
+      <div class="comp-desc">Skull, pelvis, femur, tibia, humerus — each with mass and inertia</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-label">Joint</div>
+      <div class="comp-name">Joints</div>
+      <div class="comp-desc">Connect bodies. Define degrees of freedom (e.g. elbow = 1-DOF hinge)</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-label">Muscle</div>
+      <div class="comp-name">Muscles &amp; Tendons</div>
+      <div class="comp-desc">Attach via path points. Generate forces based on activation, length, velocity</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-label">Marker</div>
+      <div class="comp-name">Markers</div>
+      <div class="comp-desc">Virtual landmarks matched to motion capture data for model scaling</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-label">Act.</div>
+      <div class="comp-name">Actuators</div>
+      <div class="comp-desc">Motors or idealized torques — used to model exoskeletons and assistive devices</div>
+    </div>
+    <div class="comp-card" style="background:var(--callout-bg);border-color:var(--callout-border);">
+      <div class="comp-label">Demo</div>
+      <div class="comp-name">Live Demo</div>
+      <div class="comp-desc">Open <strong>arm26.osim</strong> and identify each component in the GUI</div>
+    </div>
+  </div>
+  <span class="slide-number">7</span>
+</section>
+
+<!-- ══ SLIDE 8 — SECTION: CORE CONCEPTS ═══════════ -->
+<section class="slide-section">
+  <div class="section-number">03</div>
+  <h2>Core Concepts</h2>
+  <p class="section-sub">DOF · Activation vs. Force · The Analysis Pipeline</p>
+</section>
+
+<!-- ══ SLIDE 9 — DEGREES OF FREEDOM ══════════════ -->
+<section>
+  <div class="course-tag">Core Concepts</div>
+  <h2>Key Concept 1: Degrees of Freedom (DOF)</h2>
+  <p style="font-size:0.74em;margin-bottom:10px;">A <strong>DOF</strong> is one independent direction in which a joint can move.</p>
+  <div class="dof-row">
+    <div class="dof-card"><div class="dof-joint">Elbow</div><div class="dof-num">1</div><div class="dof-motion">Flexion / Extension</div></div>
+    <div class="dof-card"><div class="dof-joint">Knee</div><div class="dof-num">1</div><div class="dof-motion">Flexion / Extension</div></div>
+    <div class="dof-card"><div class="dof-joint">Wrist</div><div class="dof-num">2</div><div class="dof-motion">Flexion + Radial/Ulnar</div></div>
+    <div class="dof-card"><div class="dof-joint">Shoulder</div><div class="dof-num">3</div><div class="dof-motion">Flexion, Abduction, Rotation</div></div>
+    <div class="dof-card"><div class="dof-joint">Hip</div><div class="dof-num">3</div><div class="dof-motion">Flexion, Abduction, Rotation</div></div>
+  </div>
+  <div class="callout">The <strong>EduExo kit</strong> has exactly <strong>1 DOF</strong> — it assists elbow flexion and extension only.</div>
+  <span class="slide-number">9</span>
+</section>
+
+<!-- ══ SLIDE 10 — ACTIVATION vs FORCE ════════════ -->
+<section>
+  <div class="course-tag">Core Concepts</div>
+  <h2>Key Concept 2: Muscle Activation vs. Force</h2>
+  <div class="two-col">
+    <div class="col-box">
+      <h3>Activation (0 &#8594; 1)</h3>
+      <ul>
+        <li>Neural signal from brain to muscle</li>
+        <li>0 = fully relaxed, 1 = max voluntary contraction</li>
+        <li>Measured experimentally via <strong>EMG</strong></li>
+        <li>Estimated computationally via <strong>Static Optimization</strong></li>
+      </ul>
+    </div>
+    <div class="col-box">
+      <h3>Force (Newtons)</h3>
+      <ul>
+        <li>Actual mechanical pull the muscle exerts</li>
+        <li>Depends on: activation, fiber length, velocity</li>
+        <li>Same activation &#8594; different force at different angles</li>
+        <li>Modeled with <strong>Hill-type muscle model</strong></li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout">Activation is the <em>input</em>; Force is the <em>output</em>. These are not interchangeable.</div>
+  <span class="slide-number">10</span>
+</section>
+
+<!-- ══ SLIDE 11 — PIPELINE ════════════════════════ -->
+<section>
+  <div class="course-tag">Core Concepts</div>
+  <h2>Key Concept 3: The Analysis Pipeline</h2>
+  <div class="pipeline-row">
+    <div class="pipe-num">1</div>
+    <div><div class="pipe-name">Scaling</div><div class="pipe-desc">Resize the generic model to match your subject's body dimensions.</div><div class="pipe-io">IN: Generic model + static trial &nbsp;|&nbsp; OUT: Subject-specific scaled model</div></div>
+  </div>
+  <div class="pipeline-row">
+    <div class="pipe-num">2</div>
+    <div><div class="pipe-name">Inverse Kinematics (IK)</div><div class="pipe-desc">Find joint angles that best match the measured marker positions over time.</div><div class="pipe-io">IN: Scaled model + motion capture (.trc) &nbsp;|&nbsp; OUT: Joint angle trajectories (.mot)</div></div>
+  </div>
+  <div class="pipeline-row">
+    <div class="pipe-num">3</div>
+    <div><div class="pipe-name">Inverse Dynamics (ID)</div><div class="pipe-desc">Calculate net joint torques required to produce the observed motion.</div><div class="pipe-io">IN: Joint angles + ground reaction forces &nbsp;|&nbsp; OUT: Net joint moments (.sto)</div></div>
+  </div>
+  <div class="pipeline-row">
+    <div class="pipe-num">4</div>
+    <div><div class="pipe-name">Static Optimization (SO)</div><div class="pipe-desc">Distribute net joint moments across individual muscles — solves the muscle redundancy problem.</div><div class="pipe-io">IN: Net moments + muscle properties &nbsp;|&nbsp; OUT: Per-muscle activations &amp; forces</div></div>
+  </div>
+  <span class="slide-number">11</span>
+</section>
+
+<!-- ══ SLIDE 12 — SECTION: HANDS-ON ══════════════ -->
+<section class="slide-section">
+  <div class="section-number">04</div>
+  <h2>Hands-On Lab</h2>
+  <p class="section-sub">Tutorial 1 — Gait2392 model with crouch gait analysis</p>
+</section>
+
+<!-- ══ SLIDE 13 — LAB ══════════════════════════════ -->
+<section>
+  <div class="course-tag">Hands-On Lab</div>
+  <h2>Today's Lab: Tutorial 1 — Gait Model</h2>
+  <div class="two-col">
+    <div>
+      <h3>Steps</h3>
+      <div class="lab-step"><div class="lab-n">1</div><div class="lab-text">Open OpenSim 4.5</div></div>
+      <div class="lab-step"><div class="lab-n">2</div><div class="lab-text">File &#8594; Open Model &#8594; <code>Gait2392_Simbody/gait2392_simbody.osim</code></div></div>
+      <div class="lab-step"><div class="lab-n">3</div><div class="lab-text">File &#8594; Load Motion &#8594; <code>walk1.mot</code> &#8594; Press Play</div></div>
+      <div class="lab-step"><div class="lab-n">4</div><div class="lab-text">Window &#8594; Coordinates &#8594; move sliders to pose the model</div></div>
+      <div class="lab-step"><div class="lab-n">5</div><div class="lab-text">Tools &#8594; Plot &#8594; <em>hamstring fiber length</em> vs. <em>knee angle</em></div></div>
+      <div class="lab-step"><div class="lab-n">6</div><div class="lab-text">Load <code>crouch2.mot</code> &#8594; compare to normal gait</div></div>
+    </div>
+    <div class="col-box">
+      <h3>Discussion Questions</h3>
+      <ul>
+        <li>How many DOF does the model have?</li>
+        <li>Are hamstrings longer or shorter in crouch gait?</li>
+        <li>Would you recommend hamstring surgery for this patient?</li>
+      </ul>
+    </div>
+  </div>
+  <span class="slide-number">13</span>
+</section>
+
+<!-- ══ SLIDE 14 — SECTION: EDUEXO ════════════════ -->
+<section class="slide-section">
+  <div class="section-number">05</div>
+  <h2>Connection to Your Exoskeleton Lab</h2>
+  <p class="section-sub">Simulation mirrors the EduExo hardware</p>
+</section>
+
+<!-- ══ SLIDE 15 — EDUEXO CONNECTION ══════════════ -->
+<section>
+  <div class="course-tag">Connection to EduExo</div>
+  <h2>How This Connects to Your Exoskeleton Lab</h2>
+  <table class="map-table">
+    <thead>
+      <tr><th>Concept</th><th>In OpenSim</th><th>In EduExo Hardware</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1-DOF joint model</td><td><code>r_elbow_flex</code> coordinate</td><td class="col-edu">Elbow angle sensor</td></tr>
+      <tr><td>Muscle activation</td><td>Static Optimization output (0–1)</td><td class="col-edu">EMG sensor reading</td></tr>
+      <tr><td>Assistive torque</td><td>CoordinateActuator (5 Nm)</td><td class="col-edu">DC motor output</td></tr>
+      <tr><td>Interaction force</td><td>ExternalForce on forearm cuff</td><td class="col-edu">Force sensor in cuff</td></tr>
+      <tr><td>Motion input</td><td>.mot file (joint angles vs. time)</td><td class="col-edu">Angle sensor data stream</td></tr>
+    </tbody>
+  </table>
+  <div class="callout"><strong>Next lab:</strong> run Static Optimization with and without the EduExo motor — compare muscle activations to quantify assistive benefit.</div>
+  <span class="slide-number">15</span>
+</section>
+
+<!-- ══ SLIDE 16 — SUMMARY ══════════════════════════ -->
+<section>
+  <div class="course-tag">Summary</div>
+  <h2>What We Covered Today</h2>
+  <div class="summary-grid">
+    <div class="sum-item"><div class="badge">1</div>Why computational models are needed — muscles cannot be measured directly in vivo</div>
+    <div class="sum-item"><div class="badge">2</div>What a model contains — bodies, joints, muscles, markers, actuators</div>
+    <div class="sum-item"><div class="badge">3</div>Degrees of freedom — how joints are parameterized in simulation</div>
+    <div class="sum-item"><div class="badge">4</div>Muscle activation vs. force — neural input vs. mechanical output</div>
+    <div class="sum-item"><div class="badge">5</div>The pipeline — Scaling &#8594; IK &#8594; ID &#8594; Static Optimization</div>
+    <div class="sum-item"><div class="badge">6</div>EduExo connection — simulation mirrors real hardware</div>
+  </div>
+  <div class="next-box"><strong>Next class:</strong> Run Inverse Dynamics on arm26 with a prescribed elbow flexion motion</div>
+  <div class="resource-links">
+    <a class="res-link" href="https://opensimconfluence.atlassian.net/wiki/spaces/OpenSim/pages/53088700" target="_blank">Tutorial 1 (Official)</a>
+    <a class="res-link" href="https://simtk.org/frs/index.php?group_id=91" target="_blank">Download OpenSim 4.5</a>
+    <a class="res-link" href="https://www.youtube.com/@OpenSimVideos" target="_blank">OpenSim YouTube</a>
+  </div>
+  <span class="slide-number">16</span>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script>
+Reveal.initialize({
+  hash: true, slideNumber: false, controls: true, progress: true,
+  center: false, transition: 'slide',
+  width: 1280, height: 720, margin: 0, minScale: 0.1, maxScale: 2.0,
+  keyboard: {
+    32: function() { // space — instant
+      Reveal.configure({ transition: 'none' });
+      Reveal.next();
+      setTimeout(() => Reveal.configure({ transition: 'slide' }), 50);
+    },
+    38: function() { // up arrow — instant
+      Reveal.configure({ transition: 'none' });
+      Reveal.prev();
+      setTimeout(() => Reveal.configure({ transition: 'slide' }), 50);
+    },
+    40: function() { // down arrow — instant
+      Reveal.configure({ transition: 'none' });
+      Reveal.next();
+      setTimeout(() => Reveal.configure({ transition: 'slide' }), 50);
+    }
+  }
+});
+
+// ── E / D KEY FONT SCALE ──────────────────────────
+let scale = 2.5;
+const STEP = 0.05;
+const MIN  = 0.8;
+const MAX  = 2.5;
+const flashEl = document.getElementById('flash');
+
+function showFlash(msg) {
+  flashEl.textContent = msg;
+  flashEl.style.opacity = '1';
+  clearTimeout(flashEl._t);
+  flashEl._t = setTimeout(() => { flashEl.style.opacity = '0'; }, 1800);
+}
+function applyScale() {
+  document.querySelector('.reveal').style.fontSize = (16 * scale) + 'px';
+  Reveal.layout();
+  showFlash('Scale: ' + Math.round(scale * 100) + '%');
+}
+
+// ── PAGE NUMBERS ───────────────────────────────────
+const TOTAL = 16;
+const skipSlides = new Set([1, 2, 5, 8, 12, 14]); // title + section dividers
+
+function updatePageNum() {
+  document.querySelectorAll('.page-num').forEach(el => el.remove());
+  const idx = Reveal.getState().indexh + 1;
+  if (skipSlides.has(idx)) return;
+  const section = Reveal.getCurrentSlide();
+  if (!section) return;
+  const el = document.createElement('div');
+  el.className = 'page-num';
+  el.textContent = idx + ' / ' + TOTAL;
+  section.appendChild(el);
+}
+
+Reveal.on('slidechanged', updatePageNum);
+Reveal.on('ready', updatePageNum);
+
+// ── S KEY THEME CYCLE ──────────────────────────────
+const themes = [
+  { key: '',               label: 'Academic Slate' },
+  { key: 'steel-blue',     label: 'Steel Blue'     },
+  { key: 'warm-charcoal',  label: 'Warm Charcoal'  }
+];
+let themeIndex = 0;
+
+document.addEventListener('keydown', function(e) {
+  if (document.activeElement.tagName === 'INPUT') return;
+  if (e.key === 'e' || e.key === 'E') {
+    scale = Math.min(MAX, +(scale + STEP).toFixed(2)); applyScale();
+  }
+  if (e.key === 'd' || e.key === 'D') {
+    scale = Math.max(MIN, +(scale - STEP).toFixed(2)); applyScale();
+  }
+  if (e.key === 's' || e.key === 'S') {
+    themeIndex = (themeIndex + 1) % themes.length;
+    const t = themes[themeIndex];
+    document.documentElement.setAttribute('data-theme', t.key);
+    showFlash('Theme: ' + t.label);
+  }
+});
+</script>
+</body>
+</html>
