@@ -1,0 +1,9 @@
+
+
+emg_applications.png
+
+emg_processing_stages.png
+
+
+muscle-activation-comparison-between-EMG-muscle-activation-and-OpenSim-simulation-during-running.png
+

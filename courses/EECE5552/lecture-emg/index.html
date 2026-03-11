@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>EECE 5552 — Lecture 10</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/white.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+:root{--title-color:#2c3e50;--subtitle-color:#5a6c7d;--body-text:#333;--accent:#34495e;--bar-color:#34495e;--tag-bg:#ecf0f1;--tag-text:#34495e;--box-bg:#f8f9fa;--box-border:#dee2e6;--callout-bg:#f0f3f5;--callout-border:#34495e}
+[data-theme="steel-blue"]{--title-color:#1a3a5c;--subtitle-color:#5b7fa5;--body-text:#2c3e50;--accent:#2980b9;--bar-color:#2980b9;--tag-bg:#e8f4fd;--tag-text:#1a3a5c;--box-bg:#f0f7fd;--box-border:#aed6f1;--callout-bg:#e8f4fd;--callout-border:#2980b9}
+[data-theme="warm-charcoal"]{--title-color:#1a1a2e;--subtitle-color:#666;--body-text:#2d2d2d;--accent:#c0392b;--bar-color:#c0392b;--tag-bg:#fdf2f2;--tag-text:#922b21;--box-bg:#fdfafa;--box-border:#f1948a;--callout-bg:#fdf2f2;--callout-border:#c0392b}
+*,*::before,*::after{box-sizing:border-box}
+.reveal{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--body-text);font-size:16px}
+.reveal .slides{text-align:left}
+.reveal .slides section{padding:28px 48px 36px;height:100%;overflow:hidden}
+.reveal .slides section::after{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--bar-color);transition:background .4s}
+.reveal h1,.reveal h2,.reveal h3{text-transform:none;letter-spacing:0;margin:0 0 12px;color:var(--title-color);line-height:1.2}
+.reveal h1{font-size:1.5em;font-weight:300}
+.reveal h2{font-size:1.05em;font-weight:600;border-bottom:2px solid var(--bar-color);padding-bottom:7px;margin-bottom:14px}
+.reveal h3{font-size:.75em;font-weight:700;color:var(--accent);margin-bottom:7px}
+.reveal p{font-size:.75em;line-height:1.55;color:var(--body-text);margin:0 0 8px}
+.reveal code{font-size:.82em;background:var(--tag-bg);padding:1px 5px;border-radius:3px;font-family:'Consolas','Menlo',monospace}
+.course-tag{display:inline-block;font-size:.52em;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--tag-text);background:var(--tag-bg);padding:3px 10px;border-radius:3px;margin-bottom:10px}
+.badge{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--bar-color);color:#fff;font-size:.65em;font-weight:700;flex-shrink:0;transition:background .4s;line-height:1}
+#flash{position:fixed;bottom:44px;left:16px;z-index:9999;font-family:'Segoe UI',sans-serif;font-size:12px;font-weight:600;color:var(--bar-color);background:rgba(255,255,255,.94);padding:4px 12px;border-radius:4px;border:1px solid var(--box-border);opacity:0;transition:opacity .4s}
+.slide-dark{background:var(--title-color)!important;transition:background .4s;display:flex!important;flex-direction:column;justify-content:center!important;overflow:hidden!important}
+.slide-dark::after{background:rgba(255,255,255,.22)!important}
+.nu-seal{position:absolute;bottom:-60px;right:-60px;width:380px;height:380px;filter:brightness(0) invert(1);opacity:.13;pointer-events:none;user-select:none}
+.slide-dark.is-title{padding:44px 72px!important}
+.title-course-label{font-size:.65em;font-weight:400;color:rgba(255,255,255,.55);margin:0 0 2px}
+.title-course-name{font-size:.75em;font-weight:600;color:rgba(255,255,255,.85);margin:0 0 36px}
+.title-h1{font-size:1.75em;font-weight:300;color:#fff;margin:0 0 36px;line-height:1.25;max-width:68%}
+.title-instructor-name{font-size:.72em;font-weight:600;color:#fff;margin-bottom:4px}
+.title-instructor-sub{font-size:.6em;color:rgba(255,255,255,.55);line-height:1.7}
+.slide-dark.is-section h2{color:#fff!important;font-size:1.3em!important;font-weight:300!important;border-bottom:1px solid rgba(255,255,255,.2)!important;padding-bottom:12px!important;margin-bottom:10px!important}
+.section-sub{color:rgba(255,255,255,.5)!important;font-size:.7em;margin:0}
+.section-number{font-size:4em;font-weight:700;color:rgba(255,255,255,.1);position:absolute;top:20px;right:48px;line-height:1}
+.slide-dark.is-qa h2{color:#fff!important;font-size:1.6em!important;font-weight:300!important;border-bottom:1px solid rgba(255,255,255,.2)!important;padding-bottom:12px!important;margin-bottom:10px!important}
+.qa-sub{color:rgba(255,255,255,.5)!important;font-size:.58em;margin-top:28px}
+.page-num{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);font-size:.42em;color:#bbb;letter-spacing:.5px;pointer-events:none}
+.reveal ul.bullet-list{list-style:none;padding:0;margin:0}
+.reveal ul.bullet-list li{font-size:.76em;padding:6px 0 6px 18px;position:relative;color:var(--body-text);border-bottom:1px solid var(--box-border);line-height:1.45}
+.reveal ul.bullet-list li:last-child{border-bottom:none}
+.reveal ul.bullet-list li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--bar-color);transition:background .4s}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.col-box{background:var(--box-bg);border:1px solid var(--box-border);border-radius:5px;padding:13px 15px}
+.col-box ul{list-style:none;padding:0;margin:0}
+.col-box ul li{font-size:.72em;padding:4px 0 4px 16px;position:relative;color:var(--body-text);line-height:1.4}
+.col-box ul li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--bar-color);transition:background .4s}
+.callout{background:var(--callout-bg);border-left:4px solid var(--callout-border);border-radius:0 5px 5px 0;padding:9px 14px;font-size:.72em;color:var(--body-text);margin-top:12px;line-height:1.5}
+.flow-row{display:flex;align-items:center;gap:8px;margin-top:10px}
+.flow-step{background:var(--box-bg);border:1px solid var(--box-border);border-top:3px solid var(--bar-color);transition:border-color .4s;border-radius:5px;padding:12px 10px;text-align:center;flex:1}
+.flow-step .step-num{width:28px;height:28px;border-radius:50%;background:var(--bar-color);color:#fff;font-size:.7em;font-weight:700;margin:0 auto 7px;display:flex;align-items:center;justify-content:center;transition:background .4s}
+.flow-step .step-label{font-size:.65em;font-weight:700;color:var(--title-color)}
+.flow-step .step-sub{font-size:.58em;color:var(--subtitle-color);margin-top:2px}
+.flow-arrow{font-size:1em;color:var(--accent);flex-shrink:0;font-weight:700}
+.pipeline-row{display:flex;align-items:flex-start;gap:12px;background:var(--box-bg);border:1px solid var(--box-border);border-radius:5px;padding:9px 14px;margin-bottom:7px}
+.pipe-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65em;font-weight:700;color:#fff;background:var(--bar-color);flex-shrink:0;margin-top:1px;transition:background .4s}
+.pipe-name{font-size:.73em;font-weight:700;color:var(--title-color);margin-bottom:2px}
+.pipe-desc{font-size:.65em;color:var(--subtitle-color);line-height:1.4}
+.pipe-io{font-size:.58em;color:#999;margin-top:3px}
+.comp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
+.comp-card{background:var(--box-bg);border:1px solid var(--box-border);border-top:3px solid var(--bar-color);border-radius:5px;padding:11px 12px;transition:border-color .4s}
+.comp-label{display:inline-flex;align-items:center;justify-content:center;background:var(--bar-color);color:#fff;font-size:.55em;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 7px;border-radius:3px;margin-bottom:7px;transition:background .4s}
+.comp-name{font-size:.67em;font-weight:700;color:var(--title-color);margin-bottom:4px}
+.comp-desc{font-size:.6em;color:var(--subtitle-color);line-height:1.45}
+.map-table{width:100%;border-collapse:collapse;font-size:.7em;margin-top:4px}
+.map-table th{text-align:left;padding:7px 10px;background:var(--title-color);color:#fff;font-weight:600;font-size:.9em;transition:background .4s}
+.map-table td{padding:7px 10px;border-bottom:1px solid var(--box-border);color:var(--body-text);vertical-align:top;line-height:1.4}
+.map-table tr:nth-child(even) td{background:var(--box-bg)}
+.map-table .col-accent{color:var(--accent);font-weight:600}
+.lab-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:7px}
+.lab-n{width:22px;height:22px;border-radius:50%;background:var(--bar-color);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.6em;font-weight:700;flex-shrink:0;transition:background .4s}
+.lab-text{font-size:.72em;color:var(--body-text);padding-top:3px;line-height:1.4}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.sum-item{display:flex;gap:10px;align-items:flex-start;background:var(--box-bg);border:1px solid var(--box-border);border-radius:5px;padding:9px 11px;font-size:.7em;color:var(--body-text);line-height:1.45}
+.resource-links{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+.res-link{font-size:.62em;background:var(--tag-bg);color:var(--tag-text);border:1px solid var(--box-border);border-radius:4px;padding:4px 10px;text-decoration:none;font-weight:500}
+.next-box{background:var(--callout-bg);border-left:4px solid var(--callout-border);border-radius:0 5px 5px 0;padding:8px 13px;font-size:.7em;color:var(--body-text);margin-bottom:10px}
+.img-wrap{width:100%;margin-top:8px;text-align:center}
+.img-wrap img{max-width:100%;max-height:480px;border-radius:5px;border:1px solid var(--box-border);object-fit:contain}
+.img-caption{font-size:.58em;color:var(--subtitle-color);margin-top:7px;font-style:italic}
+.video-wrap{position:relative;width:100%;padding-top:50%;margin-top:8px;border-radius:5px;overflow:hidden;border:1px solid var(--box-border)}
+.video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;border-radius:5px}
+.video-caption{font-size:.58em;color:var(--subtitle-color);margin-top:7px;font-style:italic}
+.agenda-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.agenda-item{display:flex;align-items:center;gap:14px;background:var(--box-bg);border:1px solid var(--box-border);border-radius:5px;padding:12px 16px}
+.agenda-num{font-size:1.1em;font-weight:700;color:var(--bar-color);flex-shrink:0;min-width:32px;transition:color .4s}
+.agenda-title{font-size:.72em;font-weight:600;color:var(--title-color)}
+.agenda-sub{font-size:.6em;color:var(--subtitle-color);margin-top:2px;line-height:1.4}
+.def-term{font-size:1.3em;font-weight:700;color:var(--bar-color);margin-bottom:16px;transition:color .4s}
+.def-text{font-size:.8em;line-height:1.65;color:var(--body-text);background:var(--box-bg);border:1px solid var(--box-border);border-left:5px solid var(--bar-color);border-radius:0 6px 6px 0;padding:14px 18px;margin-bottom:12px;transition:border-color .4s}
+.def-source{font-size:.6em;color:var(--subtitle-color);font-style:italic}
+.quote-wrap{display:flex;flex-direction:column;justify-content:center;height:75%;padding:0 20px}
+.quote-mark{font-size:4em;font-weight:700;color:var(--bar-color);line-height:.8;margin-bottom:8px;transition:color .4s}
+.quote-text{font-size:.9em;font-weight:300;color:var(--title-color);line-height:1.65;margin-bottom:18px;font-style:italic}
+.quote-author{font-size:.68em;font-weight:600;color:var(--bar-color);transition:color .4s}
+.quote-role{font-size:.6em;color:var(--subtitle-color);margin-top:2px}
+.compare-wrap{display:grid;grid-template-columns:1fr 40px 1fr;gap:0;margin-top:8px;align-items:stretch}
+.compare-box{background:var(--box-bg);border:1px solid var(--box-border);border-radius:6px;padding:14px 16px}
+.compare-box.right{border-color:var(--bar-color);border-width:2px}
+.compare-label{font-size:.6em;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--bar-color);margin-bottom:10px;transition:color .4s}
+.compare-label.muted{color:var(--subtitle-color)}
+.compare-divider{display:flex;align-items:center;justify-content:center;font-size:.75em;font-weight:700;color:var(--subtitle-color)}
+.compare-box ul{list-style:none;padding:0;margin:0}
+.compare-box ul li{font-size:.7em;padding:4px 0 4px 16px;position:relative;color:var(--body-text);line-height:1.4}
+.compare-box ul li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:var(--bar-color);transition:background .4s}
+.eq-display{background:var(--box-bg);border:1px solid var(--box-border);border-left:5px solid var(--bar-color);border-radius:0 6px 6px 0;padding:18px 24px;margin:14px 0;text-align:center;transition:border-color .4s}
+.eq-display .katex{font-size:1.25em}
+.eq-display .katex-display{margin:0}
+.eq-terms{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-top:10px}
+.eq-term{display:flex;gap:10px;align-items:baseline;font-size:.67em}
+.eq-sym{font-weight:700;color:var(--bar-color);min-width:80px;transition:color .4s}
+.eq-sym .katex{font-size:1em;color:var(--bar-color)}
+.eq-meaning{color:var(--subtitle-color)}
+.code-wrap{margin-top:8px;border-radius:6px;overflow:hidden;border:1px solid var(--box-border)}
+.code-lang-bar{background:var(--title-color);color:rgba(255,255,255,.6);font-size:.55em;padding:5px 14px;font-family:'Consolas','Menlo',monospace;letter-spacing:.5px;transition:background .4s}
+.code-block{background:#f6f8fa;padding:14px 16px;margin:0;overflow-x:auto;font-size:.72em;font-family:'Consolas','Menlo',monospace;color:#24292e;line-height:1.6;white-space:pre}
+.reveal .controls{bottom:12px;right:12px}
+.reveal .controls button{color:var(--bar-color)!important;opacity:.18!important;transform:scale(.55);transition:opacity .2s,transform .2s}
+.reveal .controls button:hover{opacity:.55!important;transform:scale(.62)}
+</style>
+</head>
+<body>
+<div id="flash"></div>
+<div class="reveal"><div class="slides" id="slide-container"></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script>
+const SLIDES = [
+
+  /* ── TITLE ── */
+  { type:"title", courseCode:"EECE 5552", courseName:"Assistive Robotics",
+    title:"Lecture 10: Intro to EMG Signals and Simulation",
+    instructor:"Dr. Xian Li", role:"Assistant Teaching Professor",
+    dept:"Department of Electrical and Computer Engineering" },
+
+  /* ── AGENDA ── */
+  { type:"agenda", tag:"Overview", title:"Lecture Outline",
+    items:[
+      { num:"01", title:"Clinical Motivation",  sub:"Injury diagnosis & recovery assessment" },
+      { num:"02", title:"Muscle Mechanics",      sub:"How muscles generate force" },
+      { num:"03", title:"EMG Signals",           sub:"Electrical activity & detection systems" },
+      { num:"04", title:"EMG in OpenSim",        sub:"IK, ID, and EMG-informed simulation" },
+      { num:"05", title:"Lab Exercise",          sub:"EduExo exoskeleton comparison" }
+    ] },
+
+  /* ══ SECTION 01 ══ */
+  { type:"section", num:"01", title:"Clinical Motivation",
+    sub:"Why does measuring muscles matter in the real world?" },
+
+  { type:"quote", tag:"Clinical Motivation",
+    text:"An NBA player lands awkwardly on an inclined surface after a jump. Which muscles were injured — and how do we know?",
+    author:"The Central Question",
+    role:"Diagnosis · Assessment · Recovery · Prediction" },
+
+  { type:"video", tag:"Clinical Motivation",
+    title:"Case Study: Sports Injury & Musculoskeletal Analysis",
+    youtube:"jP0IFCHTU3E",
+    caption:"Watch how biomechanical tools are applied to real injury scenarios" },
+
+
+  { type:"pipeline", tag:"Clinical Motivation",
+    title:"Step 1 — How Do We Identify Which Muscles Are Injured?",
+    steps:[
+      { name:"Situational Analysis",
+        desc:"Based on the mechanism of injury (e.g. valgus collapse on landing), identify candidate muscles most likely loaded beyond their physiological limit.",
+        io:"Input: injury scenario  |  Output: list of candidate muscles" },
+      { name:"Functional Movement Tests",
+        desc:"Ask the patient to perform specific movements (e.g. single-leg squat, hop test). Observe compensation patterns, range of motion, and pain location.",
+        io:"Input: movement tasks  |  Output: performance indicators" },
+      { name:"Comparison to Normative Data",
+        desc:"Compare the patient's joint angles, forces, and muscle activity to a healthy population baseline to quantify the deficit.",
+        io:"Input: patient data  |  Output: deviation from norm (% deficit)" }
+    ] },
+
+  { type:"twocol", tag:"Clinical Motivation",
+    title:"Step 2 — Assessing Recovery: How Close to Normal?",
+    left:{ heading:"Motion Capture Approach", items:[
+      "Attach reflective markers to bony landmarks",
+      "Capture 3D joint trajectories during functional tasks",
+      "Run Inverse Kinematics → joint angle time series",
+      "Run Inverse Dynamics → net joint moments",
+      "Run Static Optimization → per-muscle activation"
+    ]},
+    right:{ heading:"Comparison to Normative Data", items:[
+      "Match subject to age/sex/mass-matched healthy controls",
+      "Compute symmetry index between injured and healthy limb",
+      "Plot muscle activation envelopes side by side",
+      "Flag muscles with activation deficit > 15%",
+      "Track improvement across rehabilitation sessions"
+    ]},
+    callout:"This is exactly the OpenSim pipeline from Lecture 9 — now applied to a clinical rehabilitation question." },
+
+  { type:"flow", tag:"Clinical Motivation",
+    title:"Step 3 — Predicting Which Exercises Aid Recovery",
+    steps:[
+      { label:"Build Patient Model",  sub:"Scale OpenSim model to subject" },
+      { label:"Simulate Exercise",    sub:"Prescribe candidate movements" },
+      { label:"Predict Muscle Load",  sub:"Static Optimization output" },
+      { label:"Compare & Select",     sub:"Pick exercises targeting deficit muscles" }
+    ],
+    callout:"Simulation lets clinicians test dozens of exercise variants <em>before</em> asking the patient to perform them — reducing risk and saving time." },
+
+  /* ══ SECTION 02 ══ */
+  { type:"section", num:"02", title:"Muscle Mechanics",
+    sub:"How muscles generate, transmit, and limit force" },
+
+  { type:"image", tag:"Muscle Mechanics",
+    title:"Muscle Structure: From Organ to Sarcomere",
+    src:"img/muscle_fiber_anatomy.png",
+    caption:"Hierarchical organization: whole muscle → fascicle → fiber → myofibril → sarcomere. The sarcomere is the basic contractile unit." },
+
+  { type:"definition", tag:"Muscle Mechanics", term:"Skeletal Muscle",
+    def:"A skeletal muscle is a voluntary, striated tissue composed of bundled muscle fibers (fascicles). Each fiber contains sarcomeres — the fundamental contractile units — arranged in series and parallel. When activated by a motor neuron, cross-bridges form between actin and myosin filaments, generating active force. Passive elastic elements in the connective tissue contribute additional force at longer lengths.",
+    source:"Zajac, 1989 — Critical Reviews in Biomedical Engineering" },
+
+  { type:"image", tag:"Muscle Mechanics",
+    title:"Hill-Type Muscle Model — 3-Element Schematic",
+    src:"img/hill_model_diagram.png",
+    caption:"CE = contractile element (active force), SEE = series elastic (tendon), PEE = parallel elastic (connective tissue). CC BY-SA 3.0, Wikimedia Commons." },
+
+  { type:"equation", tag:"Muscle Mechanics",
+    title:"Hill-Type Muscle Model",
+    eq:`$$F_m(t) = a(t) \\cdot F_{max} \\cdot \\tilde{F}_L(\\ell) \\cdot \\tilde{F}_V(v) + F_P(\\ell)$$`,
+    terms:[
+      { sym:`$a(t)$`,                 meaning:"Activation (0–1) — driven by neural input or EMG" },
+      { sym:`$F_{max}$`,              meaning:"Maximum isometric force of the muscle" },
+      { sym:`$\\tilde{F}_L(\\ell)$`,  meaning:"Normalized force-length curve" },
+      { sym:`$\\tilde{F}_V(v)$`,      meaning:"Normalized force-velocity curve" },
+      { sym:`$F_P(\\ell)$`,           meaning:"Passive elastic force (connective tissue)" }
+    ],
+    callout:"Key insight: $a(t)$ is the only term directly observable from surface EMG. The rest comes from the model geometry." },
+
+  { type:"twocol", tag:"Muscle Mechanics",
+    title:"Force-Length and Force-Velocity Relationships",
+    left:{ heading:"Force-Length $\\tilde{F}_L(\\ell)$", items:[
+      "Peak force occurs at optimal fiber length $\\ell_0$",
+      "Force drops at shorter lengths — overlap reduced",
+      "Force drops at longer lengths — fewer cross-bridges",
+      "Determines joint angle at which muscle is strongest",
+      "Clinically: why muscle length matters in posture"
+    ]},
+    right:{ heading:"Force-Velocity $\\tilde{F}_V(v)$", items:[
+      "Isometric ($v=0$): maximum active force",
+      "Concentric ($v>0$, shortening): force decreases",
+      "Eccentric ($v<0$, lengthening): force can exceed $F_{max}$",
+      "Eccentric contractions are the primary cause of DOMS",
+      "NBA landing = high eccentric load on quadriceps"
+    ]},
+    callout:"Injury risk is highest during <strong>rapid eccentric contractions</strong> at long muscle lengths — exactly what happens during a hard landing." },
+
+  /* ══ SECTION 03 ══ */
+  { type:"section", num:"03", title:"EMG Signals",
+    sub:"Measuring the electrical activity of muscles" },
+
+  { type:"definition", tag:"EMG Signals", term:"Electromyography (EMG)",
+    def:"Electromyography is the measurement of the electrical potentials generated by muscle fibers during contraction. When a motor neuron fires, it triggers an action potential that propagates along the muscle fiber membrane, producing a detectable voltage difference. The sum of all active motor unit action potentials (MUAPs) in the pickup volume is recorded as the raw EMG signal.",
+    source:"De Luca, 1979 — CRC Critical Reviews in Biomedical Engineering" },
+
+  { type:"image", tag:"EMG Signals",
+    title:"EMG in Practice: Clinical and Wearable Applications",
+    src:"img/emg_applications.png",
+    caption:"EMG is used across prosthetics, rehabilitation, sports science, and human-robot interaction — the same signal pipeline applies in each domain." },
+
+  { type:"image", tag:"EMG Signals",
+    title:"Surface EMG Electrode Placement Guide",
+    src:"img/electrode_placement.png",
+    caption:"Proper electrode placement is critical — misplacement by 1 cm can reduce signal amplitude by 50%." },
+
+  { type:"pipeline", tag:"EMG Signals",
+    title:"From Muscle Activation to Processed EMG",
+    steps:[
+      { name:"Motor Unit Recruitment",
+        desc:"Central nervous system recruits motor units. Each firing produces a motor unit action potential (MUAP) measured in microvolts (μV).",
+        io:"Neural drive → MUAPs (10–500 μV, 10–500 Hz)" },
+      { name:"Signal Acquisition",
+        desc:"Electrodes detect the summated raw EMG. Surface electrodes capture the average of many motor units; needle electrodes target individual units.",
+        io:"Raw EMG → amplified, digitized at ≥1000 Hz" },
+      { name:"Signal Processing",
+        desc:"Bandpass filter (20–450 Hz), full-wave rectification, and smoothing (RMS or low-pass envelope) to extract the activation envelope.",
+        io:"Raw EMG → linear envelope (0–1 normalized)" },
+      { name:"Normalization",
+        desc:"Divide by Maximum Voluntary Contraction (MVC) to express activation as a fraction of maximum. Enables inter-subject comparison.",
+        io:"Envelope / MVC → normalized EMG ≈ activation $a(t)$" }
+    ] },
+
+  { type:"image", tag:"EMG Signals",
+    title:"EMG Signal Processing: Raw → Filtered → Rectified → Envelope",
+    src:"img/emg_processing_stages.png",
+    caption:"Each stage removes noise and extracts the activation envelope. The final normalized envelope ≈ muscle activation a(t) used in OpenSim." },
+
+  { type:"image", tag:"EMG Signals",
+    title:"EMG Waveform Comparison: Raw, Rectified, and Smoothed",
+    src:"img/emg_comparison_raw_rectified_smoothed.png",
+    caption:"The raw bipolar signal (top) is rectified to remove negative values, then smoothed to reveal the activation envelope — the signal used for muscle control." },
+
+  { type:"compgrid", tag:"EMG Signals",
+    title:"Typical EMG Detection Systems",
+    cards:[
+      { label:"Surface",   name:"Surface EMG (sEMG)",         desc:"Non-invasive. Detects average activity of a muscle group. Best for large superficial muscles. Used in most clinical and exoskeleton applications." },
+      { label:"Needle",    name:"Intramuscular EMG",           desc:"Invasive needle inserted into the muscle. Detects individual motor units. Gold standard for clinical diagnosis of nerve/muscle disorders." },
+      { label:"Fine Wire", name:"Fine-Wire EMG",               desc:"Thin wires inserted via needle then withdrawn. Detects deep muscles (e.g. iliopsoas). Less painful than needle EMG." },
+      { label:"Array",     name:"High-Density sEMG (HD-EMG)", desc:"Grid of 64–256 surface electrodes. Maps the spatial distribution of muscle activity. Used in prosthetics and fatigue research." },
+      { label:"Wireless",  name:"Wireless IMU-EMG Hybrid",    desc:"Combines sEMG with IMU for simultaneous muscle activity and joint kinematics. Enables lab-free, wearable assessment." },
+      { label:"EduExo",    name:"EduExo EMG Module",          desc:"Single-channel sEMG sensor included in the EduExo Pro kit. Reads biceps/forearm activity for exoskeleton control.", highlight:true }
+    ] },
+
+  /* emg_applications.png — real-world uses of EMG, fits right after detection systems */
+
+  { type:"twocol", tag:"EMG Signals",
+    title:"MyoWare 2.0 — Wearable EMG Sensor",
+    left:{ heading:"Hardware Specifications", items:[
+      "Single-channel surface EMG sensor board",
+      "Built-in amplifier, rectifier, and envelope filter",
+      "Output: analog voltage proportional to muscle activation",
+      "Operating voltage: 3.3 V / 5 V compatible",
+      "Compatible with Arduino, Raspberry Pi, and microcontrollers",
+      "Snap-on disposable electrodes (Ag/AgCl)"
+    ]},
+    right:{ heading:"Use Cases in This Course", items:[
+      "Record biceps/triceps activation during EduExo tasks",
+      "Stream real-time analog signal to Arduino (EduExo kit)",
+      "Export data to CSV → normalize → use in OpenSim",
+      "Validate Static Optimization predicted activations",
+      "Compare EMG with/without exoskeleton assistance",
+      "Feed EMG-proportional control signal to EduExo motor"
+    ]},
+    callout:"Key workflow: MyoWare → normalized EMG envelope → activation input to OpenSim → compare with model-predicted activation from Static Optimization." },
+
+  { type:"image", tag:"EMG Signals",
+    title:"MyoWare 2.0 — Device and Electrode Setup",
+    src:"img/myoware_device.png",
+    caption:"MyoWare 2.0 by Advancer Technologies — integrates amplification, rectification, and smoothing on a single board." },
+
+  /* ══ SECTION 04 ══ */
+  { type:"section", num:"04", title:"EMG in OpenSim",
+    sub:"Connecting measured signals to musculoskeletal simulation" },
+
+  { type:"flow", tag:"EMG in OpenSim",
+    title:"Where Does EMG Fit in the OpenSim Pipeline?",
+    steps:[
+      { label:"Motion Capture",    sub:"Joint angles via IK" },
+      { label:"Inverse Dynamics",  sub:"Net joint moments" },
+      { label:"EMG Input",         sub:"Normalized activation" },
+      { label:"EMG-Informed SO",   sub:"Constrained optimization" }
+    ],
+    callout:"Standard Static Optimization is <em>unconstrained</em> — any muscle combination is valid. Adding measured EMG as a constraint produces more physiologically realistic solutions." },
+
+  /* muscle-activation-comparison image — OpenSim predicted vs. measured EMG */
+
+  { type:"table", tag:"EMG in OpenSim",
+    title:"Standard Static Optimization vs. EMG-Informed",
+    headers:["Property","Standard SO","EMG-Informed SO"],
+    rows:[
+      ["Muscle activations",   "Computed freely by optimizer", "Constrained to match measured EMG"],
+      ["Required data",        "Motion capture + GRF",         "Motion capture + GRF + EMG"],
+      ["Physiological realism","Moderate (math optimal)",      "Higher (grounded in real signals)"],
+      ["Clinical validation",  "Compared post-hoc to EMG",     "EMG is part of the solution"],
+      ["Typical use",          "Population-level studies",     "Subject-specific clinical analysis"]
+    ],
+    accentCol:2,
+    callout:"For the EduExo lab, we will use standard SO — but you can optionally use MyoWare-recorded EMG to validate whether the model's predictions match what you actually measured." },
+
+  { type:"twocol", tag:"EMG in OpenSim",
+    title:"Running IK & ID with EMG Data",
+    left:{ heading:"Inverse Kinematics Setup", items:[
+      "Place markers on: ASIS, greater trochanter, lateral knee, lateral malleolus",
+      "Load .trc marker file from motion capture session",
+      "Run IK → joint angle .mot file",
+      "Verify: residuals < 2 cm RMS",
+      "Check elbow flexion angle against MyoWare Arduino timestamp"
+    ]},
+    right:{ heading:"Inverse Dynamics Setup", items:[
+      "Load joint angle .mot from IK output",
+      "Apply external loads (ground reaction forces if available)",
+      "Run ID → net joint moment .sto file",
+      "Inspect elbow flexion moment — compare with EduExo motor torque",
+      "Use ID output as input to Static Optimization"
+    ]},
+    callout:"After running SO, export <code>StaticOptimization_activation.sto</code> and overlay with your normalized MyoWare EMG envelope in the OpenSim Plotter." },
+
+  { type:"image", tag:"EMG in OpenSim",
+    title:"Predicted vs. Measured EMG: OpenSim Simulation vs. Recorded Signal",
+    src:"img/muscle-activation-comparison-between-EMG-muscle-activation-and-OpenSim-simulation-during-running.png",
+    caption:"Comparison of EMG-measured muscle activation and OpenSim Static Optimization predictions during running. Agreement validates the model; deviations highlight where simulation assumptions break down." },
+
+    
+  { type:"code", tag:"EMG in OpenSim",
+    title:"Loading MyoWare EMG into OpenSim",
+    language:"python",
+    callout:"Convert MyoWare Arduino CSV export → normalized .sto file for OpenSim.",
+    code:
+`import pandas as pd
+
+# Load MyoWare data exported from Arduino Serial Monitor
+# Columns: time_ms, raw_emg_mV
+emg = pd.read_csv("myoware_session.csv")
+emg["time_s"] = emg["time_ms"] / 1000.0
+
+# Normalize to MVC (record a separate MVC trial first)
+mvc_value = emg["raw_emg_mV"].max()   # or load from MVC trial file
+emg["activation"] = emg["raw_emg_mV"] / mvc_value
+emg["activation"] = emg["activation"].clip(0, 1)  # clamp to [0, 1]
+
+# Write as OpenSim .sto activation file
+with open("myoware_activations.sto", "w") as f:
+    f.write("Activations\\n")
+    f.write(f"nRows={len(emg)}\\nnColumns=2\\n")
+    f.write("inDegrees=no\\n\\nendheader\\ntime\\tBIClong\\n")
+    for _, row in emg.iterrows():
+        f.write(f"{row.time_s:.4f}\\t{row.activation:.6f}\\n")
+
+print("Saved: myoware_activations.sto")`
+  },
+
+  /* ══ SECTION 05 ══ */
+  { type:"section", num:"05", title:"Lab Exercise",
+    sub:"EduExo on the arm26 model — with vs. without exoskeleton" },
+
+  { type:"comparison", tag:"Lab Exercise",
+    title:"What We Are Comparing",
+    left:{ label:"Condition A — No Exoskeleton", items:[
+      "arm26 model, no external actuator",
+      "Muscles must produce 100% of elbow torque",
+      "Run Static Optimization → baseline activations",
+      "Record: BIClong, BICshort, BRA peak activation",
+      "Represents unassisted or injured condition"
+    ]},
+    right:{ label:"Condition B — With EduExo (5 Nm)", items:[
+      "arm26_EduExo.osim with CoordinateActuator active",
+      "EduExo provides 50% of required elbow torque",
+      "Run Static Optimization → assisted activations",
+      "Record: BIClong, BICshort, BRA peak activation",
+      "Represents exoskeleton-assisted condition"
+    ]},
+    callout:"The difference between A and B quantifies the <strong>assistive benefit</strong> of the exoskeleton — the same metric used to evaluate rehabilitation devices clinically." },
+
+  { type:"lab", tag:"Lab Exercise",
+    title:"Lab: EduExo Simulation in OpenSim",
+    steps:[
+      "Open <code>arm26_EduExo.osim</code> from last week's lab",
+      "Load <code>elbow_motion.mot</code> (prescribed 10°→120°→10° flexion)",
+      "Run <strong>Inverse Dynamics</strong> — note the required elbow flexion moment",
+      "Run <strong>Static Optimization</strong> with EduExo motor <em>disabled</em> → save as Condition A",
+      "Enable EduExo motor (set <code>appliesForce = true</code>, control = 0.5) → re-run SO → save as Condition B",
+      "Open <strong>OpenSim Plotter</strong> → overlay BIClong activation for A vs. B",
+      "Optional: record your own elbow flexion with MyoWare → overlay measured vs. predicted EMG"
+    ],
+    questions:[
+      "By what percentage does BIClong activation decrease with the EduExo at 50% assistance?",
+      "Which muscle benefits most from exoskeleton assistance?",
+      "If a patient has a 40% biceps deficit post-injury, what assistance level would normalize their effort?"
+    ] },
+
+  /* ── SUMMARY ── */
+  { type:"summary", tag:"Summary",
+    title:"What We Covered Today",
+    items:[
+      "Clinical motivation — EMG helps diagnose injury, track recovery, and predict exercise outcomes",
+      "Muscle mechanics — Hill model: activation × force-length × force-velocity + passive",
+      "EMG signals — motor unit potentials, signal processing pipeline, normalization to MVC",
+      "Detection systems — surface, needle, fine-wire, HD-EMG, wireless; EduExo EMG module",
+      "MyoWare 2.0 — single-channel sEMG sensor, streams analog signal to Arduino",
+      "EMG in OpenSim — IK → ID → EMG-informed Static Optimization → activation comparison"
+    ],
+    next:"Lecture 11: Exoskeleton Control Strategies — impedance control, EMG-triggered assist, and proportional myoelectric control",
+    links:[
+      { label:"SENIAM Electrode Placement", url:"http://www.seniam.org" },
+      { label:"MyoWare 2.0",               url:"https://myoware.com" },
+      { label:"OpenSim EMG-Driven Sim",    url:"https://opensimconfluence.atlassian.net/wiki/spaces/OpenSim/pages/53088749" }
+    ] },
+
+  /* ── Q&A ── */
+  { type:"qa", courseCode:"EECE 5552", courseName:"Assistive Robotics",
+    university:"Northeastern University" }
+
+];
+
+const SEAL=`<img class="nu-seal" src="https://upload.wikimedia.org/wikipedia/commons/b/bb/NU_RGB_seal_R.png" alt="">`;
+const SKIP_TYPES=new Set(["title","section","qa"]);
+
+function render(s){
+  switch(s.type){
+    case "title":{const d=new Date();const ds=s.date||`${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}/${d.getFullYear()}`;return `<section class="slide-dark is-title">${SEAL}<div class="title-course-label">${s.courseCode}</div><div class="title-course-name">${s.courseName}</div><div class="title-h1">${s.title.replace(/\n/g,'<br>')}</div><div class="title-instructor-name">${s.instructor}</div><div class="title-instructor-sub">${s.role}<br>${s.dept}<br>${ds}</div></section>`;}
+    case "section":return `<section class="slide-dark is-section"><div class="section-number">${s.num}</div>${SEAL}<h2>${s.title}</h2><p class="section-sub">${s.sub}</p></section>`;
+    case "qa":return `<section class="slide-dark is-qa">${SEAL}<h2>Q &amp; A</h2><p class="section-sub">Questions &amp; Discussion</p><p class="qa-sub">${s.courseCode} · ${s.courseName} &nbsp;·&nbsp; ${s.university}</p></section>`;
+    case "agenda":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="agenda-grid">${s.items.map(i=>`<div class="agenda-item"><div class="agenda-num">${i.num}</div><div><div class="agenda-title">${i.title}</div>${i.sub?`<div class="agenda-sub">${i.sub}</div>`:''}</div></div>`).join('')}</div></section>`;
+    case "definition":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title||s.term}</h2><div class="def-term">${s.term}</div><div class="def-text">${s.def}</div>${s.source?`<div class="def-source">Source: ${s.source}</div>`:''}</section>`;
+    case "quote":return `<section>${s.tag?`<div class="course-tag">${s.tag}</div>`:''}<div class="quote-wrap"><div class="quote-mark">"</div><div class="quote-text">${s.text}</div><div class="quote-author">${s.author}</div>${s.role?`<div class="quote-role">${s.role}</div>`:''}</div></section>`;
+    case "twocol":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="two-col"><div class="col-box"><h3>${s.left.heading}</h3><ul>${s.left.items.map(i=>`<li>${i}</li>`).join('')}</ul></div><div class="col-box"><h3>${s.right.heading}</h3><ul>${s.right.items.map(i=>`<li>${i}</li>`).join('')}</ul></div></div>${s.callout?`<div class="callout">${s.callout}</div>`:''}</section>`;
+    case "comparison":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="compare-wrap"><div class="compare-box"><div class="compare-label muted">${s.left.label}</div><ul>${s.left.items.map(i=>`<li>${i}</li>`).join('')}</ul></div><div class="compare-divider">vs</div><div class="compare-box right"><div class="compare-label">${s.right.label}</div><ul>${s.right.items.map(i=>`<li>${i}</li>`).join('')}</ul></div></div>${s.callout?`<div class="callout">${s.callout}</div>`:''}</section>`;
+    case "flow":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="flow-row">${s.steps.map((st,i)=>`<div class="flow-step"><div class="step-num">${i+1}</div><div class="step-label">${st.label}</div><div class="step-sub">${st.sub}</div></div>${i<s.steps.length-1?'<div class="flow-arrow">&#8594;</div>':''}`).join('')}</div>${s.callout?`<div class="callout">${s.callout}</div>`:''}</section>`;
+    case "pipeline":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2>${s.steps.map((st,i)=>`<div class="pipeline-row"><div class="pipe-num">${i+1}</div><div><div class="pipe-name">${st.name}</div><div class="pipe-desc">${st.desc}</div><div class="pipe-io">${st.io.replace('|','&nbsp;|&nbsp;')}</div></div></div>`).join('')}</section>`;
+    case "compgrid":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="comp-grid">${s.cards.map(c=>`<div class="comp-card" ${c.highlight?'style="background:var(--callout-bg);border-color:var(--callout-border);"':''}><div class="comp-label">${c.label}</div><div class="comp-name">${c.name}</div><div class="comp-desc">${c.desc}</div></div>`).join('')}</div></section>`;
+    case "table":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><table class="map-table"><thead><tr>${s.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${s.rows.map(r=>`<tr>${r.map((c,i)=>`<td ${i===s.accentCol?'class="col-accent"':''}>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>${s.callout?`<div class="callout">${s.callout}</div>`:''}</section>`;
+    case "equation":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="eq-display katex-render">${s.eq}</div>${s.terms?`<div class="eq-terms">${s.terms.map(t=>`<div class="eq-term"><span class="eq-sym katex-render">${t.sym}</span><span class="eq-meaning">${t.meaning}</span></div>`).join('')}</div>`:''} ${s.callout?`<div class="callout">${s.callout}</div>`:''}</section>`;
+    case "code":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2>${s.callout?`<div class="callout" style="margin-bottom:10px;">${s.callout}</div>`:''}<div class="code-wrap"><div class="code-lang-bar">${s.language||'code'}</div><pre class="code-block">${s.code.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></div></section>`;
+    case "image":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="img-wrap"><img src="${s.src}" alt="${s.title}"><div class="img-caption">${s.caption||''}</div></div></section>`;
+    case "video":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="video-wrap"><iframe src="https://www.youtube.com/embed/${s.youtube}?rel=0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>${s.caption?`<div class="video-caption">${s.caption}</div>`:''}</section>`;
+    case "lab":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="two-col"><div><h3>Steps</h3>${s.steps.map((st,i)=>`<div class="lab-step"><div class="lab-n">${i+1}</div><div class="lab-text">${st}</div></div>`).join('')}</div><div class="col-box"><h3>Discussion Questions</h3><ul>${s.questions.map(q=>`<li>${q}</li>`).join('')}</ul></div></div></section>`;
+    case "summary":return `<section><div class="course-tag">${s.tag}</div><h2>${s.title}</h2><div class="summary-grid">${s.items.map((item,i)=>`<div class="sum-item"><div class="badge">${i+1}</div>${item}</div>`).join('')}</div><div class="next-box"><strong>Next class:</strong> ${s.next}</div><div class="resource-links">${s.links.map(l=>`<a class="res-link" href="${l.url}" target="_blank">${l.label}</a>`).join('')}</div></section>`;
+    default:return `<section><p style="color:red;">Unknown type: "${s.type}"</p></section>`;
+  }
+}
+
+document.getElementById('slide-container').innerHTML=SLIDES.map(render).join('\n');
+const TOTAL=SLIDES.length;
+const skipIndices=new Set(SLIDES.map((s,i)=>SKIP_TYPES.has(s.type)?i+1:null).filter(Boolean));
+
+function renderMath(){
+  if(typeof renderMathInElement==='undefined'){setTimeout(renderMath,100);return}
+  renderMathInElement(document.getElementById('slide-container'),{
+    delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+    throwOnError:false,errorColor:'#c0392b'
+  });
+}
+document.addEventListener('DOMContentLoaded',renderMath);
+
+Reveal.initialize({
+  hash:true,slideNumber:false,controls:true,progress:true,
+  center:false,transition:'slide',
+  width:1280,height:720,margin:0,minScale:0.1,maxScale:2.0,
+  keyboard:{
+    32:()=>{Reveal.configure({transition:'none'});Reveal.next();setTimeout(()=>Reveal.configure({transition:'slide'}),50)},
+    38:()=>{Reveal.configure({transition:'none'});Reveal.prev();setTimeout(()=>Reveal.configure({transition:'slide'}),50)},
+    40:()=>{Reveal.configure({transition:'none'});Reveal.next();setTimeout(()=>Reveal.configure({transition:'slide'}),50)}
+  }
+});
+
+let scale=1.75;
+const STEP=0.05,MIN=0.8,MAX=2.5;
+const flashEl=document.getElementById('flash');
+function showFlash(m){flashEl.textContent=m;flashEl.style.opacity='1';clearTimeout(flashEl._t);flashEl._t=setTimeout(()=>{flashEl.style.opacity='0'},1800)}
+function applyScale(){document.querySelector('.reveal').style.fontSize=(16*scale)+'px';Reveal.layout();showFlash('Scale: '+Math.round(scale*100)+'%')}
+function updatePageNum(){
+  document.querySelectorAll('.page-num').forEach(el=>el.remove());
+  const idx=Reveal.getState().indexh+1;
+  if(skipIndices.has(idx))return;
+  const sec=Reveal.getCurrentSlide();if(!sec)return;
+  const el=document.createElement('div');el.className='page-num';
+  el.textContent=idx+' / '+TOTAL;sec.appendChild(el);
+}
+Reveal.on('slidechanged',updatePageNum);
+Reveal.on('ready',()=>{applyScale();updatePageNum()});
+const themes=[{key:'',label:'Academic Slate'},{key:'steel-blue',label:'Steel Blue'},{key:'warm-charcoal',label:'Warm Charcoal'}];
+let themeIdx=0;
+document.addEventListener('keydown',e=>{
+  if(document.activeElement.tagName==='INPUT')return;
+  if(e.key==='e'||e.key==='E'){scale=Math.min(MAX,+(scale+STEP).toFixed(2));applyScale()}
+  if(e.key==='d'||e.key==='D'){scale=Math.max(MIN,+(scale-STEP).toFixed(2));applyScale()}
+  if(e.key==='s'||e.key==='S'){themeIdx=(themeIdx+1)%themes.length;document.documentElement.setAttribute('data-theme',themes[themeIdx].key);showFlash('Theme: '+themes[themeIdx].label)}
+});
+</script>
+</body>
+</html>
