@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EECE 5580 · Classical Control Systems · Northeastern University</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:   #CC0000;
+      --black: #111111;
+      --gray:  #555555;
+      --lgray: #999999;
+      --rule:  #e2e2e2;
+      --bg:    #ffffff;
+      --off:   #f6f6f6;
+      --font:  Arial, Helvetica, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--black);
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar { height: 5px; background: var(--red); }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--rule);
+      padding: 0 2rem;
+    }
+    .nav-inner {
+      max-width: 960px; margin: 0 auto;
+      display: flex; align-items: center;
+      justify-content: space-between; height: 50px;
+    }
+    .nav-brand {
+      font-size: 0.82rem; font-weight: 700;
+      color: var(--black); text-decoration: none;
+    }
+    .nav-brand span { color: var(--red); }
+    .nav-links { display: flex; gap: 1.6rem; list-style: none; }
+    .nav-links a {
+      font-size: 0.72rem; font-weight: 700; color: var(--gray);
+      text-decoration: none; letter-spacing: 0.08em;
+      text-transform: uppercase; transition: color 0.18s;
+    }
+    .nav-links a:hover { color: var(--red); }
+    .hamburger {
+      display: none; flex-direction: column; gap: 4px;
+      cursor: pointer; padding: 6px; background: none; border: none;
+    }
+    .hamburger span { display: block; width: 20px; height: 2px; background: var(--black); }
+    @media (max-width: 660px) {
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none; flex-direction: column; gap: 0;
+        position: absolute; top: 50px; left: 0; right: 0;
+        background: #fff; border-bottom: 1px solid var(--rule);
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 0.65rem 2rem; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 960px; margin: 0 auto;
+      padding: 4.5rem 2rem 3.5rem; text-align: center;
+    }
+    .hero-dept {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--lgray); margin-bottom: 1.4rem;
+    }
+    .hero-number {
+      font-size: clamp(3.8rem, 11vw, 6rem);
+      font-weight: 700; line-height: 1; color: var(--black); margin-bottom: 0.3rem;
+    }
+    .hero-title {
+      font-size: clamp(1.2rem, 3.2vw, 1.65rem);
+      font-weight: 400; color: var(--gray); margin-bottom: 1rem;
+    }
+    .hero-meta { font-size: 0.8rem; color: var(--lgray); letter-spacing: 0.05em; }
+    .hero-rule { width: 48px; height: 2px; background: var(--red); margin: 1.6rem auto; }
+    .hero-hook {
+      font-size: 1.1rem; font-weight: 700; color: var(--black);
+      max-width: 520px; margin: 0 auto; line-height: 1.45;
+    }
+    .hero-sub {
+      font-size: 0.88rem; color: var(--gray);
+      max-width: 580px; margin: 0.9rem auto 0; line-height: 1.65;
+    }
+
+    /* ── SECTION WRAPPER ── */
+    .section {
+      max-width: 960px; margin: 0 auto;
+      padding: 3rem 2rem; border-top: 1px solid var(--rule);
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .section.visible { opacity: 1; transform: none; }
+    .section-label {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--lgray); margin-bottom: 1.5rem;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .section { opacity: 1; transform: none; transition: none; }
+    }
+
+    /* ── ABOUT GRID ── */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem 3rem; }
+    @media (max-width: 620px) { .about-grid { grid-template-columns: 1fr; } }
+    .about-block h3 {
+      font-size: 0.82rem; font-weight: 700; color: var(--black);
+      margin-bottom: 0.4rem;
+    }
+    .about-block p { font-size: 0.86rem; color: var(--gray); line-height: 1.65; }
+
+    /* ── THREE COLUMNS ── */
+    .columns { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.8rem; }
+    @media (max-width: 640px) { .columns { grid-template-columns: 1fr; } }
+    .col-head {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding-bottom: 0.6rem; margin-bottom: 0.7rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .col-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .col-head h3 { font-size: 0.88rem; font-weight: 700; color: var(--black); }
+    .col ul { list-style: none; }
+    .col ul li {
+      font-size: 0.83rem; color: var(--gray);
+      padding: 0.2rem 0; display: flex; align-items: baseline; gap: 0.42rem;
+    }
+    .col ul li::before { content: '·'; color: var(--red); font-weight: 700; flex-shrink: 0; }
+
+    /* ── ROADMAP ── */
+    .roadmap { display: grid; grid-template-columns: repeat(5,1fr); gap: 0.42rem; }
+    @media (max-width: 680px) { .roadmap { grid-template-columns: 1fr 1fr; } }
+    .phase {
+      background: var(--off); border: 1px solid var(--rule);
+      padding: 0.8rem 0.7rem; border-radius: 2px;
+    }
+    .phase.hl { background: var(--red); border-color: var(--red); }
+    .phase-wk { font-size: 0.64rem; color: var(--lgray); margin-bottom: 0.22rem; }
+    .phase.hl .phase-wk { color: rgba(255,255,255,0.55); }
+    .phase-title { font-size: 0.83rem; font-weight: 700; color: var(--black); margin-bottom: 0.15rem; }
+    .phase.hl .phase-title { color: #fff; }
+    .phase-sub { font-size: 0.71rem; color: var(--lgray); line-height: 1.4; }
+    .phase.hl .phase-sub { color: rgba(255,255,255,0.65); }
+
+    /* ── DO LIST ── */
+    .do-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2.5rem; }
+    @media (max-width: 540px) { .do-grid { grid-template-columns: 1fr; } }
+    .do-item {
+      font-size: 0.85rem; color: var(--gray);
+      padding: 0.32rem 0; border-bottom: 1px solid var(--rule);
+      display: flex; gap: 0.5rem; align-items: baseline;
+    }
+    .do-item::before { content: '→'; color: var(--red); font-size: 0.74rem; flex-shrink: 0; }
+
+    /* ── HW PLATFORM ── */
+    .hw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
+    @media (max-width: 620px) { .hw-grid { grid-template-columns: 1fr; gap: 2rem 0; } }
+    .hw-col h3 {
+      font-size: 0.83rem; font-weight: 700; color: var(--black);
+      margin-bottom: 0.6rem; padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .hw-item { margin-bottom: 0.9rem; }
+    .hw-title { font-size: 0.81rem; font-weight: 700; color: var(--black); }
+    .hw-body { font-size: 0.81rem; color: var(--gray); line-height: 1.6; }
+
+    /* ── THEORY ── */
+    .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
+    @media (max-width: 580px) { .theory-grid { grid-template-columns: 1fr; } }
+    .theory-item { padding: 0.55rem 0; border-bottom: 1px solid var(--rule); }
+    .theory-title { font-size: 0.83rem; font-weight: 700; color: var(--black); }
+    .theory-desc { font-size: 0.79rem; color: var(--gray); margin-top: 0.15rem; line-height: 1.55; }
+    .theory-desc code {
+      font-family: 'Courier New', monospace; font-size: 0.78rem;
+      background: var(--off); padding: 0.05rem 0.28rem; border-radius: 2px;
+    }
+
+    /* ── COMPETITION ── */
+    .comp-box {
+      display: flex; border: 1px solid var(--rule);
+      background: var(--off); border-radius: 2px; overflow: hidden;
+    }
+    .comp-accent { width: 4px; background: var(--red); flex-shrink: 0; }
+    .comp-body { padding: 1.5rem 1.7rem; flex: 1; }
+    .comp-body h3 { font-size: 0.98rem; font-weight: 700; color: var(--black); margin-bottom: 0.55rem; }
+    .comp-body > p { font-size: 0.85rem; color: var(--gray); margin-bottom: 0.45rem; line-height: 1.6; }
+    .comp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2.5rem; margin-top: 1.1rem; }
+    @media (max-width: 560px) { .comp-cols { grid-template-columns: 1fr; } }
+    .comp-col h4 {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--lgray);
+      margin-bottom: 0.45rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--rule);
+    }
+    .comp-col ul { list-style: none; }
+    .comp-col ul li {
+      font-size: 0.82rem; color: var(--gray); padding: 0.2rem 0;
+      display: flex; gap: 0.42rem; align-items: baseline;
+    }
+    .comp-col ul li::before { content: '·'; color: var(--red); font-weight: 700; }
+    .comp-tags { display: flex; flex-wrap: wrap; gap: 0.32rem; margin-top: 1.1rem; }
+    .tag {
+      font-size: 0.71rem; font-weight: 700; color: var(--red);
+      background: rgba(204,0,0,0.07); padding: 0.17rem 0.52rem;
+      border-radius: 2px; letter-spacing: 0.02em;
+    }
+
+    /* ── WHY ── */
+    .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem; }
+    @media (max-width: 580px) { .why-grid { grid-template-columns: 1fr; } }
+    .why-item {
+      padding: 0.95rem 1rem; border: 1px solid var(--rule);
+      border-left: 3px solid var(--red); background: var(--off);
+    }
+    .why-item h3 { font-size: 0.84rem; font-weight: 700; color: var(--black); margin-bottom: 0.28rem; }
+    .why-item p { font-size: 0.79rem; color: var(--gray); line-height: 1.55; }
+
+    /* ── INFO TABLE ── */
+    .info-table { width: 100%; border-collapse: collapse; }
+    .info-table tr { border-bottom: 1px solid var(--rule); }
+    .info-table tr:last-child { border-bottom: none; }
+    .info-table td { padding: 0.55rem 0; font-size: 0.84rem; vertical-align: top; }
+    .info-table td:first-child {
+      font-weight: 700; color: var(--black); width: 155px; padding-right: 1.5rem;
+    }
+    .info-table td:last-child { color: var(--gray); }
+
+    /* ── FOOTER ── */
+    footer { background: var(--black); text-align: center; padding: 1.3rem 2rem; margin-top: 2rem; }
+    footer p { font-size: 0.73rem; color: #666; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+
+<div class="topbar"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#"><span>EECE 5580</span> &nbsp;·&nbsp; Classical Control Systems</a>
+    <button class="hamburger" aria-label="Menu" onclick="document.getElementById('nl').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="nl">
+      <li><a href="#about">Overview</a></li>
+      <li><a href="#topics">Topics</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#hardware">Hardware</a></li>
+      <li><a href="#competition">Competition</a></li>
+      <li><a href="#why">Why</a></li>
+      <li><a href="#info">Info</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <p class="hero-dept">Northeastern University &nbsp;·&nbsp; Electrical &amp; Computer Engineering &nbsp;·&nbsp; Boston/Seattle</p>
+  <h1 class="hero-number">EECE 5580</h1>
+  <p class="hero-title">Classical Control Systems</p>
+  <p class="hero-meta">4 Credit Hours &nbsp;·&nbsp; Graduate &amp; Senior Undergraduate</p>
+  <div class="hero-rule"></div>
+  <p class="hero-hook">Build a self-balancing robot. Apply control theory. Compete.</p>
+  <p class="hero-sub">Introduces the analysis and design of classical control systems — from transfer functions and stability theory to real hardware implementation. Every concept taught in lecture is tested on a physical robot you build yourself.</p>
+</header>
+
+<!-- OVERVIEW -->
+<section class="section" id="about">
+  <p class="section-label">Course Overview</p>
+  <div class="about-grid">
+    <div class="about-block">
+      <h3>What This Course Covers</h3>
+      <p>Examines control system objectives, modeling and mathematical description, transfer function and state-variable representations, feedback control characteristics, system responses, and stability. Also addresses compensator design based on root-locus and frequency response, and modern control using state-variable feedback.</p>
+    </div>
+    <div class="about-block">
+      <h3>The Hardware Project</h3>
+      <p>The centerpiece of the course is a team-based project to design, build, and tune a two-wheeled self-balancing robot from scratch. Students wire DC motors, an IMU, and wheel encoders to a microcontroller running a 200 Hz real-time control loop — then apply every control method taught in lecture to keep the robot upright.</p>
+    </div>
+    <div class="about-block">
+      <h3>Simulation &amp; Analysis Tools</h3>
+      <p>MATLAB and Simulink are used throughout the course: to derive transfer functions, plot root loci and Bode diagrams, simulate closed-loop responses, and compare theoretical predictions against hardware measurements. EECE 5581 (Lab for EECE 5580) is available for co-registration.</p>
+    </div>
+    <div class="about-block">
+      <h3>End-of-Semester Competition</h3>
+      <p>The course culminates in a live, department-wide balancing robot competition. Teams present tuned robots for a judged performance run scored on stability, disturbance recovery, and step-response speed. Awards are given for Best Balance, Best Recovery, Best Technical Report, and Fan Favorite.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TOPICS -->
+<section class="section" id="topics">
+  <p class="section-label">Course Topics</p>
+  <div class="columns">
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/>
+        </svg>
+        <h3>Control Theory</h3>
+      </div>
+      <ul>
+        <li>Transfer functions &amp; Laplace domain</li>
+        <li>State-variable representations</li>
+        <li>Feedback system characteristics</li>
+        <li>Stability — Routh-Hurwitz &amp; Nyquist</li>
+        <li>Root-locus design methods</li>
+        <li>Bode plots &amp; frequency response</li>
+        <li>Lead / lag compensator design</li>
+        <li>State feedback &amp; LQR</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+        </svg>
+        <h3>Hardware Build</h3>
+      </div>
+      <ul>
+        <li>Inverted-pendulum robot assembly</li>
+        <li>DC motors &amp; H-bridge wiring</li>
+        <li>IMU (gyro + accelerometer) fusion</li>
+        <li>Wheel encoders &amp; velocity feedback</li>
+        <li>Microcontroller real-time loop (200 Hz)</li>
+        <li>Power electronics &amp; battery circuit</li>
+        <li>Serial data logging to MATLAB</li>
+        <li>Hardware-in-the-loop debugging</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <h3>Competition &amp; Lab</h3>
+      </div>
+      <ul>
+        <li>PID controller tuning on physical robot</li>
+        <li>LQR cost-function optimization</li>
+        <li>Disturbance rejection experiments</li>
+        <li>MATLAB / Simulink system modeling</li>
+        <li>Team iterative design sprints</li>
+        <li>Live balancing &amp; slalom challenges</li>
+        <li>Technical report &amp; oral defense</li>
+        <li>Department showcase &amp; awards</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="section" id="roadmap">
+  <p class="section-label">Semester Roadmap</p>
+  <div class="roadmap">
+    <div class="phase">
+      <p class="phase-wk">Wk 1–4</p>
+      <p class="phase-title">Foundations</p>
+      <p class="phase-sub">Laplace · state-space · modeling</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 5–7</p>
+      <p class="phase-title">Hardware Lab I</p>
+      <p class="phase-sub">Robot build · motors · IMU wiring</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 8–10</p>
+      <p class="phase-title">Stability &amp; Design</p>
+      <p class="phase-sub">Root locus · Bode · compensators</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 11–13</p>
+      <p class="phase-title">Hardware Lab II</p>
+      <p class="phase-sub">PID + LQR tuning on robot</p>
+    </div>
+    <div class="phase hl">
+      <p class="phase-wk">Wk 14–16</p>
+      <p class="phase-title">Compete!</p>
+      <p class="phase-sub">Live challenges · showcase</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU WILL DO -->
+<section class="section" id="dolist">
+  <p class="section-label">What You Will Do</p>
+  <div class="do-grid">
+    <div class="do-item">Derive equations of motion for an inverted pendulum and linearize around equilibrium</div>
+    <div class="do-item">Deploy a 200 Hz real-time control loop on a microcontroller</div>
+    <div class="do-item">Design PID, lead/lag, and LQR controllers analytically in MATLAB</div>
+    <div class="do-item">Tune controller gains until your robot balances on its own</div>
+    <div class="do-item">Wire DC motors, an IMU, and encoders on a physical robot chassis</div>
+    <div class="do-item">Compare measured step-response data to theoretical Bode predictions</div>
+    <div class="do-item">Implement a complementary or Kalman filter for tilt estimation</div>
+    <div class="do-item">Enter the end-of-semester live balancing competition</div>
+  </div>
+</section>
+
+<!-- HARDWARE PLATFORM -->
+<section class="section" id="hardware">
+  <p class="section-label">Hardware Platform</p>
+  <div class="hw-grid">
+    <div class="hw-col">
+      <h3>Mechanical &amp; Electrical</h3>
+      <div class="hw-item">
+        <p class="hw-title">Chassis</p>
+        <p class="hw-body">Two-wheeled inverted-pendulum frame — laser-cut acrylic or 3D-printed. Students design and assemble the full mechanical structure from scratch.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Actuation</p>
+        <p class="hw-body">Brushed DC motors with gear reducers. H-bridge motor driver (L298N or DRV8833) controlled via PWM signals from the microcontroller.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Sensing</p>
+        <p class="hw-body">MPU-6050 IMU (3-axis gyroscope + accelerometer) for tilt angle estimation. Quadrature wheel encoders for velocity and position feedback.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Power</p>
+        <p class="hw-body">LiPo or NiMH battery pack with regulated 5 V and motor supply rails. Students design the power distribution circuit and manage safe battery operation.</p>
+      </div>
+    </div>
+    <div class="hw-col">
+      <h3>Computing &amp; Software</h3>
+      <div class="hw-item">
+        <p class="hw-title">Microcontroller</p>
+        <p class="hw-body">Arduino Uno / Nano or STM32 Nucleo running a 200 Hz main control loop. Serial port streams sensor data to a laptop for logging and analysis.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">State Estimation</p>
+        <p class="hw-body">Complementary filter or discrete Kalman filter fuses gyroscope and accelerometer data into a reliable tilt angle estimate at full loop rate.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Simulation</p>
+        <p class="hw-body">System model derived analytically, then built in MATLAB / Simulink and verified by simulation before any code is deployed to hardware.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Data Analysis</p>
+        <p class="hw-body">Step-response plots, Bode diagrams, and root-locus overlays logged from the real robot and compared against theoretical predictions in MATLAB.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTROL THEORY CURRICULUM -->
+<section class="section" id="theory">
+  <p class="section-label">Control Theory Curriculum</p>
+  <div class="theory-grid">
+    <div class="theory-item">
+      <p class="theory-title">Mathematical Modeling</p>
+      <p class="theory-desc">Derive equations of motion for the inverted pendulum. Linearize around the upright equilibrium. Extract the transfer function and state-space model for all subsequent analysis.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Stability Analysis</p>
+      <p class="theory-desc">Apply Routh-Hurwitz criterion to assess closed-loop stability. Compute gain and phase margins from Bode plots. Interpret Nyquist diagrams for robustness assessment.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Root-Locus Design</p>
+      <p class="theory-desc">Sketch root loci by hand using construction rules, then verify with MATLAB's <code>rlocus</code>. Select pole locations to meet transient response specifications such as settling time and overshoot.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Frequency-Domain Design</p>
+      <p class="theory-desc">Use Bode plots to design lead and lag compensators. Specify gain crossover frequency, phase margin, and bandwidth. Verify closed-loop performance before hardware deployment.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">PID Control</p>
+      <p class="theory-desc">Derive PD, PI, and full PID controllers. Understand the physical role of each gain. Apply Ziegler-Nichols and manual methods to tune a PID controller on the physical robot.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Modern State-Space Methods</p>
+      <p class="theory-desc">Design state-variable feedback via pole placement. Apply LQR optimal control by specifying a cost function. Introduction to Luenberger observer design for unmeasured states.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COMPETITION -->
+<section class="section" id="competition">
+  <p class="section-label">End-of-Semester Competition</p>
+  <div class="comp-box">
+    <div class="comp-accent"></div>
+    <div class="comp-body">
+      <h3>🏆 Balancing Robot Challenge</h3>
+      <p>The course culminates in a live, department-wide competition. Teams present their tuned robots for a judged performance run. Robots are scored blind — no software changes permitted after submission.</p>
+      <p>Judging criteria: upright balance stability, recovery time after a push disturbance, and step-response speed. An optional slalom bonus rewards teams with well-tuned velocity control.</p>
+      <div class="comp-cols">
+        <div class="comp-col">
+          <h4>Competition Challenges</h4>
+          <ul>
+            <li>Upright balance on flat surface</li>
+            <li>Push-and-recover disturbance test</li>
+            <li>Step-response speed measurement</li>
+            <li>Optional: cone slalom navigation</li>
+          </ul>
+        </div>
+        <div class="comp-col">
+          <h4>Team Deliverables</h4>
+          <ul>
+            <li>Weekly lab notebooks</li>
+            <li>Full system design report</li>
+            <li>10-min oral defense presentation</li>
+            <li>Robot hardware submission</li>
+          </ul>
+        </div>
+      </div>
+      <div class="comp-tags">
+        <span class="tag">Best Balance</span>
+        <span class="tag">Best Disturbance Recovery</span>
+        <span class="tag">Best Technical Report</span>
+        <span class="tag">Fan Favorite</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY TAKE THIS COURSE -->
+<section class="section" id="why">
+  <p class="section-label">Why Take This Course</p>
+  <div class="why-grid">
+    <div class="why-item">
+      <h3>Industry-Ready Skills</h3>
+      <p>PID tuning, frequency-domain analysis, and MATLAB / Simulink are used daily by control engineers at aerospace, automotive, and robotics companies. This course teaches them in the context of a real physical system.</p>
+    </div>
+    <div class="why-item">
+      <h3>Hands-On Learning</h3>
+      <p>No passive lectures — every concept from stability margins to state feedback is verified on a physical robot. You see, hear, and feel the control theory working in real time.</p>
+    </div>
+    <div class="why-item">
+      <h3>Foundational for Graduate Study</h3>
+      <p>EECE 5580 is a prerequisite gateway to Digital Control Systems and advanced robotics courses. The tools — Laplace, state-space, stability criteria — appear in nearly every controls and robotics graduate course.</p>
+    </div>
+    <div class="why-item">
+      <h3>Team Design Experience</h3>
+      <p>Work in teams on a semester-long engineering project. Practice technical writing, oral presentation, and collaborative hardware and software development — skills valued in every engineering role.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COURSE INFO -->
+<section class="section" id="info">
+  <p class="section-label">Course Information</p>
+  <table class="info-table">
+    <tr><td>Course Number</td><td>EECE 5580</td></tr>
+    <tr><td>Title</td><td>Classical Control Systems</td></tr>
+    <tr><td>Credits</td><td>4 credit hours</td></tr>
+    <tr><td>Level</td><td>Graduate &amp; Senior Undergraduate</td></tr>
+    <tr><td>Campus</td><td>Northeastern University &nbsp;·&nbsp; Seattle</td></tr>
+    <tr><td>Prerequisites</td><td>EECE 3464 or EECE 2520 with minimum grade D&minus; &nbsp;·&nbsp; or Graduate Admission</td></tr>
+    <!-- <tr><td>Companion Lab</td><td>EECE 5581 — Lab for EECE 5580 &nbsp;·&nbsp; co-registration available. Covers computer simulation, digital computer control, and MATLAB-based analysis.</td></tr> -->
+    <tr><td>Tools</td><td>MATLAB, Simulink, Arduino / STM32, Python (data logging)</td></tr>
+  </table>
+</section>
+
+<footer>
+  <p>College of Engineering &nbsp;·&nbsp; Electrical &amp; Computer Engineering &nbsp;·&nbsp; Northeastern University &nbsp;·&nbsp; northeastern.edu</p>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(
+    es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
