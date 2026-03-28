@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kalman Filter Visualizer &mdash; EECE 5554</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ── Tokens ── */
+:root {
+  --bg:        #080c10;
+  --panel:     #0d1318;
+  --surface:   #111a22;
+  --surface2:  #16212c;
+  --border:    #1e2e3e;
+  --border2:   #253545;
+  --green:     #39e896;
+  --green-dim: rgba(57,232,150,0.12);
+  --green-glow:rgba(57,232,150,0.25);
+  --amber:     #f0b840;
+  --amber-dim: rgba(240,184,64,0.12);
+  --blue:      #4ab4f0;
+  --blue-dim:  rgba(74,180,240,0.12);
+  --red:       #f05060;
+  --red-dim:   rgba(240,80,96,0.12);
+  --text:      #c8dce8;
+  --muted:     #445a6a;
+  --muted2:    #2a3d4e;
+}
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* graph-paper background */
+body::before {
+  content:'';
+  position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(57,232,150,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57,232,150,0.03) 1px, transparent 1px),
+    linear-gradient(rgba(57,232,150,0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(57,232,150,0.015) 1px, transparent 1px);
+  background-size: 60px 60px, 60px 60px, 12px 12px, 12px 12px;
+  pointer-events:none;
+}
+
+.app {
+  position:relative;z-index:1;
+  max-width:1240px;margin:0 auto;padding:32px 20px 60px;
+}
+
+/* ── Header ── */
+header {
+  display:flex;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;gap:16px;
+  margin-bottom:32px;
+  padding-bottom:24px;
+  border-bottom:1px solid var(--border);
+}
+.header-left{}
+.breadcrumb {
+  font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;
+}
+.breadcrumb a{color:var(--muted);text-decoration:none;}
+.breadcrumb a:hover{color:var(--green);}
+.breadcrumb .sep{margin:0 6px;opacity:0.4;}
+
+h1 {
+  font-family:'Instrument Serif',serif;
+  font-size:1.9rem;font-weight:400;
+  letter-spacing:-0.01em;line-height:1.1;
+  margin-bottom:6px;
+}
+h1 em {color:var(--green);font-style:italic;}
+.tagline{font-size:0.7rem;color:var(--muted);letter-spacing:0.08em;}
+
+.mode-toggle {
+  display:flex;gap:4px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:4px;
+  align-self:flex-start;
+  margin-top:8px;
+}
+.mode-btn {
+  background:none;border:none;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:0.7rem;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--muted);
+  padding:7px 18px;border-radius:7px;
+  transition:all 0.2s;
+}
+.mode-btn.active {
+  background:var(--surface2);
+  color:var(--green);
+  border:1px solid var(--border2);
+  box-shadow:0 0 12px var(--green-dim);
+}
+
+/* ── Main grid ── */
+.main-grid {
+  display:grid;
+  grid-template-columns:1fr 280px;
+  gap:18px;
+  align-items:start;
+}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr;}}
+
+/* ── Canvas panel ── */
+.canvas-panel {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:16px;
+  overflow:hidden;
+  position:relative;
+}
+.canvas-header {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.canvas-title {
+  font-size:0.62rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);
+}
+.playback-btns {
+  display:flex;gap:6px;align-items:center;
+}
+.pb-btn {
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text);font-family:'DM Mono',monospace;font-size:0.7rem;
+  padding:5px 14px;border-radius:7px;cursor:pointer;
+  transition:all 0.2s;display:flex;align-items:center;gap:5px;
+}
+.pb-btn:hover{border-color:var(--green);color:var(--green);}
+.pb-btn.playing{border-color:var(--amber);color:var(--amber);}
+.pb-btn#resetBtn{color:var(--muted);}
+.pb-btn#resetBtn:hover{border-color:var(--red);color:var(--red);}
+.pb-btn:disabled{opacity:0.28;cursor:not-allowed;pointer-events:none;}
+
+#mainCanvas {
+  width:100%;display:block;
+  background:#080c10;
+  cursor:crosshair;
+}
+
+/* step counter */
+.canvas-footer {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 18px;
+  border-top:1px solid var(--border);
+  font-size:0.65rem;color:var(--muted);
+}
+.step-counter{display:flex;gap:16px;}
+.step-val{color:var(--text);}
+
+/* ── Legend ── */
+.legend {
+  display:flex;gap:18px;flex-wrap:wrap;
+  padding:10px 18px;
+  border-top:1px solid var(--border);
+  background:var(--surface);
+}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:0.62rem;color:var(--muted);}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.legend-line{width:18px;height:2px;flex-shrink:0;border-radius:1px;}
+.legend-dash{width:18px;height:0;border-top:2px dashed;flex-shrink:0;}
+
+/* ── Right panel ── */
+.right-panel {
+  display:flex;flex-direction:column;gap:14px;
+}
+
+/* ── Control card ── */
+.ctrl-card {
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+}
+.ctrl-card-header {
+  padding:11px 16px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);
+}
+.ctrl-body {padding:16px;}
+
+/* slider row */
+.slider-row {margin-bottom:14px;}
+.slider-row:last-child{margin-bottom:0;}
+.slider-label {
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:6px;
+}
+.slider-name{font-size:0.7rem;color:var(--text);}
+.val-group{display:flex;align-items:center;gap:4px;}
+.val-input{
+  font-family:'DM Mono',monospace;
+  font-size:0.75rem;font-weight:500;
+  padding:2px 6px;border-radius:5px;
+  background:var(--surface2);border:1px solid var(--border2);
+  width:68px;text-align:right;
+  outline:none;transition:border-color 0.15s,box-shadow 0.15s;
+  -moz-appearance:textfield;
+}
+.val-input::-webkit-outer-spin-button,
+.val-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.val-input.green{color:var(--green);}
+.val-input.green:focus{border-color:var(--green);box-shadow:0 0 0 2px var(--green-dim);}
+.val-input.amber{color:var(--amber);}
+.val-input.amber:focus{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-dim);}
+.val-input.blue{color:var(--blue);}
+.val-input.blue:focus{border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-dim);}
+.val-reset{
+  background:none;border:1px solid transparent;
+  color:var(--muted2);cursor:pointer;
+  font-size:0.8rem;line-height:1;
+  padding:2px 5px;border-radius:5px;
+  transition:color 0.15s,border-color 0.15s,background 0.15s;
+  flex-shrink:0;font-family:'DM Mono',monospace;
+}
+.val-reset:hover{color:var(--muted);border-color:var(--border);background:var(--surface2);}
+.slider-hint{font-size:0.6rem;color:var(--muted);margin-top:3px;line-height:1.4;}
+
+input[type=range] {
+  -webkit-appearance:none;appearance:none;
+  width:100%;height:4px;border-radius:2px;
+  background:var(--border2);outline:none;cursor:pointer;
+}
+input[type=range].green-track::-webkit-slider-thumb {
+  -webkit-appearance:none;appearance:none;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--green);cursor:pointer;
+  box-shadow:0 0 6px var(--green-glow);
+}
+input[type=range].amber-track::-webkit-slider-thumb {
+  -webkit-appearance:none;appearance:none;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--amber);cursor:pointer;
+}
+input[type=range].blue-track::-webkit-slider-thumb {
+  -webkit-appearance:none;appearance:none;
+  width:14px;height:14px;border-radius:50%;
+  background:var(--blue);cursor:pointer;
+}
+
+/* ── Metrics card ── */
+.metric-grid {
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  padding:14px;
+}
+.metric-cell {
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:9px;padding:10px 12px;
+}
+.metric-label{font-size:0.55rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.metric-val{
+  font-family:'Instrument Serif',serif;
+  font-size:1.4rem;line-height:1;
+}
+.metric-val.green{color:var(--green);}
+.metric-val.amber{color:var(--amber);}
+.metric-val.blue{color:var(--blue);}
+.metric-val.red{color:var(--red);}
+
+/* ── Explainer card ── */
+.explainer {
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;
+}
+.explainer-tabs {
+  display:flex;border-bottom:1px solid var(--border);
+  background:var(--surface);
+}
+.exp-tab {
+  background:none;border:none;cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:0.6rem;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);padding:9px 14px;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:all 0.2s;
+}
+.exp-tab.active{color:var(--green);border-bottom-color:var(--green);}
+.exp-body {
+  padding:14px 16px;font-size:0.7rem;color:var(--muted);
+  line-height:1.7;display:none;
+  max-height:220px;overflow-y:auto;
+}
+.exp-body.active{display:block;}
+.exp-body strong{color:var(--text);}
+.exp-body code {
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:4px;padding:1px 5px;font-size:0.68rem;
+  color:var(--green);
+}
+.exp-body .eq {
+  background:var(--surface2);border-left:2px solid var(--green);
+  border-radius:0 6px 6px 0;padding:8px 12px;margin:8px 0;
+  font-size:0.68rem;color:var(--green);line-height:1.8;
+}
+
+/* ── Speed control ── */
+.speed-row {
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;border-top:1px solid var(--border);
+}
+.speed-label{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);flex-shrink:0;}
+.speed-btns{display:flex;gap:4px;}
+.spd-btn{
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--muted);font-family:'DM Mono',monospace;font-size:0.65rem;
+  padding:3px 9px;border-radius:5px;cursor:pointer;transition:all 0.15s;
+}
+.spd-btn:hover,.spd-btn.active{border-color:var(--amber);color:var(--amber);}
+
+/* ── Animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.app>*{animation:fadeUp 0.4s ease both;}
+header{animation-delay:0s;}
+.main-grid{animation-delay:0.08s;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header>
+    <div class="header-left">
+      <div class="breadcrumb">
+        <a href="/">shawnlinu.github.io</a><span class="sep">/</span>
+        <a href="/tools/">tools</a><span class="sep">/</span>
+        <span style="color:var(--green)">kalman-filter</span>
+      </div>
+      <h1>Kalman Filter <em>Visualizer</em></h1>
+      <div class="tagline">EECE 5554 &mdash; Robot Sensing &amp; Navigation &mdash; Interactive Demo</div>
+    </div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn1d" onclick="setMode('1d')">1D &mdash; Position</button>
+      <button class="mode-btn" id="btn2d" onclick="setMode('2d')">2D &mdash; Trajectory</button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <div class="main-grid">
+
+    <!-- Canvas -->
+    <div class="canvas-panel">
+      <div class="canvas-header">
+        <span class="canvas-title" id="canvasTitle">1D Position Tracking</span>
+        <div class="playback-btns">
+          <button class="pb-btn" id="playBtn" onclick="togglePlay()">&#9654; Play</button>
+          <button class="pb-btn" id="stepBackBtn" onclick="stepBack()" disabled>&#124;&#9664; Back</button>
+          <button class="pb-btn" id="stepBtn" onclick="stepOnce()">&#9654;&#124; Step</button>
+          <button class="pb-btn" id="resetBtn" onclick="resetSim()">&#8635; Reset</button>
+        </div>
+      </div>
+      <canvas id="mainCanvas" height="420"></canvas>
+      <div class="legend" id="legend1d">
+        <div class="legend-item"><div class="legend-dash" style="border-color:var(--muted)"></div>True state</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Noisy measurement</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--green)"></div>Kalman estimate</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--green-dim);height:10px;border-radius:2px;opacity:0.6"></div>Uncertainty (&#177;&#963;)</div>
+      </div>
+      <div class="legend hidden" id="legend2d">
+        <div class="legend-item"><div class="legend-dash" style="border-color:var(--muted)"></div>True path</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Measurement</div>
+        <div class="legend-item"><div class="legend-line" style="background:var(--green)"></div>Kalman estimate</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue);width:8px;height:8px;border:2px solid var(--blue);border-radius:50%;background:none"></div>Uncertainty ellipse</div>
+      </div>
+      <div class="canvas-footer">
+        <div class="step-counter">
+          <span>Step <span class="step-val" id="stepNum">0</span></span>
+          <span>Gain K = <span class="step-val" style="color:var(--green)" id="gainVal">&mdash;</span></span>
+          <span>Innovation = <span class="step-val" style="color:var(--amber)" id="innovVal">&mdash;</span></span>
+        </div>
+        <span id="speedLabel" style="color:var(--muted);font-size:0.6rem">1&times; speed</span>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div class="right-panel">
+
+      <!-- Parameters -->
+      <div class="ctrl-card">
+        <div class="ctrl-card-header">Filter Parameters</div>
+        <div class="ctrl-body">
+
+          <div class="slider-row">
+            <div class="slider-label">
+              <span class="slider-name">Process Noise <em>Q</em></span>
+              <div class="val-group">
+                <input type="number" id="qVal" class="val-input green" value="0.100" step="any"
+                  oninput="onValInput('q')" onkeydown="onValKey(event,'q')" onblur="onValBlur('q')">
+                <button class="val-reset" onclick="resetParam('q')" title="Reset to default">&#8635;</button>
+              </div>
+            </div>
+            <input type="range" id="qSlider" class="green-track" min="-3" max="2" step="0.05" value="-1"
+              oninput="onParamChange()">
+            <div class="slider-hint">How much does the true state wander? Higher Q &rarr; filter trusts measurements more.</div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">
+              <span class="slider-name">Measurement Noise <em>R</em></span>
+              <div class="val-group">
+                <input type="number" id="rVal" class="val-input amber" value="1.000" step="any"
+                  oninput="onValInput('r')" onkeydown="onValKey(event,'r')" onblur="onValBlur('r')">
+                <button class="val-reset" onclick="resetParam('r')" title="Reset to default">&#8635;</button>
+              </div>
+            </div>
+            <input type="range" id="rSlider" class="amber-track" min="-2" max="3" step="0.05" value="0"
+              oninput="onParamChange()">
+            <div class="slider-hint">How noisy is the sensor? Higher R &rarr; filter relies more on its own prediction.</div>
+          </div>
+
+          <div class="slider-row">
+            <div class="slider-label">
+              <span class="slider-name">Initial Uncertainty <em>P&#8320;</em></span>
+              <div class="val-group">
+                <input type="number" id="p0Val" class="val-input blue" value="1.000" step="any"
+                  oninput="onValInput('p0')" onkeydown="onValKey(event,'p0')" onblur="onValBlur('p0')">
+                <button class="val-reset" onclick="resetParam('p0')" title="Reset to default">&#8635;</button>
+              </div>
+            </div>
+            <input type="range" id="p0Slider" class="blue-track" min="-2" max="3" step="0.1" value="0"
+              oninput="onParamChange()">
+            <div class="slider-hint">How confident is the filter at the start? Watch it converge regardless of this value.</div>
+          </div>
+
+        </div>
+        <div class="speed-row">
+          <span class="speed-label">Speed</span>
+          <div class="speed-btns">
+            <button class="spd-btn active" id="spd1" onclick="setSpeed(1,this)">1&times;</button>
+            <button class="spd-btn" id="spd2" onclick="setSpeed(3,this)">3&times;</button>
+            <button class="spd-btn" id="spd5" onclick="setSpeed(8,this)">8&times;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live metrics -->
+      <div class="ctrl-card">
+        <div class="ctrl-card-header">Live State</div>
+        <div class="metric-grid">
+          <div class="metric-cell">
+            <div class="metric-label">Estimate x&#770;</div>
+            <div class="metric-val green" id="mEstimate">&mdash;</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">True x</div>
+            <div class="metric-val" style="color:var(--muted)" id="mTrue">&mdash;</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Error |x&#770;&minus;x|</div>
+            <div class="metric-val red" id="mError">&mdash;</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Variance P</div>
+            <div class="metric-val blue" id="mVariance">&mdash;</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">Kalman Gain K</div>
+            <div class="metric-val green" id="mGain">&mdash;</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-label">RMSE (all steps)</div>
+            <div class="metric-val amber" id="mRmse">&mdash;</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Explainer -->
+      <div class="explainer">
+        <div class="explainer-tabs">
+          <button class="exp-tab active" onclick="showTab('what',this)">What</button>
+          <button class="exp-tab" onclick="showTab('eq',this)">Equations</button>
+          <button class="exp-tab" onclick="showTab('tune',this)">Tuning</button>
+        </div>
+        <div class="exp-body active" id="tab-what">
+          The <strong>Kalman filter</strong> is an optimal recursive estimator. At each step it combines two sources of information:
+          <br><br>
+          &bull; <strong style="color:var(--muted)">Prediction</strong> &mdash; where the model says the state should be.<br>
+          &bull; <strong style="color:var(--amber)">Measurement</strong> &mdash; what the noisy sensor reports.<br><br>
+          It blends them using the <strong style="color:var(--green)">Kalman gain K</strong>, which is computed automatically from Q and R. Watch K stabilize as the filter converges &mdash; this is the steady-state gain.
+        </div>
+        <div class="exp-body" id="tab-eq">
+          <strong>Predict</strong>
+          <div class="eq">
+            x&#770;<sup>&minus;</sup> = F&thinsp;x&#770;<br>
+            P<sup>&minus;</sup> = F&thinsp;P&thinsp;F<sup>T</sup> + Q
+          </div>
+          <strong>Update</strong>
+          <div class="eq">
+            K = P<sup>&minus;</sup>H<sup>T</sup>(H&thinsp;P<sup>&minus;</sup>H<sup>T</sup> + R)<sup>&minus;1</sup><br>
+            x&#770; = x&#770;<sup>&minus;</sup> + K(z &minus; H&thinsp;x&#770;<sup>&minus;</sup>)<br>
+            P = (I &minus; KH)&thinsp;P<sup>&minus;</sup>
+          </div>
+          In 1D: F=1, H=1, so K = P/(P+R) &mdash; a simple weighted average between prediction and measurement.
+        </div>
+        <div class="exp-body" id="tab-tune">
+          <strong>Q too low</strong> &mdash; filter is overconfident in its model. Estimate lags real changes, slow to react.<br><br>
+          <strong>Q too high</strong> &mdash; filter trusts every measurement. Estimate is noisy, tracks jitter.<br><br>
+          <strong>R too low</strong> &mdash; filter trusts a bad sensor. Estimate oscillates with noise.<br><br>
+          <strong>R too high</strong> &mdash; filter ignores sensor. Estimate drifts with model errors.<br><br>
+          <strong>Optimal</strong>: set Q &asymp; variance of the true process disturbance, R &asymp; variance of sensor noise.
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ══════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════ */
+var mode='1d';
+var playing=false;
+var animId=null;
+var speed=1;
+var lastTime=null;
+var msPerStep=40; // base ms per simulation step at 1x
+
+/* 1D sim */
+var SIM1D={
+  N:200, step:0,
+  truth:[], meas:[], estimates:[], variances:[], gains:[],
+  x:0, P:1, Q:0.1, R:1,
+  trueX:0, trueV:0.05
+};
+
+/* 2D sim */
+var SIM2D={
+  N:200, step:0,
+  truthX:[], truthY:[],
+  measX:[], measY:[],
+  estX:[], estY:[],
+  varPxx:[], varPyy:[], varPxy:[],
+  gains:[],
+  // state [x, vx, y, vy]
+  xVec:[0,0.8,0,0.3],
+  P:[[10,0,0,0],[0,1,0,0],[0,0,10,0],[0,0,0,1]],
+  Q:0.1, R:1,
+  dt:0.1
+};
+
+/* ══════════════════════════════════════════════════
+   DOM REFS
+══════════════════════════════════════════════════ */
+var canvas=document.getElementById('mainCanvas');
+var ctx=canvas.getContext('2d');
+
+/* ══════════════════════════════════════════════════
+   PARAMS
+══════════════════════════════════════════════════ */
+function getQ(){ return Math.pow(10, parseFloat(document.getElementById('qSlider').value)); }
+function getR(){ return Math.pow(10, parseFloat(document.getElementById('rSlider').value)); }
+function getP0(){ return Math.pow(10, parseFloat(document.getElementById('p0Slider').value)); }
+
+/* defaults (log10 scale slider values) */
+var DEFAULTS={q:{slider:-1,val:0.1},r:{slider:0,val:1.0},p0:{slider:0,val:1.0}};
+
+function sliderToVal(sliderId){
+  return Math.pow(10, parseFloat(document.getElementById(sliderId).value));
+}
+function valToSlider(v){ return Math.log10(Math.max(v, 1e-6)); }
+
+window.onParamChange=function(){
+  /* called by range slider oninput — update number inputs to match */
+  var q=sliderToVal('qSlider'), r=sliderToVal('rSlider'), p0=sliderToVal('p0Slider');
+  document.getElementById('qVal').value=q.toFixed(4);
+  document.getElementById('rVal').value=r.toFixed(4);
+  document.getElementById('p0Val').value=p0.toFixed(4);
+  resetSim();
+};
+
+/* called by number input oninput — live-update slider as user types */
+window.onValInput=function(param){
+  var inputId=param==='p0'?'p0Val':param+'Val';
+  var sliderId=param==='p0'?'p0Slider':param+'Slider';
+  var raw=parseFloat(document.getElementById(inputId).value);
+  if(isNaN(raw)||raw<=0) return; /* wait for valid number */
+  var logV=valToSlider(raw);
+  var slider=document.getElementById(sliderId);
+  var lo=parseFloat(slider.min), hi=parseFloat(slider.max);
+  document.getElementById(sliderId).value=Math.min(Math.max(logV,lo),hi);
+  resetSim();
+};
+
+/* Enter key confirms; Escape blurs without applying */
+window.onValKey=function(e,param){
+  if(e.key==='Enter'){ e.preventDefault(); onValBlur(param); }
+  if(e.key==='Escape'){ e.preventDefault();
+    /* restore displayed value from slider */
+    var sliderId=param==='p0'?'p0Slider':param+'Slider';
+    var inputId=param==='p0'?'p0Val':param+'Val';
+    document.getElementById(inputId).value=sliderToVal(sliderId).toFixed(4);
+    document.getElementById(inputId).blur();
+  }
+};
+
+/* on blur: clamp and re-sync slider */
+window.onValBlur=function(param){
+  var inputId=param==='p0'?'p0Val':param+'Val';
+  var sliderId=param==='p0'?'p0Slider':param+'Slider';
+  var raw=parseFloat(document.getElementById(inputId).value);
+  if(isNaN(raw)||raw<=0){
+    /* restore from slider */
+    document.getElementById(inputId).value=sliderToVal(sliderId).toFixed(4);
+    return;
+  }
+  var slider=document.getElementById(sliderId);
+  var lo=Math.pow(10,parseFloat(slider.min));
+  var hi=Math.pow(10,parseFloat(slider.max));
+  raw=Math.min(Math.max(raw,lo),hi);
+  document.getElementById(inputId).value=raw.toFixed(4);
+  slider.value=valToSlider(raw).toFixed(6);
+  resetSim();
+};
+
+/* reset individual param to its default */
+window.resetParam=function(param){
+  var d=DEFAULTS[param];
+  var sliderId=param==='p0'?'p0Slider':param+'Slider';
+  var inputId=param==='p0'?'p0Val':param+'Val';
+  document.getElementById(sliderId).value=d.slider;
+  document.getElementById(inputId).value=d.val.toFixed(4);
+  resetSim();
+};
+
+/* ══════════════════════════════════════════════════
+   MODE
+══════════════════════════════════════════════════ */
+window.setMode=function(m){
+  mode=m;
+  document.getElementById('btn1d').classList.toggle('active',m==='1d');
+  document.getElementById('btn2d').classList.toggle('active',m==='2d');
+  document.getElementById('legend1d').classList.toggle('hidden',m!=='1d');
+  document.getElementById('legend2d').classList.toggle('hidden',m!=='2d');
+  document.getElementById('canvasTitle').textContent=m==='1d'?'1D Position Tracking':'2D Trajectory Tracking';
+  resetSim();
+  updateStepBackBtn();
+};
+
+/* ══════════════════════════════════════════════════
+   SPEED
+══════════════════════════════════════════════════ */
+window.setSpeed=function(s,btn){
+  speed=s;
+  document.querySelectorAll('.spd-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var labels={1:'1x speed',3:'3x speed',8:'8x speed'};
+  document.getElementById('speedLabel').textContent=labels[s]||s+'x speed';
+};
+
+/* ══════════════════════════════════════════════════
+   1D KALMAN
+══════════════════════════════════════════════════ */
+function init1D(){
+  var s=SIM1D;
+  s.step=0; s.truth=[]; s.meas=[]; s.estimates=[]; s.variances=[]; s.gains=[];
+  s.Q=getQ(); s.R=getR();
+  s.x=0; s.P=getP0();
+  // generate full truth + meas signal up front (seeded random for reproducibility)
+  s.trueX=0; s.trueV=0.05;
+  var rng=seededRng(42);
+  for(var i=0;i<s.N;i++){
+    s.trueX += s.trueV + rng()*Math.sqrt(s.Q);
+    // slow sine drift for visual interest
+    var trueVal = s.trueX + 3*Math.sin(i*0.08);
+    s.truth.push(trueVal);
+    s.meas.push(trueVal + rng()*Math.sqrt(s.R)*3.5);
+  }
+}
+
+function step1D(){
+  var s=SIM1D;
+  if(s.step>=s.N) return;
+  var i=s.step;
+  // Predict
+  var xPred=s.x; // F=1
+  var PPred=s.P+s.Q;
+  // Update
+  var z=s.meas[i];
+  var K=PPred/(PPred+s.R);
+  s.x=xPred+K*(z-xPred);
+  s.P=(1-K)*PPred;
+  s.estimates.push(s.x);
+  s.variances.push(s.P);
+  s.gains.push(K);
+  s.step++;
+  updateFooter1D(i,K,z-xPred);
+}
+
+function updateFooter1D(i,K,innov){
+  document.getElementById('stepNum').textContent=SIM1D.step;
+  document.getElementById('gainVal').textContent=K.toFixed(4);
+  document.getElementById('innovVal').textContent=innov.toFixed(3);
+  var est=SIM1D.estimates[SIM1D.estimates.length-1]||0;
+  var tr=SIM1D.truth[i]||0;
+  document.getElementById('mEstimate').textContent=est.toFixed(3);
+  document.getElementById('mTrue').textContent=tr.toFixed(3);
+  document.getElementById('mError').textContent=Math.abs(est-tr).toFixed(3);
+  document.getElementById('mVariance').textContent=SIM1D.variances[SIM1D.variances.length-1].toFixed(4);
+  document.getElementById('mGain').textContent=K.toFixed(4);
+  // RMSE
+  var se=0;
+  for(var j=0;j<SIM1D.estimates.length;j++) se+=(SIM1D.estimates[j]-SIM1D.truth[j])*(SIM1D.estimates[j]-SIM1D.truth[j]);
+  document.getElementById('mRmse').textContent=Math.sqrt(se/SIM1D.estimates.length).toFixed(3);
+}
+
+/* ══════════════════════════════════════════════════
+   2D KALMAN (constant velocity model)
+══════════════════════════════════════════════════ */
+// State: [x, vx, y, vy]
+// F = [[1,dt,0,0],[0,1,0,0],[0,0,1,dt],[0,0,0,1]]
+// H = [[1,0,0,0],[0,0,1,0]]
+
+function init2D(){
+  var s=SIM2D;
+  s.step=0;
+  s.truthX=[];s.truthY=[];
+  s.measX=[];s.measY=[];
+  s.estX=[];s.estY=[];
+  s.varPxx=[];s.varPyy=[];s.varPxy=[];
+  s.gains=[];
+  s.Q=getQ(); s.R=getR();
+  var p0=getP0();
+  s.xVec=[0,1.2,0,0.5];
+  s.P=[[p0,0,0,0],[0,p0,0,0],[0,0,p0,0],[0,0,0,p0]];
+  var dt=s.dt;
+  var rng=seededRng(99);
+  var tx=0,tvx=1.2,ty=0,tvy=0.5;
+  for(var i=0;i<s.N;i++){
+    // process noise on velocity
+    tvx+=rng()*Math.sqrt(s.Q)*0.5;
+    tvy+=rng()*Math.sqrt(s.Q)*0.5 + Math.sin(i*0.12)*0.04;
+    tx+=tvx*dt; ty+=tvy*dt;
+    s.truthX.push(tx); s.truthY.push(ty);
+    s.measX.push(tx+rng()*Math.sqrt(s.R)*4);
+    s.measY.push(ty+rng()*Math.sqrt(s.R)*4);
+  }
+}
+
+function step2D(){
+  var s=SIM2D;
+  if(s.step>=s.N)return;
+  var i=s.step;
+  var dt=s.dt;
+  var Q=s.Q, R=s.R;
+
+  // F matrix (4x4)
+  var F=[[1,dt,0,0],[0,1,0,0],[0,0,1,dt],[0,0,0,1]];
+  // Q matrix - process noise on velocity
+  var qn=Q*0.1;
+  var Qm=[[0,0,0,0],[0,qn,0,0],[0,0,0,0],[0,0,0,qn]];
+
+  // Predict state
+  var xp=matVec(F,s.xVec);
+  // Predict covariance: P = F*P*F' + Q
+  var FP=matMat(F,s.P);
+  var FPFt=matMat(FP,transpose(F));
+  var Ppred=matAdd(FPFt,Qm);
+
+  // H = [[1,0,0,0],[0,0,1,0]]
+  var H=[[1,0,0,0],[0,0,1,0]];
+  // z = [measX, measY]
+  var z=[s.measX[i],s.measY[i]];
+
+  // Innovation: y = z - H*xp
+  var Hxp=matVec(H,xp);
+  var innov=[z[0]-Hxp[0], z[1]-Hxp[1]];
+
+  // S = H*Ppred*H' + R*I
+  var HPp=matMat(H,Ppred);
+  var HPpHt=matMat(HPp,transpose(H));
+  var Rm=[[R,0],[0,R]];
+  var S=matAdd(HPpHt,Rm);
+
+  // K = Ppred*H'*S^-1
+  var PpHt=matMat(Ppred,transpose(H));
+  var Sinv=inv2x2(S);
+  var K=matMat(PpHt,Sinv); // 4x2
+
+  // Update state
+  var Ky=[K[0][0]*innov[0]+K[0][1]*innov[1],
+          K[1][0]*innov[0]+K[1][1]*innov[1],
+          K[2][0]*innov[0]+K[2][1]*innov[1],
+          K[3][0]*innov[0]+K[3][1]*innov[1]];
+  s.xVec=[xp[0]+Ky[0],xp[1]+Ky[1],xp[2]+Ky[2],xp[3]+Ky[3]];
+
+  // Update covariance: P = (I-KH)*Ppred
+  var KH=matMat(K,H);
+  var I4=[[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]];
+  var IKH=matSub(I4,KH);
+  s.P=matMat(IKH,Ppred);
+
+  s.estX.push(s.xVec[0]);
+  s.estY.push(s.xVec[2]);
+  s.varPxx.push(s.P[0][0]);
+  s.varPyy.push(s.P[2][2]);
+  s.varPxy.push(s.P[0][2]);
+  s.step++;
+
+  // Footer
+  var kgain=Math.sqrt(K[0][0]*K[0][0]+K[2][1]*K[2][1]);
+  var innovMag=Math.sqrt(innov[0]*innov[0]+innov[1]*innov[1]);
+  document.getElementById('stepNum').textContent=s.step;
+  document.getElementById('gainVal').textContent=kgain.toFixed(4);
+  document.getElementById('innovVal').textContent=innovMag.toFixed(3);
+  document.getElementById('mEstimate').textContent='('+s.xVec[0].toFixed(1)+','+s.xVec[2].toFixed(1)+')';
+  document.getElementById('mTrue').textContent='('+s.truthX[i].toFixed(1)+','+s.truthY[i].toFixed(1)+')';
+  var err=Math.sqrt(Math.pow(s.xVec[0]-s.truthX[i],2)+Math.pow(s.xVec[2]-s.truthY[i],2));
+  document.getElementById('mError').textContent=err.toFixed(3);
+  document.getElementById('mVariance').textContent=((s.P[0][0]+s.P[2][2])*0.5).toFixed(3);
+  document.getElementById('mGain').textContent=kgain.toFixed(4);
+  var se=0;
+  for(var j=0;j<s.estX.length;j++) se+=Math.pow(s.estX[j]-s.truthX[j],2)+Math.pow(s.estY[j]-s.truthY[j],2);
+  document.getElementById('mRmse').textContent=Math.sqrt(se/s.estX.length).toFixed(3);
+}
+
+/* ══════════════════════════════════════════════════
+   DRAWING — 1D
+══════════════════════════════════════════════════ */
+function draw1D(){
+  var s=SIM1D;
+  var W=canvas.width/dpr(), H=canvas.height/dpr();
+  ctx.clearRect(0,0,W,H);
+  drawGrid(W,H);
+  if(s.truth.length===0)return;
+
+  // Y range
+  var allY=s.truth.concat(s.meas);
+  var yMin=Math.min.apply(null,allY)-2, yMax=Math.max.apply(null,allY)+2;
+  var pad={l:52,r:20,t:20,b:36};
+  var pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+
+  function sx(i){return pad.l+i/(s.N-1)*pw;}
+  function sy(v){return pad.t+(1-(v-yMin)/(yMax-yMin))*ph;}
+
+  // Draw axes
+  drawAxes(ctx,pad,W,H,'Step','Value');
+
+  // Uncertainty envelope (only up to current step)
+  if(s.estimates.length>1){
+    ctx.beginPath();
+    for(var i=0;i<s.estimates.length;i++){
+      var sig=Math.sqrt(s.variances[i]);
+      if(i===0) ctx.moveTo(sx(i),sy(s.estimates[i]+sig));
+      else ctx.lineTo(sx(i),sy(s.estimates[i]+sig));
+    }
+    for(var i=s.estimates.length-1;i>=0;i--){
+      var sig=Math.sqrt(s.variances[i]);
+      ctx.lineTo(sx(i),sy(s.estimates[i]-sig));
+    }
+    ctx.closePath();
+    ctx.fillStyle='rgba(57,232,150,0.08)';
+    ctx.fill();
+  }
+
+  // True state (dashed, full length)
+  ctx.beginPath();
+  for(var i=0;i<s.truth.length;i++){
+    if(i===0) ctx.moveTo(sx(i),sy(s.truth[i]));
+    else ctx.lineTo(sx(i),sy(s.truth[i]));
+  }
+  ctx.strokeStyle='rgba(150,180,200,0.35)';
+  ctx.lineWidth=1.5;
+  ctx.setLineDash([6,4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Measurements (dots, up to current)
+  for(var i=0;i<s.step;i++){
+    ctx.beginPath();
+    ctx.arc(sx(i),sy(s.meas[i]),3,0,Math.PI*2);
+    ctx.fillStyle='rgba(240,184,64,0.7)';
+    ctx.fill();
+  }
+
+  // Kalman estimate line
+  if(s.estimates.length>1){
+    ctx.beginPath();
+    for(var i=0;i<s.estimates.length;i++){
+      if(i===0) ctx.moveTo(sx(i),sy(s.estimates[i]));
+      else ctx.lineTo(sx(i),sy(s.estimates[i]));
+    }
+    ctx.strokeStyle='#39e896';
+    ctx.lineWidth=2;
+    ctx.shadowColor='rgba(57,232,150,0.4)';
+    ctx.shadowBlur=6;
+    ctx.stroke();
+    ctx.shadowBlur=0;
+
+    // Current estimate dot
+    var last=s.estimates.length-1;
+    ctx.beginPath();
+    ctx.arc(sx(last),sy(s.estimates[last]),5,0,Math.PI*2);
+    ctx.fillStyle='#39e896';
+    ctx.shadowColor='rgba(57,232,150,0.6)';
+    ctx.shadowBlur=10;
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+
+  // Y axis ticks
+  ctx.fillStyle='#445a6a';
+  ctx.font='9px DM Mono,monospace';
+  ctx.textAlign='right';
+  for(var t=0;t<=4;t++){
+    var v=yMin+(yMax-yMin)*t/4;
+    ctx.fillText(v.toFixed(1),pad.l-6,sy(v)+3);
+  }
+  // X axis ticks
+  ctx.textAlign='center';
+  for(var t=0;t<=4;t++){
+    var step=Math.round(t*(s.N-1)/4);
+    ctx.fillText(step,sx(step),H-pad.b+14);
+  }
+}
+
+/* ══════════════════════════════════════════════════
+   DRAWING — 2D
+══════════════════════════════════════════════════ */
+function draw2D(){
+  var s=SIM2D;
+  var W=canvas.width/dpr(), H=canvas.height/dpr();
+  ctx.clearRect(0,0,W,H);
+  drawGrid(W,H);
+  if(s.truthX.length===0)return;
+
+  var pad={l:52,r:20,t:20,b:36};
+  var pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+
+  // Compute display ranges — always use full truth + meas arrays so range is stable
+  var allX=s.truthX.concat(s.measX);
+  var allY=s.truthY.concat(s.measY);
+  if(s.estX.length>0){ allX=allX.concat(s.estX); allY=allY.concat(s.estY); }
+  var xMin=Math.min.apply(null,allX)-3, xMax=Math.max.apply(null,allX)+3;
+  var yMin=Math.min.apply(null,allY)-3, yMax=Math.max.apply(null,allY)+3;
+  // Keep aspect ratio square-ish
+  var xRange=xMax-xMin, yRange=yMax-yMin;
+  var range=Math.max(xRange,yRange);
+  var xMid=(xMax+xMin)/2, yMid=(yMax+yMin)/2;
+  xMin=xMid-range/2; xMax=xMid+range/2;
+  yMin=yMid-range/2; yMax=yMid+range/2;
+
+  function sx(v){return pad.l+(v-xMin)/(xMax-xMin)*pw;}
+  function sy(v){return pad.t+(1-(v-yMin)/(yMax-yMin))*ph;}
+
+  drawAxes(ctx,pad,W,H,'X','Y');
+
+  // True path — always draw full path so it's visible before simulation starts
+  ctx.beginPath();
+  for(var i=0;i<s.truthX.length;i++){
+    if(i===0) ctx.moveTo(sx(s.truthX[i]),sy(s.truthY[i]));
+    else ctx.lineTo(sx(s.truthX[i]),sy(s.truthY[i]));
+  }
+  ctx.strokeStyle='rgba(150,180,200,0.45)';
+  ctx.lineWidth=1.5;
+  ctx.setLineDash([6,4]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Start marker dot
+  ctx.beginPath();
+  ctx.arc(sx(s.truthX[0]),sy(s.truthY[0]),4,0,Math.PI*2);
+  ctx.fillStyle='rgba(150,180,200,0.5)';
+  ctx.fill();
+
+  // Measurements
+  for(var i=0;i<s.step;i++){
+    ctx.beginPath();
+    ctx.arc(sx(s.measX[i]),sy(s.measY[i]),3,0,Math.PI*2);
+    ctx.fillStyle='rgba(240,184,64,0.65)';
+    ctx.fill();
+  }
+
+  // Kalman path
+  if(s.estX.length>1){
+    ctx.beginPath();
+    for(var i=0;i<s.estX.length;i++){
+      if(i===0) ctx.moveTo(sx(s.estX[i]),sy(s.estY[i]));
+      else ctx.lineTo(sx(s.estX[i]),sy(s.estY[i]));
+    }
+    ctx.strokeStyle='#39e896';
+    ctx.lineWidth=2;
+    ctx.shadowColor='rgba(57,232,150,0.4)';
+    ctx.shadowBlur=6;
+    ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+
+  // Uncertainty ellipse at current position
+  if(s.estX.length>0){
+    var last=s.estX.length-1;
+    var pxx=s.varPxx[last], pyy=s.varPyy[last], pxy=s.varPxy[last];
+    drawEllipse(ctx, sx(s.estX[last]), sy(s.estY[last]),
+      Math.sqrt(pxx)*pw/(xMax-xMin),
+      Math.sqrt(pyy)*ph/(yMax-yMin),
+      0.5*Math.atan2(2*pxy, pxx-pyy));
+
+    // Current position dot
+    ctx.beginPath();
+    ctx.arc(sx(s.estX[last]),sy(s.estY[last]),5,0,Math.PI*2);
+    ctx.fillStyle='#39e896';
+    ctx.shadowColor='rgba(57,232,150,0.6)';
+    ctx.shadowBlur=10;
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+
+  // Axis ticks
+  ctx.fillStyle='#445a6a';
+  ctx.font='9px DM Mono,monospace';
+  ctx.textAlign='right';
+  for(var t=0;t<=4;t++){
+    var v=yMin+(yMax-yMin)*t/4;
+    ctx.fillText(v.toFixed(0),pad.l-5,sy(v)+3);
+  }
+  ctx.textAlign='center';
+  for(var t=0;t<=4;t++){
+    var v=xMin+(xMax-xMin)*t/4;
+    ctx.fillText(v.toFixed(0),sx(v),H-pad.b+14);
+  }
+}
+
+function drawEllipse(ctx,cx,cy,rx,ry,angle){
+  rx=Math.max(rx,3); ry=Math.max(ry,3);
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(angle);
+  ctx.beginPath();
+  ctx.ellipse(0,0,rx,ry,0,0,Math.PI*2);
+  ctx.strokeStyle='rgba(74,180,240,0.6)';
+  ctx.lineWidth=1.5;
+  ctx.setLineDash([4,3]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(74,180,240,0.06)';
+  ctx.fill();
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════
+   SHARED DRAW HELPERS
+══════════════════════════════════════════════════ */
+function drawGrid(W,H){
+  ctx.strokeStyle='rgba(57,232,150,0.04)';
+  ctx.lineWidth=1;
+  var step=40;
+  for(var x=0;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(var y=0;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+}
+function drawAxes(ctx,pad,W,H,xl,yl){
+  ctx.strokeStyle='rgba(68,90,106,0.6)';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,H-pad.b);
+  ctx.moveTo(pad.l,H-pad.b);ctx.lineTo(W-pad.r,H-pad.b);
+  ctx.stroke();
+  ctx.fillStyle='#445a6a';
+  ctx.font='8px DM Mono,monospace';
+  ctx.textAlign='center';
+  ctx.fillText(xl,W/2,H-4);
+  ctx.save();ctx.translate(10,H/2);ctx.rotate(-Math.PI/2);
+  ctx.fillText(yl,0,0);ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════
+   ANIMATION LOOP
+══════════════════════════════════════════════════ */
+function dpr(){return window.devicePixelRatio||1;}
+function resizeCanvas(){
+  var w=canvas.parentElement.clientWidth;
+  var h=420;
+  canvas.width=w*dpr();
+  canvas.height=h*dpr();
+  canvas.style.width=w+'px';
+  canvas.style.height=h+'px';
+  ctx.scale(dpr(),dpr());
+}
+
+var accum=0;
+function loop(ts){
+  if(!playing){animId=null;return;}
+  animId=requestAnimationFrame(loop);
+  if(lastTime===null){lastTime=ts;}
+  var dt=ts-lastTime; lastTime=ts;
+  accum+=dt;
+  var stepsPerFrame=Math.max(1,speed);
+  while(accum>=msPerStep && hasStepsLeft()){
+    for(var i=0;i<stepsPerFrame&&hasStepsLeft();i++){
+      if(mode==='1d') step1D(); else step2D();
+    }
+    accum-=msPerStep;
+  }
+  if(!hasStepsLeft()) stopPlay();
+  updateStepBackBtn();
+  render();
+}
+
+function hasStepsLeft(){
+  return mode==='1d' ? SIM1D.step<SIM1D.N : SIM2D.step<SIM2D.N;
+}
+
+function render(){
+  ctx.save();
+  if(mode==='1d') draw1D(); else draw2D();
+  ctx.restore();
+}
+
+/* ══════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════ */
+window.togglePlay=function(){
+  if(playing) stopPlay(); else startPlay();
+};
+function startPlay(){
+  if(!hasStepsLeft()) resetSim();
+  playing=true; lastTime=null; accum=0;
+  document.getElementById('playBtn').innerHTML='&#9646;&#9646; Pause';
+  document.getElementById('playBtn').classList.add('playing');
+  animId=requestAnimationFrame(loop);
+}
+function stopPlay(){
+  playing=false;
+  document.getElementById('playBtn').innerHTML='&#9654; Play';
+  document.getElementById('playBtn').classList.remove('playing');
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+}
+window.stepOnce=function(){
+  stopPlay();
+  if(mode==='1d') step1D(); else step2D();
+  updateStepBackBtn();
+  render();
+};
+
+window.stepBack=function(){
+  stopPlay();
+  if(mode==='1d'){
+    var s=SIM1D;
+    if(s.step<=0) return;
+    s.step--;
+    s.estimates.pop();
+    s.variances.pop();
+    s.gains.pop();
+    /* restore footer from previous step, or clear if back to 0 */
+    if(s.step===0){
+      clearMetrics();
+    } else {
+      var i=s.step-1;
+      var K=s.gains[s.gains.length-1];
+      var est=s.estimates[s.estimates.length-1];
+      var tr=s.truth[i];
+      var innov=s.meas[i]-est;
+      document.getElementById('stepNum').textContent=s.step;
+      document.getElementById('gainVal').textContent=K.toFixed(4);
+      document.getElementById('innovVal').textContent=innov.toFixed(3);
+      document.getElementById('mEstimate').textContent=est.toFixed(3);
+      document.getElementById('mTrue').textContent=tr.toFixed(3);
+      document.getElementById('mError').textContent=Math.abs(est-tr).toFixed(3);
+      document.getElementById('mVariance').textContent=s.variances[s.variances.length-1].toFixed(4);
+      document.getElementById('mGain').textContent=K.toFixed(4);
+      var se=0;
+      for(var j=0;j<s.estimates.length;j++) se+=(s.estimates[j]-s.truth[j])*(s.estimates[j]-s.truth[j]);
+      document.getElementById('mRmse').textContent=Math.sqrt(se/s.estimates.length).toFixed(3);
+    }
+  } else {
+    var s=SIM2D;
+    if(s.step<=0) return;
+    s.step--;
+    s.estX.pop(); s.estY.pop();
+    s.varPxx.pop(); s.varPyy.pop(); s.varPxy.pop();
+    s.gains.pop();
+    if(s.step===0){
+      clearMetrics();
+    } else {
+      var i=s.step-1;
+      document.getElementById('stepNum').textContent=s.step;
+      document.getElementById('mEstimate').textContent='('+s.estX[s.estX.length-1].toFixed(1)+','+s.estY[s.estY.length-1].toFixed(1)+')';
+      document.getElementById('mTrue').textContent='('+s.truthX[i].toFixed(1)+','+s.truthY[i].toFixed(1)+')';
+      var err=Math.sqrt(Math.pow(s.estX[s.estX.length-1]-s.truthX[i],2)+Math.pow(s.estY[s.estY.length-1]-s.truthY[i],2));
+      document.getElementById('mError').textContent=err.toFixed(3);
+      document.getElementById('mVariance').textContent=((s.varPxx[s.varPxx.length-1]+s.varPyy[s.varPyy.length-1])*0.5).toFixed(3);
+      var se=0;
+      for(var j=0;j<s.estX.length;j++) se+=Math.pow(s.estX[j]-s.truthX[j],2)+Math.pow(s.estY[j]-s.truthY[j],2);
+      document.getElementById('mRmse').textContent=Math.sqrt(se/s.estX.length).toFixed(3);
+      /* gain/innovation not stored per step in 2D, just clear them */
+      document.getElementById('gainVal').textContent='--';
+      document.getElementById('innovVal').textContent='--';
+    }
+  }
+  updateStepBackBtn();
+  render();
+};
+
+function updateStepBackBtn(){
+  var atStart=(mode==='1d') ? SIM1D.step<=0 : SIM2D.step<=0;
+  document.getElementById('stepBackBtn').disabled=atStart;
+}
+
+window.resetSim=function(){
+  stopPlay();
+  if(mode==='1d') init1D(); else init2D();
+  clearMetrics();
+  updateStepBackBtn();
+  render();
+};
+
+function clearMetrics(){
+  ['mEstimate','mTrue','mError','mVariance','mGain','mRmse'].forEach(function(id){
+    document.getElementById(id).textContent='--';
+  });
+  document.getElementById('stepNum').textContent='0';
+  document.getElementById('gainVal').textContent='--';
+  document.getElementById('innovVal').textContent='--';
+}
+
+/* ══════════════════════════════════════════════════
+   EXPLAINER TABS
+══════════════════════════════════════════════════ */
+window.showTab=function(name,btn){
+  document.querySelectorAll('.exp-body').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.exp-tab').forEach(function(el){el.classList.remove('active');});
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+};
+
+/* ══════════════════════════════════════════════════
+   MATRIX MATH (pure JS, no libs)
+══════════════════════════════════════════════════ */
+function matMat(A,B){
+  var r=A.length,c=B[0].length,k=B.length,C=[];
+  for(var i=0;i<r;i++){C[i]=[];for(var j=0;j<c;j++){C[i][j]=0;for(var p=0;p<k;p++)C[i][j]+=A[i][p]*B[p][j];}}
+  return C;
+}
+function matVec(A,v){
+  var r=A.length,c=v.length,res=[];
+  for(var i=0;i<r;i++){res[i]=0;for(var j=0;j<c;j++)res[i]+=A[i][j]*v[j];}
+  return res;
+}
+function matAdd(A,B){var C=[];for(var i=0;i<A.length;i++){C[i]=[];for(var j=0;j<A[0].length;j++)C[i][j]=A[i][j]+B[i][j];}return C;}
+function matSub(A,B){var C=[];for(var i=0;i<A.length;i++){C[i]=[];for(var j=0;j<A[0].length;j++)C[i][j]=A[i][j]-B[i][j];}return C;}
+function transpose(A){var C=[];for(var j=0;j<A[0].length;j++){C[j]=[];for(var i=0;i<A.length;i++)C[j][i]=A[i][j];}return C;}
+function inv2x2(M){
+  var det=M[0][0]*M[1][1]-M[0][1]*M[1][0];
+  if(Math.abs(det)<1e-12)det=1e-12;
+  return [[M[1][1]/det,-M[0][1]/det],[-M[1][0]/det,M[0][0]/det]];
+}
+
+/* ══════════════════════════════════════════════════
+   SEEDED RNG (Mulberry32)
+══════════════════════════════════════════════════ */
+function seededRng(seed){
+  var s=seed;
+  return function(){
+    s+=0x6D2B79F5;
+    var t=s;
+    t=Math.imul(t^t>>>15,t|1);
+    t^=t+Math.imul(t^t>>>7,t|61);
+    return((t^t>>>14)>>>0)/4294967296-0.5; // returns -0.5..0.5
+  };
+}
+
+/* ══════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════ */
+window.addEventListener('resize',function(){
+  resizeCanvas();
+  render();
+});
+onParamChange(); // sets slider labels + calls resetSim
+resizeCanvas();
+init1D();
+render();
+
+})();
+</script>
+</body>
+</html>
