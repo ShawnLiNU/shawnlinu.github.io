@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Research — Xian (Shawn) Li</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --black: #000000;
+      --white: #FFFFFF;
+      --red: #C8102E;
+      --gold: #A4804A;
+      --gray-light: #F5F5F5;
+      --gray-border: #E0E0E0;
+      --gray-text: #444444;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      color: var(--black);
+      background: var(--white);
+      line-height: 1.7;
+      font-weight: 300;
+    }
+
+    /* ── Red accent bar ── */
+    body::before {
+      content: '';
+      display: block;
+      height: 4px;
+      background: var(--red);
+    }
+
+    /* ── Navbar ── */
+    nav {
+      background: var(--black);
+      padding: 0.9rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    nav .brand {
+      color: var(--white);
+      font-weight: 700;
+      font-size: 1.15rem;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.6rem;
+      align-items: center;
+    }
+    nav ul a {
+      color: rgba(255,255,255,.75);
+      text-decoration: none;
+      font-size: 0.92rem;
+      font-weight: 400;
+      transition: color .2s;
+    }
+    nav ul a:hover { color: var(--white); }
+    nav ul a.active { color: var(--white); }
+
+    /* ── Theme toggle ── */
+    #themeToggle {
+      background: none;
+      border: 1.5px solid rgba(255,255,255,.3);
+      border-radius: 8px;
+      padding: 0.4rem 0.5rem;
+      cursor: pointer;
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      transition: border-color .2s;
+    }
+    #themeToggle:hover { border-color: rgba(255,255,255,.7); }
+
+    /* ── Container ── */
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 3rem;
+    }
+
+    /* ── Page header ── */
+    .page-header { margin-bottom: 2.5rem; }
+    .page-header h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--black);
+      border-bottom: 2px solid var(--red);
+      padding-bottom: 0.35rem;
+      margin-bottom: 0.7rem;
+    }
+    .page-header p {
+      font-size: 0.97rem;
+      color: var(--gray-text);
+      max-width: 640px;
+    }
+
+    /* ── Section headings ── */
+    .section-heading {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--black);
+      border-bottom: 2px solid var(--red);
+      padding-bottom: 0.35rem;
+      margin-bottom: 1.2rem;
+      margin-top: 2.8rem;
+    }
+
+    /* ── Current project cards ── */
+    .project-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .proj-card {
+      border: 1px solid var(--gray-border);
+      border-left: 4px solid var(--red);
+      border-radius: 8px;
+      padding: 1.4rem 1.5rem;
+      background: var(--gray-light);
+      transition: box-shadow .2s;
+    }
+    .proj-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+
+    .proj-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.6rem;
+    }
+    .proj-card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--black);
+      line-height: 1.35;
+    }
+    .proj-status {
+      font-size: 0.75rem;
+      font-weight: 400;
+      padding: 0.2rem 0.65rem;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .status-active { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+    .status-dev    { background: #fff8e1; color: #f57f17; border: 1px solid #ffe082; }
+
+    .proj-card-desc {
+      font-size: 0.93rem;
+      color: var(--gray-text);
+      line-height: 1.72;
+      margin-bottom: 0.85rem;
+    }
+    .proj-meta { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .proj-tag {
+      background: var(--white);
+      border: 1px solid var(--gray-border);
+      border-radius: 20px;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.78rem;
+      color: var(--gray-text);
+    }
+
+    /* ── Previous work link card ── */
+    .prev-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--gray-border);
+      border-radius: 8px;
+      padding: 1.3rem 1.5rem;
+      background: var(--gray-light);
+      text-decoration: none;
+      color: inherit;
+      margin-top: 2.8rem;
+      transition: box-shadow .2s, border-color .2s;
+      gap: 1rem;
+    }
+    .prev-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); border-color: var(--red); }
+    .prev-card-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 0.25rem;
+    }
+    .prev-card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--black);
+      margin-bottom: 0.3rem;
+    }
+    .prev-card-desc { font-size: 0.88rem; color: var(--gray-text); }
+    .prev-card-arrow {
+      font-size: 1.4rem;
+      color: var(--gray-border);
+      flex-shrink: 0;
+      transition: color .2s, transform .2s;
+    }
+    .prev-card:hover .prev-card-arrow { color: var(--red); transform: translateX(4px); }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      font-size: 0.8rem;
+      color: #999;
+      border-top: 1px solid var(--gray-border);
+      margin-top: 3rem;
+    }
+    footer a { color: var(--red); text-decoration: none; }
+
+    /* ── Dark mode ── */
+    body.dark { background: #121212; color: #E0E0E0; }
+    body.dark::before { background: #E85A5A; }
+    body.dark nav { background: #1a1a1a; }
+    body.dark .page-header h1 { color: var(--white); }
+    body.dark .page-header p { color: #BDBDBD; }
+    body.dark .section-heading { color: var(--white); border-bottom-color: #E85A5A; }
+
+    body.dark .proj-card { background: #1e1e1e; border-color: #333; border-left-color: #E85A5A; }
+    body.dark .proj-card-title { color: var(--white); }
+    body.dark .proj-card-desc { color: #BDBDBD; }
+    body.dark .proj-tag { background: #2a2a2a; border-color: #444; color: #BDBDBD; }
+    body.dark .status-active { background: #1b3a1e; color: #81c784; border-color: #388e3c; }
+    body.dark .status-dev    { background: #3a2e00; color: #ffd54f; border-color: #f9a825; }
+
+    body.dark .prev-card { background: #1e1e1e; border-color: #333; }
+    body.dark .prev-card:hover { border-color: #E85A5A; }
+    body.dark .prev-card-label { color: #E85A5A; }
+    body.dark .prev-card-title { color: var(--white); }
+    body.dark .prev-card-desc { color: #BDBDBD; }
+    body.dark .prev-card-arrow { color: #444; }
+    body.dark .prev-card:hover .prev-card-arrow { color: #E85A5A; }
+
+    body.dark footer { border-top-color: #333; color: #666; }
+    body.dark footer a { color: #E85A5A; }
+
+    @media (max-width: 600px) {
+      .proj-card-top { flex-direction: column; gap: 0.4rem; }
+      .prev-card { flex-direction: column; align-items: flex-start; }
+      .prev-card-arrow { display: none; }
+    }
+  </style>
+</head>
+<body class="dark">
+
+<!-- Navbar -->
+<nav>
+  <a class="brand" href="https://coe.northeastern.edu/people/li-xian/">Xian (Shawn) Li</a>
+  <ul>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="index.html" class="active">Research</a></li>
+    <li>
+      <button id="themeToggle" aria-label="Toggle dark mode">
+        <svg class="icon-moon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+    </li>
+  </ul>
+</nav>
+
+<div class="container">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <h1>Research</h1>
+    <p>My research focuses on human-centered robotics and intelligent wearable systems — developing technologies that enable safe, intuitive collaboration between humans and robots in healthcare, rehabilitation, and everyday environments.</p>
+  </div>
+
+  <!-- Current Projects -->
+  <div class="section-heading">Current Projects</div>
+  <div class="project-cards">
+
+    <!-- Project 1 -->
+    <div class="proj-card">
+      <div class="proj-card-top">
+        <div class="proj-card-title">Supervised Mobile Manipulation for Human-Centered Environments</div>
+        <span class="proj-status status-dev">In Development</span>
+      </div>
+      <div class="proj-card-desc">
+        Nursing facilities face chronic staffing shortages, with non-clinical logistics tasks consuming a disproportionate share of staff time. This project develops a mobile manipulation system integrating a TurtleBot 4 for autonomous navigation with a UR12e arm for pick-and-place operations, targeting routine logistics in care facility environments. Core research challenges include safe human-robot coexistence in unstructured spaces, task-level coordination between mobile base and manipulator, and principled exception handling when autonomy fails. A VR tele-assist interface provides human fallback control and serves as a testbed for studying supervised autonomy: when should a robot act independently, escalate to the human, or ask for clarification? The full pipeline spans ROS 2 navigation, trajectory planning, and sim-to-real transfer via Gazebo.
+      </div>
+      <div class="proj-meta">
+        <span class="proj-tag">Mobile Manipulation</span>
+        <span class="proj-tag">Human-in-the-Loop</span>
+        <span class="proj-tag">TurtleBot 4 + UR12e</span>
+        <span class="proj-tag">VR Tele-Assist</span>
+        <span class="proj-tag">ROS 2 / Gazebo</span>
+        <span class="proj-tag">Healthcare Robotics</span>
+        <span class="proj-tag">Supervised Autonomy</span>
+      </div>
+    </div>
+
+    <!-- Project 2 -->
+    <div class="proj-card">
+      <div class="proj-card-top">
+        <div class="proj-card-title">Multi-Modal Teleoperation Interfaces for Assistive Robotics</div>
+        <span class="proj-status status-active">Active</span>
+      </div>
+      <div class="proj-card-desc">
+        Teleoperation is a critical bridge between human intent and robot action — yet relatively little is known about how different sensing modalities affect performance, cognitive load, and accessibility across user populations. This project conducts a systematic investigation of five interface paradigms for controlling a UR12e arm: computer vision-based control using MediaPipe hand and joint angle detection; body-worn sensing via the EduExo exoskeleton (joint angle + force); leader-follower arm mapping with a PincherX-100; gamepad input (DualShock 4, Nintendo Switch Pro Controller); and immersive VR teleoperation via Meta Quest 2 with 6-DOF hand tracking. The research asks: how should interface modality be matched to user capability, task structure, and deployment context — and what design principles generalize across assistive robotics applications?
+      </div>
+      <div class="proj-meta">
+        <span class="proj-tag">Teleoperation</span>
+        <span class="proj-tag">Human-Robot Interfaces</span>
+        <span class="proj-tag">UR12e</span>
+        <span class="proj-tag">VR / Meta Quest 2</span>
+        <span class="proj-tag">EduExo Exoskeleton</span>
+        <span class="proj-tag">Computer Vision</span>
+        <span class="proj-tag">Accessibility</span>
+      </div>
+    </div>
+
+    <!-- Project 3 -->
+    <div class="proj-card">
+      <div class="proj-card-top">
+        <div class="proj-card-title">Vision-Language-Action Models for Human-Supervised Robot Manipulation</div>
+        <span class="proj-status status-active">Active</span>
+      </div>
+      <div class="proj-card-desc">
+        Large Vision-Language-Action (VLA) models offer a promising path toward generalizable robot manipulation — but deploying them reliably in assistive contexts requires understanding how humans can efficiently supervise, correct, and trust autonomous policies. This project fine-tunes the π₀ framework (PaliGemma 3B backbone, cross-embodiment pre-training on UR5e and other platforms) on a UR12e arm for language-conditioned pick-and-place tasks. Three interconnected research questions guide the work: how many teleoperation demonstrations are needed to achieve reliable task performance (sample efficiency); how demonstration quality and collection modality affect fine-tuning outcomes (data strategy); and how to design meaningful human-oversight mechanisms that balance autonomy with appropriate intervention. Graduate student collaborators develop the data collection pipeline, fine-tuning workflow, and evaluation protocols.
+      </div>
+      <div class="proj-meta">
+        <span class="proj-tag">Vision-Language-Action</span>
+        <span class="proj-tag">π₀ / PaliGemma</span>
+        <span class="proj-tag">UR12e</span>
+        <span class="proj-tag">Robot Learning</span>
+        <span class="proj-tag">Teleoperation Data</span>
+        <span class="proj-tag">Human Oversight</span>
+        <span class="proj-tag">Sample Efficiency</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Previous Research — single link card -->
+  <a href="projects/index.html" class="prev-card">
+    <div class="prev-card-left">
+      <div class="prev-card-label">Doctoral &amp; Postdoctoral Research</div>
+      <div class="prev-card-title">Previous Projects &amp; Publications</div>
+      <div class="prev-card-desc">20 publications across 6 research areas — triboelectric energy harvesting, self-powered motion sensing, non-contact biopotential monitoring, ECG signal processing, smart textiles, and aging &amp; smart health cyber-physical systems.</div>
+    </div>
+    <div class="prev-card-arrow">→</div>
+  </a>
+
+</div>
+
+<!-- Footer -->
+<footer>
+  &copy; 2026 Xian (Shawn) Li. Hosted by <a href="https://pages.github.com/" target="_blank">GitHub Pages</a>.
+</footer>
+
+<script>
+  const toggle = document.getElementById('themeToggle');
+  const moon   = toggle.querySelector('.icon-moon');
+  const sun    = toggle.querySelector('.icon-sun');
+  toggle.addEventListener('click', () => {
+    document.body.classList.toggle('dark');
+    const isDark = document.body.classList.contains('dark');
+    moon.style.display = isDark ? 'none'  : 'block';
+    sun.style.display  = isDark ? 'block' : 'none';
+  });
+</script>
+
+</body>
+</html>
