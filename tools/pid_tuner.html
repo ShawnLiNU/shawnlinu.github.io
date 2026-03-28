@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PID Controller Tuner &mdash; EECE 5580</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08070a;--panel:#100f14;--surface:#161420;--surface2:#1d1b26;
+  --border:#2a2635;--border2:#352f45;
+  --amber:#f0a030;--amber-dim:rgba(240,160,48,0.12);--amber-glow:rgba(240,160,48,0.22);
+  --green:#40e090;--green-dim:rgba(64,224,144,0.10);
+  --red:#f04858;--red-dim:rgba(240,72,88,0.10);
+  --blue:#5090f0;--blue-dim:rgba(80,144,240,0.10);
+  --violet:#a060f0;
+  --text:#d8cce8;--muted:#4a4060;--muted2:#2e2840;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(240,160,48,0.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(240,160,48,0.018) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;
+}
+.app{position:relative;z-index:1;max-width:1320px;margin:0 auto;padding:26px 20px 60px;}
+
+/* ── Header ── */
+header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+.breadcrumb{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.breadcrumb a{color:var(--muted);text-decoration:none;}
+.breadcrumb a:hover{color:var(--amber);}
+.breadcrumb .sep{margin:0 6px;opacity:0.4;}
+h1{font-family:'Instrument Serif',serif;font-size:1.75rem;font-weight:400;letter-spacing:-0.01em;line-height:1.1;margin-bottom:4px;}
+h1 em{color:var(--amber);font-style:italic;}
+.tagline{font-size:0.63rem;color:var(--muted);letter-spacing:0.08em;}
+.preset-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;align-self:flex-end;}
+.preset-label{font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.preset-btn{background:var(--surface);border:1px solid var(--border2);color:var(--text);font-family:'DM Mono',monospace;font-size:0.65rem;padding:5px 12px;border-radius:7px;cursor:pointer;transition:all 0.18s;}
+.preset-btn:hover{border-color:var(--amber);color:var(--amber);}
+.preset-btn.active{border-color:var(--amber);color:var(--amber);background:var(--amber-dim);}
+
+/* ── Layout ── */
+.main-grid{display:grid;grid-template-columns:300px 1fr;gap:16px;}
+@media(max-width:960px){.main-grid{grid-template-columns:1fr;}}
+
+/* ── Panel ── */
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.ph{display:flex;align-items:center;justify-content:space-between;padding:10px 15px;background:var(--surface);border-bottom:1px solid var(--border);}
+.pt{font-size:0.58rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);}
+
+/* ── Left panel ── */
+.left-col{display:flex;flex-direction:column;gap:14px;}
+
+/* Plant TF inputs */
+.tf-wrap{padding:14px;}
+.tf-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.tf-label{font-size:0.62rem;color:var(--muted);width:28px;flex-shrink:0;}
+.tf-input{
+  font-family:'DM Mono',monospace;font-size:0.72rem;
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text);border-radius:5px;padding:4px 7px;
+  flex:1;outline:none;-moz-appearance:textfield;
+  transition:border-color 0.15s,box-shadow 0.15s;
+}
+.tf-input::-webkit-outer-spin-button,.tf-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.tf-input:focus{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-dim);}
+.tf-hint{font-size:0.58rem;color:var(--muted);margin-top:-4px;margin-bottom:8px;padding-left:36px;line-height:1.5;}
+.tf-divider{border:none;border-top:1px solid var(--border);margin:8px 0;}
+
+/* PID sliders */
+.pid-wrap{padding:14px;}
+.pid-row{margin-bottom:13px;}
+.pid-row:last-child{margin-bottom:0;}
+.pid-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;}
+.pid-name{font-size:0.68rem;color:var(--text);}
+.pid-val-wrap{display:flex;align-items:center;gap:4px;}
+.pid-val{
+  font-family:'DM Mono',monospace;font-size:0.72rem;font-weight:500;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:5px;padding:2px 6px;width:72px;text-align:right;
+  outline:none;-moz-appearance:textfield;transition:border-color 0.15s,box-shadow 0.15s;
+}
+.pid-val::-webkit-outer-spin-button,.pid-val::-webkit-inner-spin-button{-webkit-appearance:none;}
+.pid-val.kp-c{color:var(--amber);}  .pid-val.kp-c:focus{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-dim);}
+.pid-val.ki-c{color:var(--green);}  .pid-val.ki-c:focus{border-color:var(--green);box-shadow:0 0 0 2px var(--green-dim);}
+.pid-val.kd-c{color:var(--blue);}   .pid-val.kd-c:focus{border-color:var(--blue); box-shadow:0 0 0 2px var(--blue-dim);}
+.reset-btn{background:none;border:1px solid transparent;color:var(--muted2);cursor:pointer;font-size:0.75rem;padding:2px 5px;border-radius:5px;transition:all 0.15s;}
+.reset-btn:hover{color:var(--muted);border-color:var(--border);background:var(--surface2);}
+input[type=range].pid-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;border-radius:2px;background:var(--border2);outline:none;cursor:pointer;}
+input[type=range].kp-s::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--amber);cursor:pointer;}
+input[type=range].ki-s::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--green);cursor:pointer;}
+input[type=range].kd-s::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--blue);cursor:pointer;}
+.pid-hint{font-size:0.58rem;color:var(--muted);margin-top:3px;line-height:1.4;}
+
+/* Metrics */
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px;}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:9px 11px;}
+.ml{font-size:0.52rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.mv{font-family:'Instrument Serif',serif;font-size:1.25rem;line-height:1;}
+.mv.am{color:var(--amber);}.mv.gn{color:var(--green);}.mv.rd{color:var(--red);}.mv.bl{color:var(--blue);}
+
+/* ── Right: charts ── */
+.charts-col{display:flex;flex-direction:column;gap:14px;}
+.chart-tabs{display:flex;gap:3px;}
+.ctab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:8px 16px;transition:all 0.18s;}
+.ctab:hover{color:var(--text);}
+.ctab.active{color:var(--amber);border-bottom-color:var(--amber);}
+.chart-wrap{position:relative;background:#07060a;}
+canvas.chart{width:100%;display:block;}
+.chart-overlay{position:absolute;top:9px;left:13px;font-size:0.6rem;color:var(--muted);pointer-events:none;}
+.chart-overlay span{display:block;line-height:1.8;}
+.chart-overlay .hi{color:var(--amber);}
+
+/* Stability badge */
+.stab-badge{display:inline-flex;align-items:center;gap:6px;border-radius:20px;padding:4px 12px;font-size:0.65rem;font-weight:500;border:1px solid;}
+.stab-badge .dot{width:6px;height:6px;border-radius:50%;}
+.badge-stable{color:var(--green);border-color:rgba(64,224,144,0.4);background:rgba(64,224,144,0.07);}
+.badge-stable .dot{background:var(--green);}
+.badge-unstable{color:var(--red);border-color:rgba(240,72,88,0.4);background:rgba(240,72,88,0.07);}
+.badge-unstable .dot{background:var(--red);}
+.badge-marginal{color:var(--amber);border-color:rgba(240,160,48,0.4);background:rgba(240,160,48,0.07);}
+.badge-marginal .dot{background:var(--amber);}
+
+/* Explainer */
+.explainer{padding:12px 14px;}
+.exp-tabs{display:flex;gap:3px;border-bottom:1px solid var(--border);margin-bottom:12px;}
+.etab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:6px 12px;transition:all 0.18s;}
+.etab:hover{color:var(--text);}
+.etab.active{color:var(--amber);border-bottom-color:var(--amber);}
+.exp-body{font-size:0.68rem;color:var(--muted);line-height:1.7;display:none;max-height:140px;overflow-y:auto;}
+.exp-body.active{display:block;}
+.exp-body strong{color:var(--text);}
+.exp-body .eq{background:var(--surface2);border-left:2px solid var(--amber);border-radius:0 5px 5px 0;padding:6px 10px;margin:6px 0;font-size:0.65rem;color:var(--amber);line-height:1.9;}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.app>*{animation:fadeUp 0.35s ease both;}
+header{animation-delay:0s;}.main-grid{animation-delay:0.07s;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div>
+    <div class="breadcrumb"><a href="/">shawnlinu.github.io</a><span class="sep">/</span><a href="/tools/">tools</a><span class="sep">/</span><span style="color:var(--amber)">pid-tuner</span></div>
+    <h1>PID Controller <em>Tuner</em></h1>
+    <div class="tagline">EECE 5580 &mdash; Classical Control Systems &mdash; Step Response &amp; Bode Plot</div>
+  </div>
+  <div class="preset-bar">
+    <span class="preset-label">Plant</span>
+    <button class="preset-btn active" id="pre-first" onclick="loadPreset('first')">1st Order</button>
+    <button class="preset-btn" id="pre-second" onclick="loadPreset('second')">2nd Order</button>
+    <button class="preset-btn" id="pre-integrator" onclick="loadPreset('integrator')">Integrator</button>
+    <button class="preset-btn" id="pre-robot" onclick="loadPreset('robot')">Balancing Robot</button>
+    <button class="preset-btn" id="pre-unstable" onclick="loadPreset('unstable')">Unstable Plant</button>
+  </div>
+</header>
+
+<div class="main-grid">
+
+  <!-- LEFT -->
+  <div class="left-col">
+
+    <!-- Plant TF -->
+    <div class="panel">
+      <div class="ph"><span class="pt">Plant Transfer Function G(s)</span></div>
+      <div class="tf-wrap">
+        <div style="font-size:0.6rem;color:var(--muted);margin-bottom:10px;">
+          Enter coefficients as comma-separated values, highest power first.<br>
+          <span style="color:var(--amber)">Example: "1, 3, 2" means s&sup2; + 3s + 2</span>
+        </div>
+        <div class="tf-row">
+          <span class="tf-label" style="color:var(--amber)">Num</span>
+          <input class="tf-input" id="tfNum" type="text" value="1" placeholder="e.g. 1">
+        </div>
+        <div class="tf-row">
+          <span class="tf-label" style="color:var(--muted)">Den</span>
+          <input class="tf-input" id="tfDen" type="text" value="1, 1" placeholder="e.g. 1, 2, 1">
+        </div>
+        <div class="tf-hint" id="tfPreview">G(s) = 1 / (s + 1)</div>
+      </div>
+    </div>
+
+    <!-- PID Gains -->
+    <div class="panel">
+      <div class="ph">
+        <span class="pt">PID Gains</span>
+        <span id="stabBadge" class="stab-badge badge-stable"><span class="dot"></span><span id="stabText">Stable</span></span>
+      </div>
+      <div class="pid-wrap">
+        <div class="pid-row">
+          <div class="pid-header">
+            <span class="pid-name">Proportional <em style="color:var(--amber)">Kp</em></span>
+            <div class="pid-val-wrap">
+              <input type="number" class="pid-val kp-c" id="kpVal" value="1.0" step="any" oninput="onValIn('kp')" onblur="onValBlur('kp')" onkeydown="onValKey(event,'kp')">
+              <button class="reset-btn" onclick="resetGain('kp')" title="Reset">&#8635;</button>
+            </div>
+          </div>
+          <input type="range" class="pid-slider kp-s" id="kpSlider" min="0" max="3" step="0.001" value="1.0" oninput="onSliderIn('kp')">
+          <div class="pid-hint">Reduces steady-state error. Too high &rarr; oscillation.</div>
+        </div>
+        <div class="pid-row">
+          <div class="pid-header">
+            <span class="pid-name">Integral <em style="color:var(--green)">Ki</em></span>
+            <div class="pid-val-wrap">
+              <input type="number" class="pid-val ki-c" id="kiVal" value="0.0" step="any" oninput="onValIn('ki')" onblur="onValBlur('ki')" onkeydown="onValKey(event,'ki')">
+              <button class="reset-btn" onclick="resetGain('ki')" title="Reset">&#8635;</button>
+            </div>
+          </div>
+          <input type="range" class="pid-slider ki-s" id="kiSlider" min="0" max="5" step="0.001" value="0.0" oninput="onSliderIn('ki')">
+          <div class="pid-hint">Eliminates steady-state error. Too high &rarr; windup &amp; instability.</div>
+        </div>
+        <div class="pid-row">
+          <div class="pid-header">
+            <span class="pid-name">Derivative <em style="color:var(--blue)">Kd</em></span>
+            <div class="pid-val-wrap">
+              <input type="number" class="pid-val kd-c" id="kdVal" value="0.0" step="any" oninput="onValIn('kd')" onblur="onValBlur('kd')" onkeydown="onValKey(event,'kd')">
+              <button class="reset-btn" onclick="resetGain('kd')" title="Reset">&#8635;</button>
+            </div>
+          </div>
+          <input type="range" class="pid-slider kd-s" id="kdSlider" min="0" max="2" step="0.0005" value="0.0" oninput="onSliderIn('kd')">
+          <div class="pid-hint">Damps oscillations. Too high &rarr; noise amplification.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="panel">
+      <div class="ph"><span class="pt">Step Response Metrics</span></div>
+      <div class="metrics-grid">
+        <div class="mc"><div class="ml">Rise Time</div><div class="mv am" id="mRise">--</div><div style="font-size:0.55rem;color:var(--muted);margin-top:2px">seconds</div></div>
+        <div class="mc"><div class="ml">Settling Time</div><div class="mv gn" id="mSettle">--</div><div style="font-size:0.55rem;color:var(--muted);margin-top:2px">seconds</div></div>
+        <div class="mc"><div class="ml">Overshoot</div><div class="mv rd" id="mOver">--</div><div style="font-size:0.55rem;color:var(--muted);margin-top:2px">%</div></div>
+        <div class="mc"><div class="ml">Steady-State Error</div><div class="mv bl" id="mSS">--</div><div style="font-size:0.55rem;color:var(--muted);margin-top:2px">%</div></div>
+        <div class="mc"><div class="ml">Phase Margin</div><div class="mv am" id="mPM">--</div><div style="font-size:0.55rem;color:var(--muted);margin-top:2px">degrees</div></div>
+        <div class="mc"><div class="ml">Gain Margin</div><div class="mv gn" id="mGM">--</div><div style="font-size:0.55rem;color:var(--muted);margin-top:2px">dB</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="charts-col">
+    <div class="panel">
+      <div class="ph">
+        <div class="chart-tabs">
+          <button class="ctab active" id="ctStep" onclick="setChartTab('step',this)">Step Response</button>
+          <button class="ctab" id="ctBode" onclick="setChartTab('bode',this)">Bode Plot</button>
+          <button class="ctab" id="ctNyq" onclick="setChartTab('nyquist',this)">Nyquist</button>
+        </div>
+        <span class="pt" id="chartSubtitle">Closed-loop unit step</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas class="chart" id="mainChart" height="480"></canvas>
+        <div class="chart-overlay" id="chartOverlay">
+          <span class="hi" id="ol1">&mdash;</span>
+          <span id="ol2">&mdash;</span>
+        </div>
+      </div>
+    </div>
+    <!-- Reference -->
+    <div class="panel">
+      <div class="ph"><span class="pt">Reference</span></div>
+      <div class="explainer">
+        <div class="exp-tabs">
+          <button class="etab active" onclick="showExp('pid',this)">PID</button>
+          <button class="etab" onclick="showExp('cl',this)">Closed-Loop</button>
+          <button class="etab" onclick="showExp('tune',this)">Tuning</button>
+        </div>
+        <div class="exp-body active" id="exp-pid">
+          The PID control law in time domain:
+          <div class="eq">u(t) = Kp&thinsp;e(t) + Ki&int;e(t)dt + Kd&thinsp;de/dt</div>
+          In the s-domain:
+          <div class="eq">C(s) = Kp + Ki/s + Kd&thinsp;s</div>
+          The closed-loop transfer function is:
+          <div class="eq">T(s) = C(s)G(s) / (1 + C(s)G(s))</div>
+        </div>
+        <div class="exp-body" id="exp-cl">
+          <strong>Step response</strong> shows how the output responds to a unit step input. Key metrics: rise time (10%&rarr;90%), settling time (&plusmn;2% band), overshoot.<br><br>
+          <strong>Bode plot</strong> shows the open-loop L(s)=C(s)G(s) frequency response. Phase margin and gain margin determine stability robustness.
+        </div>
+        <div class="exp-body" id="exp-tune">
+          <strong>Start with Kp only</strong> &mdash; increase until acceptable rise time, note oscillations.<br><br>
+          <strong>Add Ki</strong> to eliminate steady-state error. Increase slowly; too much causes windup and low phase margin.<br><br>
+          <strong>Add Kd</strong> to dampen overshoot. Watch that it does not amplify high-frequency noise.<br><br>
+          <strong>Target:</strong> Phase margin &gt; 45&deg;, Gain margin &gt; 6 dB.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ══════════════════════════════════════════
+   POLYNOMIAL MATH
+   Stored as arrays [a_n, a_{n-1}, ..., a_0] (highest power first)
+══════════════════════════════════════════ */
+function polyAdd(A,B){
+  var la=A.length,lb=B.length,out=[];
+  var n=Math.max(la,lb);
+  for(var i=0;i<n;i++) out.push((i<n-la?0:A[i-(n-la)])+(i<n-lb?0:B[i-(n-lb)]));
+  return trim(out);
+}
+function polyMul(A,B){
+  if(!A.length||!B.length) return [0];
+  var out=new Array(A.length+B.length-1).fill(0);
+  for(var i=0;i<A.length;i++) for(var j=0;j<B.length;j++) out[i+j]+=A[i]*B[j];
+  return trim(out);
+}
+function trim(p){var i=0;while(i<p.length-1&&Math.abs(p[i])<1e-14)i++;return p.slice(i);}
+function polyEvalS(p,s){var v=0;for(var i=0;i<p.length;i++)v+=p[i]*Math.pow(s,p.length-1-i);return v;}
+function polyEvalC(p,re,im){
+  /* evaluate at complex s = re + i*im, returns {re,im} */
+  var vr=0,vi=0;
+  var n=p.length;
+  for(var i=0;i<n;i++){
+    var pw=n-1-i;
+    var cr=1,ci=0;
+    for(var k=0;k<pw;k++){var tr=cr*re-ci*im;var ti=cr*im+ci*re;cr=tr;ci=ti;}
+    vr+=p[i]*cr; vi+=p[i]*ci;
+  }
+  return{re:vr,im:vi};
+}
+function cmDiv(ar,ai,br,bi){var d=br*br+bi*bi;return{re:(ar*br+ai*bi)/d,im:(ai*br-ar*bi)/d};}
+function cmAbs(r,i){return Math.sqrt(r*r+i*i);}
+function cmArg(r,i){return Math.atan2(i,r);}
+
+function parseCoeffs(s){
+  var parts=s.split(',').map(function(x){return parseFloat(x.trim());});
+  if(parts.some(isNaN)||!parts.length) return null;
+  return trim(parts);
+}
+
+/* ══════════════════════════════════════════
+   CLOSED-LOOP TRANSFER FUNCTION
+   T(s) = C(s)*G(s) / (1 + C(s)*G(s))
+   C(s) = Kd*s^2 + Kp*s + Ki  / s
+   => multiply out to avoid division
+══════════════════════════════════════════ */
+function buildClosedLoop(numG,denG,Kp,Ki,Kd){
+  /* C(s) numerator (before /s): [Kd, Kp, Ki] */
+  var cNum=[Kd,Kp,Ki].filter(function(_,i){return true;}); /* [Kd s^2 + Kp s + Ki] */
+  /* CG numerator = cNum * numG */
+  var cgNum=polyMul(cNum,numG);
+  /* CG denominator = [1,0] * denG  (the s in C denominator) */
+  var cgDen=polyMul([1,0],denG);
+  /* Closed-loop: T = CG/(1+CG)
+     num = cgNum, den = cgDen + cgNum */
+  var clNum=cgNum;
+  var clDen=polyAdd(cgDen,cgNum);
+  return{num:clNum,den:clDen,olNum:cgNum,olDen:cgDen};
+}
+
+/* ══════════════════════════════════════════
+   STEP RESPONSE via RK4 on state-space
+   Convert T(s) = b(s)/a(s) to controllable canonical form
+══════════════════════════════════════════ */
+function stepResponse(num,den,tEnd,nPts){
+  /* Normalize */
+  var a0=den[0];
+  var a=den.map(function(v){return v/a0;});
+  var b=num.map(function(v){return v/a0;});
+  var n=a.length-1; /* order */
+  /* Pad b to length n+1 */
+  while(b.length<n+1) b.unshift(0);
+
+  var bn=b[0];
+  /* b_hat = b - bn*a */
+  var bh=[];
+  for(var i=0;i<=n;i++) bh.push(b[i]-bn*a[i]);
+
+  /* State: x dot = Ac*x + Bc*u, y = Cc*x + Dc*u */
+  /* Companion form */
+  var dt=tEnd/nPts;
+  var x=new Array(n).fill(0);
+
+  /* RK4 derivative — hoisted out of the loop (required by strict mode) */
+  function f(xv){
+    var u=1;
+    var dxdt=new Array(n).fill(0);
+    for(var i=0;i<n-1;i++) dxdt[i]=xv[i+1];
+    var last=-a[n]*xv[0];
+    for(var i=1;i<n;i++) last-=a[n-i]*xv[i];
+    last+=u;
+    dxdt[n-1]=last;
+    return dxdt;
+  }
+
+  var t=[],y=[];
+  for(var step=0;step<=nPts;step++){
+    var u=1; /* unit step */
+    /* output */
+    var out=bn*u;
+    for(var i=0;i<n;i++) out+=bh[i+1]*x[i];
+    t.push(step*dt); y.push(out);
+    if(step===nPts) break;
+    /* RK4 steps */
+    var k1=f(x);
+    var k2=f(x.map(function(v,i){return v+dt/2*k1[i];}));
+    var k3=f(x.map(function(v,i){return v+dt/2*k2[i];}));
+    var k4=f(x.map(function(v,i){return v+dt*k3[i];}));
+    x=x.map(function(v,i){return v+dt/6*(k1[i]+2*k2[i]+2*k3[i]+k4[i]);});
+  }
+  return{t:t,y:y};
+}
+
+/* ══════════════════════════════════════════
+   BODE — evaluate L(jw) = C(jw)G(jw)
+══════════════════════════════════════════ */
+function bode(olNum,olDen,nPts){
+  var freqs=[],mags=[],phases=[];
+  for(var i=0;i<nPts;i++){
+    var w=Math.pow(10,-2+5*i/(nPts-1));
+    var n=polyEvalC(olNum,0,w);
+    var d=polyEvalC(olDen,0,w);
+    var h=cmDiv(n.re,n.im,d.re,d.im);
+    freqs.push(w);
+    mags.push(20*Math.log10(Math.max(cmAbs(h.re,h.im),1e-12)));
+    var ph=cmArg(h.re,h.im)*180/Math.PI;
+    phases.push(ph);
+  }
+  return{freqs:freqs,mags:mags,phases:phases};
+}
+
+/* ══════════════════════════════════════════
+   NYQUIST — L(jw) in complex plane
+══════════════════════════════════════════ */
+function nyquist(olNum,olDen,nPts){
+  var re=[],im=[];
+  for(var i=0;i<nPts;i++){
+    var w=Math.pow(10,-1+4*i/(nPts-1));
+    var n=polyEvalC(olNum,0,w);
+    var d=polyEvalC(olDen,0,w);
+    var h=cmDiv(n.re,n.im,d.re,d.im);
+    re.push(h.re); im.push(h.im);
+  }
+  return{re:re,im:im};
+}
+
+/* ══════════════════════════════════════════
+   METRICS
+══════════════════════════════════════════ */
+function computeMetrics(t,y,bodeData){
+  var final=y[y.length-1];
+  var ssErr=Math.abs(final-1)*100;
+
+  /* rise time 10%-90% */
+  var t10=-1,t90=-1;
+  for(var i=0;i<y.length;i++){
+    if(t10<0&&y[i]>=0.1*final) t10=t[i];
+    if(t90<0&&y[i]>=0.9*final) t90=t[i];
+  }
+  var riseTime=(t10>=0&&t90>=0)?t90-t10:null;
+
+  /* overshoot */
+  var peak=Math.max.apply(null,y);
+  var over=final>0.01?Math.max(0,(peak-final)/final*100):0;
+
+  /* settling time ±2% */
+  var settleTime=null;
+  var band=0.02*Math.abs(final);
+  for(var i=y.length-1;i>=0;i--){
+    if(Math.abs(y[i]-final)>band){settleTime=t[i]; break;}
+  }
+
+  /* phase and gain margin from Bode */
+  var pm=null,gm=null;
+  if(bodeData){
+    /* phase crossover (mag=0dB) */
+    for(var i=0;i<bodeData.mags.length-1;i++){
+      if(bodeData.mags[i]>=0&&bodeData.mags[i+1]<0){
+        var frac=(bodeData.mags[i])/(bodeData.mags[i]-bodeData.mags[i+1]);
+        var phAtCross=bodeData.phases[i]+frac*(bodeData.phases[i+1]-bodeData.phases[i]);
+        pm=180+phAtCross;
+        break;
+      }
+    }
+    /* gain crossover (phase=-180) */
+    for(var i=0;i<bodeData.phases.length-1;i++){
+      if(bodeData.phases[i]>=-180&&bodeData.phases[i+1]<-180){
+        var frac=(-180-bodeData.phases[i])/(bodeData.phases[i+1]-bodeData.phases[i]);
+        var magAtPh=bodeData.mags[i]+frac*(bodeData.mags[i+1]-bodeData.mags[i]);
+        gm=-magAtPh;
+        break;
+      }
+    }
+  }
+  return{riseTime:riseTime,settleTime:settleTime,over:over,ssErr:ssErr,pm:pm,gm:gm};
+}
+
+/* ══════════════════════════════════════════
+   STATE
+══════════════════════════════════════════ */
+var currentTab='step';
+var lastStep=null,lastBode=null,lastNyq=null;
+var lastCL=null;
+var DEFAULTS={kp:1,ki:0,kd:0};
+
+var PRESETS={
+  first:{num:'1',den:'1, 1',kp:2,ki:0.5,kd:0.1,label:'1/(s+1)'},
+  second:{num:'1',den:'1, 1.4, 1',kp:3,ki:1,kd:0.5,label:'1/(s²+1.4s+1)'},
+  integrator:{num:'1',den:'1, 0',kp:1,ki:0,kd:0.3,label:'1/s'},
+  robot:{num:'9.81',den:'1, 0, -9.81',kp:40,ki:5,kd:8,label:'9.81/(s²-9.81) — inverted pendulum'},
+  unstable:{num:'1',den:'1, -1',kp:3,ki:1,kd:0.5,label:'1/(s-1) — unstable'}
+};
+
+/* ══════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════ */
+window.loadPreset=function(name){
+  document.querySelectorAll('.preset-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('pre-'+name).classList.add('active');
+  var p=PRESETS[name];
+  document.getElementById('tfNum').value=p.num;
+  document.getElementById('tfDen').value=p.den;
+  setGainUI('kp',p.kp);setGainUI('ki',p.ki);setGainUI('kd',p.kd);
+  DEFAULTS={kp:p.kp,ki:p.ki,kd:p.kd};
+  updateAll();
+};
+
+function setGainUI(g,v){
+  document.getElementById(g+'Val').value=v.toFixed(4);
+  document.getElementById(g+'Slider').value=Math.min(v,parseFloat(document.getElementById(g+'Slider').max));
+}
+
+window.onSliderIn=function(g){
+  var v=parseFloat(document.getElementById(g+'Slider').value);
+  document.getElementById(g+'Val').value=v.toFixed(4);
+  updateAll();
+};
+window.onValIn=function(g){
+  var v=parseFloat(document.getElementById(g+'Val').value);
+  if(isNaN(v)||v<0) return;
+  var sl=document.getElementById(g+'Slider');
+  sl.value=Math.min(v,parseFloat(sl.max));
+  updateAll();
+};
+window.onValBlur=function(g){
+  var v=parseFloat(document.getElementById(g+'Val').value);
+  if(isNaN(v)||v<0){document.getElementById(g+'Val').value=DEFAULTS[g].toFixed(4);}
+};
+window.onValKey=function(e,g){
+  if(e.key==='Enter'){e.preventDefault();onValBlur(g);}
+  if(e.key==='Escape'){e.preventDefault();document.getElementById(g+'Val').value=DEFAULTS[g].toFixed(4);updateAll();}
+};
+window.resetGain=function(g){setGainUI(g,DEFAULTS[g]);updateAll();};
+
+window.setChartTab=function(tab,btn){
+  currentTab=tab;
+  document.querySelectorAll('.ctab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  var subtitles={step:'Closed-loop unit step',bode:'Open-loop L(s)=C(s)G(s)',nyquist:'Open-loop Nyquist diagram'};
+  document.getElementById('chartSubtitle').textContent=subtitles[tab];
+  draw();
+};
+
+window.showExp=function(name,btn){
+  document.querySelectorAll('.exp-body').forEach(function(e){e.classList.remove('active');});
+  document.querySelectorAll('.etab').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('exp-'+name).classList.add('active');
+  btn.classList.add('active');
+};
+
+/* ══════════════════════════════════════════
+   UPDATE PIPELINE
+══════════════════════════════════════════ */
+function getGain(g){return Math.max(0,parseFloat(document.getElementById(g+'Val').value)||0);}
+
+var tfDebounceTimer=null;
+
+function updateTFPreview(){
+  var numS=document.getElementById('tfNum').value;
+  var denS=document.getElementById('tfDen').value;
+  var n=parseCoeffs(numS),d=parseCoeffs(denS);
+  if(!n||!d){
+    document.getElementById('tfPreview').style.color='var(--red)';
+    document.getElementById('tfPreview').textContent='Invalid — use comma-separated numbers';
+    return false;
+  }
+  document.getElementById('tfPreview').style.color='var(--muted)';
+  document.getElementById('tfPreview').textContent='G(s) = '+polyStr(n)+' / ('+polyStr(d)+')';
+  return true;
+}
+
+function polyStr(p){
+  if(!p||!p.length) return '0';
+  var n=p.length-1;
+  var terms=[];
+  p.forEach(function(c,i){
+    var pw=n-i;
+    if(Math.abs(c)<1e-10) return;
+    var ac=Math.abs(c);
+    var cs=ac.toFixed(ac>=100?0:ac>=1?2:3);
+    var sign=c<0?'-':'+';
+    var term;
+    if(pw===0) term=cs;
+    else if(pw===1) term=(ac===1?'':cs)+'s';
+    else term=(ac===1?'':cs)+'s^'+pw;
+    terms.push({sign:sign,term:term});
+  });
+  if(!terms.length) return '0';
+  return terms.map(function(t,i){
+    return (i===0?(t.sign==='-'?'-':''):' '+t.sign+' ')+t.term;
+  }).join('');
+}
+
+function updateAll(){
+  if(!updateTFPreview()) return;
+  var numG=parseCoeffs(document.getElementById('tfNum').value);
+  var denG=parseCoeffs(document.getElementById('tfDen').value);
+  if(!numG||!denG) return;
+  var Kp=getGain('kp'),Ki=getGain('ki'),Kd=getGain('kd');
+  var cl=buildClosedLoop(numG,denG,Kp,Ki,Kd);
+  lastCL=cl;
+
+  /* Adaptive tEnd: use 50/|smallest nonzero real coeff ratio| clamped to [5,60] */
+  var tEnd=20;
+  try{
+    var lead=Math.abs(cl.den[cl.den.length-1]||0);
+    var lead2=Math.abs(cl.den[0]||1);
+    if(lead>1e-6) tEnd=Math.min(60,Math.max(5,10*lead2/lead));
+  }catch(e){}
+
+  /* Step response */
+  try{
+    var sr=stepResponse(cl.num,cl.den,tEnd,800);
+    lastStep=sr;
+  }catch(e){lastStep=null;}
+
+  /* Bode */
+  try{lastBode=bode(cl.olNum,cl.olDen,300);}catch(e){lastBode=null;}
+
+  /* Nyquist */
+  try{lastNyq=nyquist(cl.olNum,cl.olDen,400);}catch(e){lastNyq=null;}
+
+  /* Metrics */
+  if(lastStep){
+    var m=computeMetrics(lastStep.t,lastStep.y,lastBode);
+    document.getElementById('mRise').textContent=m.riseTime!=null?m.riseTime.toFixed(3):'--';
+    document.getElementById('mSettle').textContent=m.settleTime!=null?m.settleTime.toFixed(3):'--';
+    document.getElementById('mOver').textContent=m.over!=null?m.over.toFixed(1):'--';
+    document.getElementById('mSS').textContent=m.ssErr!=null?m.ssErr.toFixed(2):'--';
+    document.getElementById('mPM').textContent=m.pm!=null?m.pm.toFixed(1):'--';
+    document.getElementById('mGM').textContent=m.gm!=null?m.gm.toFixed(1):'--';
+    /* stability */
+    var badge=document.getElementById('stabBadge');
+    var txt=document.getElementById('stabText');
+    var yFinal=lastStep.y[lastStep.y.length-1];
+    var yMax=Math.max.apply(null,lastStep.y.map(Math.abs));
+    if(yMax>100||isNaN(yFinal)){
+      badge.className='stab-badge badge-unstable';txt.textContent='Unstable';
+    } else if(m.pm!=null&&m.pm<15){
+      badge.className='stab-badge badge-marginal';txt.textContent='Marginal';
+    } else {
+      badge.className='stab-badge badge-stable';txt.textContent='Stable';
+    }
+  }
+  draw();
+}
+
+/* ══════════════════════════════════════════
+   DRAWING
+══════════════════════════════════════════ */
+var canvas=document.getElementById('mainChart');
+var ctx=canvas.getContext('2d');
+
+function dpr(){return window.devicePixelRatio||1;}
+function resizeCanvas(){
+  var wrap=canvas.parentElement;
+  var W=wrap.clientWidth;
+  var H=480;
+  canvas.width=W*dpr(); canvas.height=H*dpr();
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.scale(dpr(),dpr());
+}
+
+function draw(){
+  resizeCanvas();
+  if(currentTab==='step') drawStep();
+  else if(currentTab==='bode') drawBode();
+  else drawNyquist();
+}
+
+function drawBg(W,H){
+  ctx.fillStyle='#07060a'; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='rgba(240,160,48,0.04)'; ctx.lineWidth=1;
+  var step=50;
+  for(var x=0;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(var y=0;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+}
+
+function drawStep(){
+  var W=canvas.width/dpr(), H=canvas.height/dpr();
+  drawBg(W,H);
+  var pad={l:58,r:20,t:20,b:42};
+  var pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+  if(!lastStep){noData(W,H,'Compute error');return;}
+  var t=lastStep.t,y=lastStep.y;
+  var yMin=Math.min(Math.min.apply(null,y)-0.1,-0.1);
+  var yMax=Math.max(Math.max.apply(null,y)+0.2,1.3);
+  function sx(v){return pad.l+(v-t[0])/(t[t.length-1]-t[0])*pw;}
+  function sy(v){return pad.t+(1-(v-yMin)/(yMax-yMin))*ph;}
+  /* reference line y=1 */
+  ctx.beginPath();ctx.moveTo(pad.l,sy(1));ctx.lineTo(pad.l+pw,sy(1));
+  ctx.strokeStyle='rgba(240,160,48,0.22)';ctx.lineWidth=1;ctx.setLineDash([6,4]);ctx.stroke();ctx.setLineDash([]);
+  /* ±2% band */
+  ctx.fillStyle='rgba(64,224,144,0.04)';
+  ctx.fillRect(pad.l,sy(1.02),pw,sy(0.98)-sy(1.02));
+  /* signal */
+  ctx.beginPath();
+  y.forEach(function(v,i){if(i===0)ctx.moveTo(sx(t[i]),sy(v));else ctx.lineTo(sx(t[i]),sy(v));});
+  ctx.strokeStyle='#f0a030'; ctx.lineWidth=2;
+  ctx.shadowColor='rgba(240,160,48,0.4)'; ctx.shadowBlur=6; ctx.stroke(); ctx.shadowBlur=0;
+  /* axes */
+  axes(ctx,pad,W,H,'Time (s)','Amplitude');
+  ticks(ctx,pad,W,H,t[0],t[t.length-1],yMin,yMax,1,1);
+  document.getElementById('ol1').textContent='Unit Step Response';
+  document.getElementById('ol2').textContent='Setpoint = 1.0';
+}
+
+function drawBode(){
+  var W=canvas.width/dpr(), H=canvas.height/dpr();
+  drawBg(W,H);
+  if(!lastBode){noData(W,H,'No Bode data');return;}
+  var hMag=H*0.52, hPh=H*0.40;
+  var padM={l:58,r:20,t:14,b:8};
+  var padP={l:58,r:20,t:hMag+16,b:32};
+  var pwM=W-padM.l-padM.r, phM=hMag-padM.t-padM.b;
+  var pwP=W-padP.l-padP.r, phP=H-padP.t-padP.b;
+  var freqs=lastBode.freqs,mags=lastBode.mags,phases=lastBode.phases;
+  var magMin=Math.min.apply(null,mags)-10, magMax=Math.max.apply(null,mags)+10;
+  magMin=Math.floor(magMin/20)*20; magMax=Math.ceil(magMax/20)*20;
+  function sxB(w){return padM.l+(Math.log10(w)-Math.log10(freqs[0]))/(Math.log10(freqs[freqs.length-1])-Math.log10(freqs[0]))*pwM;}
+  function syM(v){return padM.t+(1-(v-magMin)/(magMax-magMin))*phM;}
+  function syP(v){return padP.t+(1-(-180-v)/(-180-0))*phP;}
+  /* 0dB line */
+  ctx.beginPath();ctx.moveTo(padM.l,syM(0));ctx.lineTo(padM.l+pwM,syM(0));
+  ctx.strokeStyle='rgba(240,160,48,0.3)';ctx.lineWidth=1;ctx.setLineDash([5,4]);ctx.stroke();ctx.setLineDash([]);
+  /* -180 line */
+  ctx.beginPath();ctx.moveTo(padP.l,syP(-180));ctx.lineTo(padP.l+pwP,syP(-180));
+  ctx.strokeStyle='rgba(240,72,88,0.3)';ctx.lineWidth=1;ctx.setLineDash([5,4]);ctx.stroke();ctx.setLineDash([]);
+  /* Magnitude */
+  ctx.beginPath();
+  freqs.forEach(function(w,i){if(i===0)ctx.moveTo(sxB(w),syM(mags[i]));else ctx.lineTo(sxB(w),syM(mags[i]));});
+  ctx.strokeStyle='#f0a030';ctx.lineWidth=2;ctx.shadowColor='rgba(240,160,48,0.35)';ctx.shadowBlur=5;ctx.stroke();ctx.shadowBlur=0;
+  /* Phase */
+  ctx.beginPath();
+  freqs.forEach(function(w,i){if(i===0)ctx.moveTo(sxB(w),syP(phases[i]));else ctx.lineTo(sxB(w),syP(phases[i]));});
+  ctx.strokeStyle='#5090f0';ctx.lineWidth=2;ctx.shadowColor='rgba(80,144,240,0.35)';ctx.shadowBlur=5;ctx.stroke();ctx.shadowBlur=0;
+  /* Labels */
+  ctx.fillStyle='#4a4060';ctx.font='9px DM Mono,monospace';ctx.textAlign='right';
+  for(var m=magMin;m<=magMax;m+=20){if(m>=magMin&&m<=magMax){ctx.fillText(m+'dB',padM.l-5,syM(m)+3);}}
+  for(var ph=-180;ph<=0;ph+=45){ctx.fillText(ph+'\u00b0',padP.l-5,syP(ph)+3);}
+  ctx.textAlign='center';
+  [0.01,0.1,1,10,100].forEach(function(w){if(w>=freqs[0]&&w<=freqs[freqs.length-1]){ctx.fillText(w+'',sxB(w),H-8);}});
+  ctx.fillText('\u03c9 (rad/s)',W/2,H-2);
+  ctx.fillStyle='#f0a030';ctx.textAlign='left';ctx.font='8px DM Mono,monospace';ctx.fillText('|L(j\u03c9)| dB',4,padM.t+8);
+  ctx.fillStyle='#5090f0';ctx.fillText('\u2220L(j\u03c9)',4,padP.t+8);
+  /* axes */
+  ctx.strokeStyle='rgba(74,64,96,0.5)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(padM.l,padM.t);ctx.lineTo(padM.l,padM.t+phM);ctx.moveTo(padM.l,padM.t+phM);ctx.lineTo(padM.l+pwM,padM.t+phM);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(padP.l,padP.t);ctx.lineTo(padP.l,padP.t+phP);ctx.moveTo(padP.l,padP.t+phP);ctx.lineTo(padP.l+pwP,padP.t+phP);ctx.stroke();
+  document.getElementById('ol1').textContent='Magnitude (top) | Phase (bottom)';
+  document.getElementById('ol2').textContent='Open-loop L(j\u03c9)';
+}
+
+function drawNyquist(){
+  var W=canvas.width/dpr(), H=canvas.height/dpr();
+  drawBg(W,H);
+  if(!lastNyq){noData(W,H,'No Nyquist data');return;}
+  var re=lastNyq.re,im=lastNyq.im;
+  var pad={l:58,r:20,t:20,b:42};
+  var pw=W-pad.l-pad.r, ph=H-pad.t-pad.b;
+  var allR=re.concat(re.map(function(v){return -0;})),allI=im.concat(im.map(function(v){return -v;}));
+  var xMin=Math.min.apply(null,re)-0.5, xMax=Math.max.apply(null,re)+0.5;
+  var yMin=Math.min.apply(null,im)-0.5, yMax=Math.max.apply(null,im)+0.5;
+  var rng=Math.max(xMax-xMin,yMax-yMin)*0.55;
+  var xMid=(xMax+xMin)/2,yMid=(yMax+yMin)/2;
+  xMin=xMid-rng;xMax=xMid+rng;yMin=yMid-rng;yMax=yMid+rng;
+  function sx(v){return pad.l+(v-xMin)/(xMax-xMin)*pw;}
+  function sy(v){return pad.t+(1-(v-yMin)/(yMax-yMin))*ph;}
+  /* axes */
+  ctx.strokeStyle='rgba(74,64,96,0.4)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(sx(0),pad.t);ctx.lineTo(sx(0),pad.t+ph);ctx.moveTo(pad.l,sy(0));ctx.lineTo(pad.l+pw,sy(0));ctx.stroke();
+  /* critical point */
+  ctx.beginPath();ctx.arc(sx(-1),sy(0),6,0,Math.PI*2);ctx.strokeStyle='rgba(240,72,88,0.8)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='rgba(240,72,88,0.4)';ctx.fill();
+  /* negative freq (mirror) */
+  ctx.beginPath();
+  re.forEach(function(v,i){if(i===0)ctx.moveTo(sx(v),sy(-im[i]));else ctx.lineTo(sx(v),sy(-im[i]));});
+  ctx.strokeStyle='rgba(80,144,240,0.3)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);
+  /* positive freq */
+  ctx.beginPath();
+  re.forEach(function(v,i){if(i===0)ctx.moveTo(sx(v),sy(im[i]));else ctx.lineTo(sx(v),sy(im[i]));});
+  ctx.strokeStyle='#f0a030';ctx.lineWidth=2;ctx.shadowColor='rgba(240,160,48,0.35)';ctx.shadowBlur=5;ctx.stroke();ctx.shadowBlur=0;
+  axes(ctx,pad,W,H,'Re','Im');
+  ticks(ctx,pad,W,H,xMin,xMax,yMin,yMax,1,1);
+  document.getElementById('ol1').textContent='Critical point at (-1, 0j)';
+  document.getElementById('ol2').textContent='Encirclements = unstable poles';
+}
+
+function axes(ctx,pad,W,H,xl,yl){
+  ctx.strokeStyle='rgba(74,64,96,0.5)';ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,H-pad.b);
+  ctx.moveTo(pad.l,H-pad.b);ctx.lineTo(W-pad.r,H-pad.b);
+  ctx.stroke();
+  ctx.fillStyle='#4a4060';ctx.font='9px DM Mono,monospace';ctx.textAlign='center';
+  ctx.fillText(xl,W/2,H-4);
+  ctx.save();ctx.translate(10,H/2);ctx.rotate(-Math.PI/2);ctx.fillText(yl,0,0);ctx.restore();
+}
+function ticks(ctx,pad,W,H,xMin,xMax,yMin,yMax,xStep,yStep){
+  var pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+  ctx.fillStyle='#4a4060';ctx.font='9px DM Mono,monospace';
+  ctx.textAlign='right';
+  for(var v=Math.ceil(yMin/yStep)*yStep;v<=yMax;v+=yStep){
+    var y=pad.t+(1-(v-yMin)/(yMax-yMin))*ph;
+    ctx.fillText(v.toFixed(1),pad.l-5,y+3);
+  }
+  ctx.textAlign='center';
+  for(var v=Math.ceil(xMin/xStep)*xStep;v<=xMax;v+=xStep){
+    var x=pad.l+(v-xMin)/(xMax-xMin)*pw;
+    ctx.fillText(v.toFixed(1),x,H-pad.b+13);
+  }
+}
+function noData(W,H,msg){
+  ctx.fillStyle='#4a4060';ctx.font='13px DM Mono,monospace';ctx.textAlign='center';
+  ctx.fillText(msg,W/2,H/2);
+}
+
+/* ══════════════════════════════════════════
+   INIT
+══════════════════════════════════════════ */
+function tfInputHandler(){
+  /* Show preview immediately while typing, but debounce the full updateAll */
+  updateTFPreview();
+  clearTimeout(tfDebounceTimer);
+  tfDebounceTimer=setTimeout(function(){updateAll();},400);
+}
+function tfCommitHandler(){
+  /* Immediate update on Enter or blur */
+  clearTimeout(tfDebounceTimer);
+  updateAll();
+}
+['tfNum','tfDen'].forEach(function(id){
+  var el=document.getElementById(id);
+  el.addEventListener('input',tfInputHandler);
+  el.addEventListener('blur',tfCommitHandler);
+  el.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){e.preventDefault();tfCommitHandler();}
+  });
+});
+window.addEventListener('resize',function(){draw();});
+loadPreset('first');
+
+})();
+</script>
+</body>
+</html>
