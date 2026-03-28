@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apple Activity and Health Data Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+:root {
+  --bg:#0a0e14; --surface:#111720; --surface2:#171e2a; --border:#1f2d3d;
+  --accent:#4af0a0; --red:#f06040; --blue:#40a0f0; --amber:#f0c040;
+  --text:#d4e4f4; --muted:#4a6080;
+  --glow:rgba(74,240,160,0.15); --glow-red:rgba(240,96,64,0.15);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(74,240,160,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(74,240,160,0.025) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none;z-index:0;}
+.app{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:36px 24px;}
+header{display:flex;align-items:center;gap:18px;margin-bottom:36px;}
+.logo-mark{width:52px;height:52px;border:2px solid var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px var(--glow);flex-shrink:0;background:var(--surface2);}
+h1{font-family:'Fraunces',serif;font-size:1.85rem;font-weight:300;letter-spacing:-0.02em;line-height:1.15;}
+h1 em{color:var(--accent);font-style:italic;}
+.subtitle{font-size:0.65rem;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-top:6px;}
+.tab-bar{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:36px;}
+.tab-btn{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;font-family:'DM Mono',monospace;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:10px 22px;transition:color 0.2s,border-color 0.2s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;animation:fadeUp 0.3s ease both;}
+.upload-zone{border:1.5px dashed var(--border);border-radius:16px;padding:52px 40px;text-align:center;cursor:pointer;transition:all 0.3s;background:var(--surface);position:relative;overflow:hidden;}
+.upload-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,var(--glow) 0%,transparent 70%);opacity:0;transition:opacity 0.3s;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);box-shadow:0 0 32px var(--glow);}
+.upload-zone:hover::before,.upload-zone.drag-over::before{opacity:1;}
+.upload-zone .icon{font-size:2.6rem;margin-bottom:14px;display:block;animation:float 3s ease-in-out infinite;}
+.upload-zone strong{color:var(--accent);font-weight:500;font-size:0.9rem;}
+.upload-zone p{font-size:0.78rem;color:var(--muted);margin-top:7px;}
+.upload-zone .hint{font-size:0.63rem;margin-top:10px;}
+.ecg-zone::before{background:radial-gradient(ellipse at center,var(--glow-red) 0%,transparent 70%);}
+.ecg-zone:hover,.ecg-zone.drag-over{border-color:var(--red);box-shadow:0 0 32px var(--glow-red);}
+.ecg-zone:hover strong{color:var(--red);}
+input[type=file]{display:none;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.hidden{display:none!important;}
+.loader{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:0.8rem;padding:20px 0;}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;}
+.spinner.red{border-top-color:var(--red);}
+.error-msg{background:rgba(240,96,64,0.1);border:1px solid rgba(240,96,64,0.3);color:var(--red);border-radius:10px;padding:14px 18px;font-size:0.8rem;margin-top:18px;}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:14px;margin-top:28px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;animation:fadeUp 0.4s ease both;}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;border-radius:0 0 12px 12px;}
+.stat-card.green::after{background:var(--accent);}
+.stat-card.red::after{background:var(--red);}
+.stat-card.blue::after{background:var(--blue);}
+.stat-card.amber::after{background:var(--amber);}
+.stat-label{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.stat-value{font-family:'Fraunces',serif;font-size:1.85rem;font-weight:600;line-height:1;}
+.stat-unit{font-size:0.65rem;color:var(--muted);margin-top:4px;}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.section-title{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.badge{font-size:0.62rem;background:var(--surface2);border:1px solid var(--border);color:var(--accent);padding:3px 10px;border-radius:20px;}
+.badge.red{color:var(--red);}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;animation:fadeUp 0.5s ease 0.15s both;}
+.chart-title{font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.meta-row{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:20px;}
+.meta-pill{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 13px;font-size:0.68rem;color:var(--muted);}
+.meta-pill strong{color:var(--text);font-weight:500;}
+.file-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;}
+.file-pill{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 12px;font-size:0.68rem;color:var(--text);cursor:pointer;transition:all 0.2s;}
+.file-pill.act-gpx{border-color:var(--accent);color:var(--accent);}
+.file-pill.act-ecg{border-color:var(--red);color:var(--red);}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:auto;max-height:300px;}
+table{width:100%;border-collapse:collapse;font-size:0.72rem;}
+thead{position:sticky;top:0;background:var(--surface2);z-index:1;}
+th{padding:11px 15px;text-align:left;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);}
+td{padding:9px 15px;border-bottom:1px solid rgba(31,45,61,0.5);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(74,240,160,0.03);}
+td.cg{color:var(--accent);}td.cr{color:var(--red);}td.cb{color:var(--blue);}td.cm{color:var(--muted);}
+.map-container{margin-top:28px;border-radius:16px;overflow:hidden;border:1px solid var(--border);animation:fadeUp 0.5s ease 0.1s both;}
+#map{height:420px;background:var(--surface2);}
+.gpx-charts{margin-top:24px;display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:700px){.gpx-charts{grid-template-columns:1fr;}}
+.ecg-main-card{margin-top:28px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;animation:fadeUp 0.4s ease both;}
+.ecg-hdr{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
+.ecg-status-pill{display:inline-flex;align-items:center;gap:7px;border-radius:20px;padding:5px 14px;font-size:0.7rem;font-weight:500;border:1px solid;}
+.ecg-status-pill .blink{width:7px;height:7px;border-radius:50%;animation:pulse 1.4s ease-in-out infinite;}
+.pill-sinus{color:var(--accent);border-color:rgba(74,240,160,0.4);background:rgba(74,240,160,0.07);}
+.pill-sinus .blink{background:var(--accent);}
+.pill-afib{color:var(--red);border-color:rgba(240,96,64,0.4);background:rgba(240,96,64,0.07);}
+.pill-afib .blink{background:var(--red);}
+.pill-inconclusive{color:var(--amber);border-color:rgba(240,192,64,0.4);background:rgba(240,192,64,0.07);}
+.pill-inconclusive .blink{background:var(--amber);}
+.ecg-canvas-wrap{position:relative;background:#0a1008;border-radius:10px;overflow:hidden;border:1px solid rgba(74,240,160,0.12);}
+.ecg-canvas-wrap::before{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(74,240,160,0.06) 1px,transparent 1px),linear-gradient(90deg,rgba(74,240,160,0.06) 1px,transparent 1px),linear-gradient(rgba(74,240,160,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(74,240,160,0.025) 1px,transparent 1px);
+  background-size:50px 50px,50px 50px,10px 10px,10px 10px;pointer-events:none;z-index:0;}
+#ecgCanvas{position:relative;z-index:1;width:100%;display:block;}
+.ecg-controls{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:16px;}
+.ctrl-label{font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);}
+.win-btns{display:flex;gap:4px;}
+.win-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:0.72rem;padding:5px 12px;border-radius:7px;cursor:pointer;transition:all 0.2s;}
+.win-btn:hover{border-color:var(--red);color:var(--red);}
+.win-btn.active{border-color:var(--red);color:var(--red);background:rgba(240,96,64,0.08);}
+.gain-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:1rem;width:28px;height:28px;border-radius:6px;cursor:pointer;transition:all 0.2s;}
+.gain-btn:hover{border-color:var(--red);color:var(--red);}
+input[type=range].slider{-webkit-appearance:none;appearance:none;width:130px;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:var(--red);cursor:pointer;}
+.ecg-bottom{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:20px;}
+@media(max-width:700px){.ecg-bottom{grid-template-columns:1fr;}}
+.rr-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;}
+.rr-title{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+#ecgWindowInfo{font-size:0.62rem;color:var(--muted);margin-left:auto;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo-mark">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="15" cy="15" r="12" stroke="#1f2d3d" stroke-width="3.5"/>
+        <circle cx="15" cy="15" r="12" stroke="#f06040" stroke-width="3.5" stroke-dasharray="55 20" stroke-dashoffset="0" stroke-linecap="round" fill="none" transform="rotate(-90 15 15)"/>
+        <circle cx="15" cy="15" r="7.5" stroke="#1f2d3d" stroke-width="3"/>
+        <circle cx="15" cy="15" r="7.5" stroke="#4af0a0" stroke-width="3" stroke-dasharray="33 14" stroke-dashoffset="0" stroke-linecap="round" fill="none" transform="rotate(-90 15 15)"/>
+        <circle cx="15" cy="15" r="3.5" stroke="#1f2d3d" stroke-width="2.5"/>
+        <circle cx="15" cy="15" r="3.5" stroke="#40a0f0" stroke-width="2.5" stroke-dasharray="15 7" stroke-dashoffset="0" stroke-linecap="round" fill="none" transform="rotate(-90 15 15)"/>
+      </svg>
+    </div>
+    <div>
+      <h1>Apple <em>Activity</em> and <em>Health</em> Data Viewer</h1>
+      <p class="subtitle">GPX Routes &middot; ECG Analysis &middot; Entirely Local &middot; No Upload</p>
+    </div>
+  </header>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="btn-gpx" onclick="switchTab('gpx')">&#9679; Activity / GPX</button>
+    <button class="tab-btn" id="btn-ecg" onclick="switchTab('ecg')">&#9679; ECG</button>
+  </div>
+
+  <!-- GPX TAB -->
+  <div id="tab-gpx" class="tab-panel active">
+    <div class="upload-zone" id="gpxZone">
+      <span class="icon">&#128205;</span>
+      <strong>Drop your GPX workout file(s) here</strong>
+      <p>or click to browse &mdash; Apple Health exports .gpx files per workout</p>
+      <p class="hint">Supports multiple files &middot; heart rate &middot; speed &middot; elevation</p>
+      <input type="file" id="gpxInput" accept=".gpx" multiple>
+    </div>
+    <div id="gpxError" class="error-msg hidden"></div>
+    <div id="gpxLoader" class="loader hidden"><div class="spinner"></div><span>Parsing GPX&hellip;</span></div>
+    <div id="gpxResults" class="hidden">
+      <div style="margin-top:28px">
+        <div id="gpxFileList" class="file-list"></div>
+        <div id="gpxMeta" class="meta-row"></div>
+      </div>
+      <div class="stats-grid" id="gpxStats"></div>
+      <div class="map-container"><div id="map"></div></div>
+      <div class="gpx-charts">
+        <div class="chart-card">
+          <div class="chart-title">Elevation Profile</div>
+          <canvas id="elevChart" height="180"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Speed over Distance</div>
+          <canvas id="speedChart" height="180"></canvas>
+        </div>
+      </div>
+      <div style="margin-top:28px;animation:fadeUp 0.5s ease 0.3s both">
+        <div class="section-header">
+          <span class="section-title">Trackpoints</span>
+          <span class="badge" id="gpxTpCount">0 pts</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Time</th><th>Lat</th><th>Lon</th><th>Elev (m)</th><th>Speed (km/h)</th></tr></thead>
+            <tbody id="gpxTpBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ECG TAB -->
+  <div id="tab-ecg" class="tab-panel">
+    <div class="upload-zone ecg-zone" id="ecgZone">
+      <span class="icon">&#128147;</span>
+      <strong>Drop your ECG CSV file(s) here</strong>
+      <p>or click to browse &mdash; exported from Apple Health &rarr; ECG</p>
+      <p class="hint">Apple exports one CSV per ECG recording &middot; multiple files supported</p>
+      <input type="file" id="ecgInput" accept=".csv" multiple>
+    </div>
+    <div id="ecgError" class="error-msg hidden"></div>
+    <div id="ecgLoader" class="loader hidden"><div class="spinner red"></div><span>Parsing ECG data&hellip;</span></div>
+    <div id="ecgResults" class="hidden">
+      <div style="margin-top:28px">
+        <div id="ecgFileList" class="file-list"></div>
+        <div id="ecgMeta" class="meta-row"></div>
+      </div>
+      <div class="stats-grid" id="ecgStats"></div>
+      <div class="ecg-main-card">
+        <div class="ecg-hdr">
+          <div>
+            <div class="chart-title" style="margin-bottom:6px">ECG Waveform &mdash; Lead I</div>
+            <div id="ecgStatusPill" class="ecg-status-pill pill-sinus">
+              <span class="blink"></span><span id="ecgStatusText">&mdash;</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+            <div class="ctrl-label">Window</div>
+            <div class="win-btns" id="winBtns">
+              <button class="win-btn active" id="wb5" onclick="setWin(5,'wb5')">5 s</button>
+              <button class="win-btn" id="wb10" onclick="setWin(10,'wb10')">10 s</button>
+              <button class="win-btn" id="wb30" onclick="setWin(30,'wb30')">30 s</button>
+              <button class="win-btn" id="wb0" onclick="setWin(0,'wb0')">All</button>
+            </div>
+          </div>
+        </div>
+        <div class="ecg-canvas-wrap">
+          <canvas id="ecgCanvas" height="220"></canvas>
+        </div>
+        <div class="ecg-controls">
+          <span class="ctrl-label">Scroll</span>
+          <input type="range" id="ecgScroll" class="slider" min="0" max="100" value="0" oninput="onScroll()">
+          <span class="ctrl-label" style="margin-left:8px">Gain</span>
+          <button class="gain-btn" onclick="changeGain(-0.5)">&#8722;</button>
+          <span id="gainLabel" style="font-size:0.72rem;min-width:36px;text-align:center">x1</span>
+          <button class="gain-btn" onclick="changeGain(0.5)">+</button>
+          <span id="ecgWindowInfo"></span>
+        </div>
+      </div>
+      <div class="ecg-bottom">
+        <div class="rr-card">
+          <div class="rr-title">RR Interval Series (beat-to-beat)</div>
+          <canvas id="rrChart" height="160"></canvas>
+        </div>
+        <div class="rr-card">
+          <div class="rr-title">RR Interval Distribution (HRV)</div>
+          <canvas id="rrHistChart" height="160"></canvas>
+        </div>
+      </div>
+      <div style="margin-top:24px;animation:fadeUp 0.5s ease 0.3s both">
+        <div class="section-header">
+          <span class="section-title">Raw Samples</span>
+          <span class="badge red" id="ecgSampleCount">0 samples</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Time (s)</th><th>Voltage (uV)</th></tr></thead>
+            <tbody id="ecgRawBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script>
+(function(){
+'use strict';
+
+/* Load Chart.js */
+var cs=document.createElement('script');
+cs.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+document.head.appendChild(cs);
+
+/* ── State ── */
+var map=null,routeLayer=null,elevCI=null,speedCI=null;
+var gpxFiles=[],gpxIdx=0;
+var ecgFiles=[],ecgIdx=0,ecgData=null;
+var ecgGain=1.0,ecgWinSec=5,ecgScrollPct=0;
+var rrCI=null,rrHistCI=null;
+
+/* ── Tabs ── */
+window.switchTab=function(id){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('btn-'+id).classList.add('active');
+  if(id==='ecg'&&ecgData){setTimeout(drawEcg,80);}
+};
+
+/* ── GPX Upload ── */
+(function(){
+  var zone=document.getElementById('gpxZone');
+  var inp=document.getElementById('gpxInput');
+  zone.addEventListener('click',function(){inp.click();});
+  zone.addEventListener('dragover',function(e){e.preventDefault();zone.classList.add('drag-over');});
+  zone.addEventListener('dragleave',function(){zone.classList.remove('drag-over');});
+  zone.addEventListener('drop',function(e){e.preventDefault();zone.classList.remove('drag-over');doHandleGpx(e.dataTransfer.files);});
+  inp.addEventListener('change',function(){doHandleGpx(inp.files);});
+})();
+
+function doHandleGpx(list){
+  gpxFiles=Array.from(list).filter(function(f){return f.name.toLowerCase().endsWith('.gpx');});
+  if(!gpxFiles.length){showErr('gpxError','No .gpx files found.');return;}
+  gpxIdx=0;renderGpxPills();loadGpxFile(0);
+}
+function renderGpxPills(){
+  document.getElementById('gpxFileList').innerHTML=gpxFiles.map(function(f,i){
+    return '<div class="file-pill'+(i===gpxIdx?' act-gpx':'')+'" onclick="gpxSwitch('+i+')">&#128196; '+esc(f.name)+'</div>';
+  }).join('');
+}
+window.gpxSwitch=function(i){gpxIdx=i;renderGpxPills();loadGpxFile(i);};
+function loadGpxFile(i){
+  showLoader('gpxLoader',true);hideErr('gpxError');
+  var r=new FileReader();
+  r.onload=function(e){
+    try{renderGpxData(parseGPX(e.target.result));}
+    catch(ex){showErr('gpxError',ex.message);}
+    showLoader('gpxLoader',false);
+  };
+  r.readAsText(gpxFiles[i]);
+}
+
+/* ── GPX Parser ── */
+function parseGPX(xml){
+  var doc=new DOMParser().parseFromString(xml,'application/xml');
+  if(doc.querySelector('parsererror'))throw new Error('Invalid XML');
+  var ns=doc.documentElement.namespaceURI||'';
+  function gEl(p,t){var e=p.getElementsByTagNameNS(ns,t)[0]||p.getElementsByTagName(t)[0];return e?e.textContent.trim():null;}
+  var trackName=gEl(doc,'name')||'Unnamed Activity';
+  var trackType=gEl(doc,'type')||'';
+  var pts=Array.from(doc.getElementsByTagName('trkpt'));
+  if(!pts.length)throw new Error('No trackpoints found.');
+  var points=pts.map(function(pt,idx){
+    var lat=parseFloat(pt.getAttribute('lat')),lon=parseFloat(pt.getAttribute('lon'));
+    var eleEl=pt.getElementsByTagName('ele')[0],ele=eleEl?parseFloat(eleEl.textContent):null;
+    var tEl=pt.getElementsByTagName('time')[0],time=tEl?new Date(tEl.textContent):null;
+    var hrEl=pt.querySelector('hr,heartrate'),hr=hrEl?parseInt(hrEl.textContent):null;
+    return{lat:lat,lon:lon,ele:ele,time:time,hr:hr,idx:idx};
+  });
+  var td=0;
+  for(var i=1;i<points.length;i++){
+    var d=hav(points[i-1].lat,points[i-1].lon,points[i].lat,points[i].lon);
+    points[i].dPrev=d;td+=d;points[i].dCum=td;
+  }
+  points[0].dPrev=0;points[0].dCum=0;
+  for(var i=1;i<points.length;i++){
+    if(points[i].time&&points[i-1].time){
+      var dt=(points[i].time-points[i-1].time)/3600000;
+      points[i].speed=dt>0?points[i].dPrev/dt:0;
+    }else{points[i].speed=null;}
+  }
+  points[0].speed=null;
+  var ve=points.map(function(p){return p.ele;}).filter(function(e){return e!=null;});
+  var eg=0,el=0;
+  for(var i=1;i<points.length;i++){
+    if(points[i].ele!=null&&points[i-1].ele!=null){
+      var diff=points[i].ele-points[i-1].ele;
+      if(diff>0)eg+=diff;else el+=Math.abs(diff);
+    }
+  }
+  var vs=points.map(function(p){return p.speed;}).filter(function(s){return s!=null&&s<200;});
+  var avgS=vs.length?vs.reduce(function(a,b){return a+b;},0)/vs.length:null;
+  var maxS=vs.length?Math.max.apply(null,vs):null;
+  var t0=null,t1=null;
+  for(var i=0;i<points.length;i++)if(points[i].time){t0=points[i].time;break;}
+  for(var i=points.length-1;i>=0;i--)if(points[i].time){t1=points[i].time;break;}
+  var dur=(t0&&t1)?(t1-t0)/1000:null;
+  var vh=points.map(function(p){return p.hr;}).filter(function(h){return h&&h>0;});
+  var avgHR=vh.length?Math.round(vh.reduce(function(a,b){return a+b;},0)/vh.length):null;
+  var maxHR=vh.length?Math.max.apply(null,vh):null;
+  return{trackName:trackName,trackType:trackType,points:points,totalDist:td,
+    elevMax:ve.length?Math.max.apply(null,ve):null,elevGain:eg,elevLoss:el,
+    avgSpeed:avgS,maxSpeed:maxS,startTime:t0,endTime:t1,duration:dur,
+    avgHR:avgHR,maxHR:maxHR,pointCount:points.length};
+}
+function hav(la1,lo1,la2,lo2){
+  var R=6371,dLa=(la2-la1)*Math.PI/180,dLo=(lo2-lo1)*Math.PI/180;
+  var a=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(la1*Math.PI/180)*Math.cos(la2*Math.PI/180)*Math.sin(dLo/2)*Math.sin(dLo/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+/* ── GPX Render ── */
+function renderGpxData(d){
+  document.getElementById('gpxResults').classList.remove('hidden');
+  function fmt(t){return t?t.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}):'--';}
+  function fmtD(s){if(!s)return'--';var h=Math.floor(s/3600),m=Math.floor((s%3600)/60);return h?h+'h '+m+'m':m+'m '+Math.floor(s%60)+'s';}
+  document.getElementById('gpxMeta').innerHTML=
+    '<div class="meta-pill"><strong>'+esc(d.trackName)+'</strong></div>'+
+    (d.trackType?'<div class="meta-pill"><strong>'+esc(d.trackType)+'</strong></div>':'')+
+    (d.startTime?'<div class="meta-pill">Date <strong>'+fmt(d.startTime)+'</strong></div>':'')+
+    (d.duration?'<div class="meta-pill">Duration <strong>'+fmtD(d.duration)+'</strong></div>':'')+
+    '<div class="meta-pill">Points <strong>'+d.pointCount.toLocaleString()+'</strong></div>';
+  var stats=[
+    {l:'Distance',v:d.totalDist.toFixed(2),u:'kilometers',c:'green'},
+    {l:'Avg Speed',v:d.avgSpeed?d.avgSpeed.toFixed(1):'--',u:'km/h',c:'blue'},
+    {l:'Max Speed',v:d.maxSpeed?d.maxSpeed.toFixed(1):'--',u:'km/h',c:'blue'},
+    {l:'Elev Gain',v:d.elevGain?Math.round(d.elevGain):'--',u:'meters',c:'green'},
+    {l:'Elev Loss',v:d.elevLoss?Math.round(d.elevLoss):'--',u:'meters',c:'red'},
+    {l:'Max Elev',v:d.elevMax?Math.round(d.elevMax):'--',u:'meters',c:'green'}
+  ];
+  if(d.avgHR)stats.push({l:'Avg HR',v:d.avgHR,u:'bpm',c:'red'});
+  if(d.maxHR)stats.push({l:'Max HR',v:d.maxHR,u:'bpm',c:'red'});
+  document.getElementById('gpxStats').innerHTML=stats.map(function(s,i){
+    return '<div class="stat-card '+s.c+'" style="animation-delay:'+i*0.05+'s"><div class="stat-label">'+s.l+'</div><div class="stat-value">'+s.v+'</div><div class="stat-unit">'+s.u+'</div></div>';
+  }).join('');
+  initMap(d.points);
+  whenChart(function(){renderElevC(d.points);renderSpeedC(d.points);});
+  renderGpxTable(d.points);
+}
+function initMap(pts){
+  var coords=pts.map(function(p){return[p.lat,p.lon];});
+  if(!map){
+    map=L.map('map',{zoomControl:true});
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'(c) OSM (c) Carto',maxZoom:19}).addTo(map);
+  }
+  if(routeLayer)map.removeLayer(routeLayer);
+  routeLayer=L.polyline(coords,{color:'#4af0a0',weight:3,opacity:0.9,smoothFactor:1}).addTo(map);
+  if(coords.length){
+    L.circleMarker(coords[0],{radius:8,color:'#4af0a0',fillColor:'#4af0a0',fillOpacity:1}).bindPopup('<b>Start</b>').addTo(map);
+    L.circleMarker(coords[coords.length-1],{radius:8,color:'#f06040',fillColor:'#f06040',fillOpacity:1}).bindPopup('<b>End</b>').addTo(map);
+  }
+  map.fitBounds(routeLayer.getBounds(),{padding:[30,30]});
+}
+function renderElevC(pts){
+  var s=samp(pts.filter(function(p){return p.ele!=null;}),300);
+  if(elevCI)elevCI.destroy();
+  elevCI=new Chart(document.getElementById('elevChart'),{type:'line',data:{labels:s.map(function(p){return p.dCum.toFixed(2);}),datasets:[{data:s.map(function(p){return p.ele;}),borderColor:'#4af0a0',backgroundColor:'rgba(74,240,160,0.07)',borderWidth:1.5,pointRadius:0,fill:true,tension:0.3}]},options:gpxOpts('m','km')});
+}
+function renderSpeedC(pts){
+  var s=samp(pts.filter(function(p){return p.speed!=null&&p.speed<100;}),300);
+  if(speedCI)speedCI.destroy();
+  speedCI=new Chart(document.getElementById('speedChart'),{type:'line',data:{labels:s.map(function(p){return p.dCum.toFixed(2);}),datasets:[{data:s.map(function(p){return p.speed!=null?p.speed.toFixed(1):null;}),borderColor:'#40a0f0',backgroundColor:'rgba(64,160,240,0.07)',borderWidth:1.5,pointRadius:0,fill:true,tension:0.3}]},options:gpxOpts('km/h','km')});
+}
+function gpxOpts(yu,xu){
+  return{responsive:true,maintainAspectRatio:true,animation:{duration:500},plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false,backgroundColor:'#111720',borderColor:'#1f2d3d',borderWidth:1,titleColor:'#4a6080',bodyColor:'#d4e4f4',callbacks:{title:function(i){return i[0].label+' '+xu;},label:function(i){return i.raw+' '+yu;}}}},scales:{x:{ticks:{color:'#4a6080',font:{family:'DM Mono',size:10},maxTicksLimit:6},grid:{color:'rgba(31,45,61,0.5)'}},y:{ticks:{color:'#4a6080',font:{family:'DM Mono',size:10},maxTicksLimit:5},grid:{color:'rgba(31,45,61,0.5)'}}}};
+}
+function renderGpxTable(pts){
+  var s=samp(pts,200);
+  document.getElementById('gpxTpCount').textContent=pts.length+' pts';
+  function fT(t){return t?t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'--';}
+  document.getElementById('gpxTpBody').innerHTML=s.map(function(p){
+    return '<tr><td class="cm">'+(p.idx+1)+'</td><td>'+fT(p.time)+'</td><td class="cg">'+p.lat.toFixed(6)+'</td><td class="cg">'+p.lon.toFixed(6)+'</td><td class="cb">'+(p.ele!=null?p.ele.toFixed(1):'--')+'</td><td class="cr">'+(p.speed!=null&&p.speed<200?p.speed.toFixed(1):'--')+'</td></tr>';
+  }).join('');
+}
+
+/* ── ECG Upload ── */
+(function(){
+  var zone=document.getElementById('ecgZone');
+  var inp=document.getElementById('ecgInput');
+  zone.addEventListener('click',function(){inp.click();});
+  zone.addEventListener('dragover',function(e){e.preventDefault();zone.classList.add('drag-over');});
+  zone.addEventListener('dragleave',function(){zone.classList.remove('drag-over');});
+  zone.addEventListener('drop',function(e){e.preventDefault();zone.classList.remove('drag-over');doHandleEcg(e.dataTransfer.files);});
+  inp.addEventListener('change',function(){doHandleEcg(inp.files);});
+})();
+
+function doHandleEcg(list){
+  ecgFiles=Array.from(list).filter(function(f){return f.name.toLowerCase().endsWith('.csv');});
+  if(!ecgFiles.length){showErr('ecgError','No .csv files found.');return;}
+  ecgIdx=0;renderEcgPills();loadEcgFile(0);
+}
+function renderEcgPills(){
+  document.getElementById('ecgFileList').innerHTML=ecgFiles.map(function(f,i){
+    return '<div class="file-pill'+(i===ecgIdx?' act-ecg':'')+'" onclick="ecgSwitch('+i+')">&#128196; '+esc(f.name)+'</div>';
+  }).join('');
+}
+window.ecgSwitch=function(i){ecgIdx=i;renderEcgPills();loadEcgFile(i);};
+function loadEcgFile(i){
+  showLoader('ecgLoader',true);hideErr('ecgError');
+  var r=new FileReader();
+  r.onload=function(e){
+    try{ecgData=parseEcg(e.target.result);renderEcgData(ecgData);}
+    catch(ex){showErr('ecgError',ex.message);}
+    showLoader('ecgLoader',false);
+  };
+  r.readAsText(ecgFiles[i]);
+}
+
+/* ── ECG Parser ── */
+/* Handles Apple Health's real ECG CSV format:
+   - Key,Value metadata rows (Name, Date of Birth, Recorded Date, Classification,
+     Symptoms, Software Version, Hardware Version, Sample Rate, Lead, Unit)
+   - Followed by a blank/separator line
+   - Then one raw voltage value per line (single column, no header, no time column)
+   Also handles the two-column elapsed_time,voltage variant just in case. */
+function parseEcg(text){
+  var rawLines=text.split(/\r?\n/);
+  var meta={},dataStart=0,foundData=false;
+
+  for(var i=0;i<rawLines.length;i++){
+    var line=rawLines[i].trim();
+    if(line===''){
+      // blank line — data likely starts after this
+      dataStart=i+1;
+      continue;
+    }
+    var parts=line.split(',');
+    var firstCell=parts[0].trim();
+
+    // If first cell is a bare number (or leading minus), this is a data row
+    if(/^-?\d+(\.\d+)?$/.test(firstCell)){
+      dataStart=i;
+      foundData=true;
+      break;
+    }
+    // Two-column format with header row "elapsed_time,voltage"
+    if(/^elapsed_time$/i.test(firstCell)){
+      dataStart=i+1;
+      foundData=true;
+      break;
+    }
+    // Store metadata key→value (case-insensitive key)
+    if(parts.length>=2){
+      meta[firstCell.toLowerCase()]=parts.slice(1).join(',').trim();
+    }
+  }
+
+  // Parse sample rate from metadata (Apple writes e.g. "Sample Rate,512 Hz" or just "512")
+  var fsRaw=meta['sample rate']||meta['sampling frequency']||meta['samplerate']||'';
+  var fs=parseFloat(fsRaw)||512; // Apple Watch ECG default is 512 Hz
+
+  // Parse samples
+  var samples=[];
+  for(var i=dataStart;i<rawLines.length;i++){
+    var line=rawLines[i].trim();
+    if(line==='') continue;
+    var parts=line.split(',');
+    var first=parseFloat(parts[0]);
+    if(isNaN(first)) continue;
+
+    if(parts.length>=2){
+      // Two-column: elapsed_time, voltage
+      var second=parseFloat(parts[1]);
+      if(!isNaN(second)){
+        samples.push({t:first, v:second});
+        continue;
+      }
+    }
+    // Single-column: just voltage, reconstruct time from sample rate
+    samples.push({v:first});
+  }
+
+  if(samples.length<10) throw new Error(
+    'Could not read ECG data — found '+samples.length+' numeric rows. '+
+    'Please use the CSV from the electrocardiograms/ folder inside Apple\'s health export zip.'
+  );
+
+  // Assign timestamps if missing (single-column format)
+  var dt=1/fs;
+  if(samples[0].t===undefined){
+    for(var i=0;i<samples.length;i++) samples[i].t=i*dt;
+  } else {
+    // Recalculate fs from actual time stamps
+    if(samples.length>1){
+      var measuredDt=(samples[samples.length-1].t-samples[0].t)/(samples.length-1);
+      if(measuredDt>0) fs=1/measuredDt;
+    }
+  }
+  var duration=samples[samples.length-1].t-samples[0].t;
+  var rawClass=meta['classification']||meta['heartrhythmclassification']||'';
+  var classification='Unknown',statusClass='inconclusive';
+  if(/sinus/i.test(rawClass)){classification='Sinus Rhythm';statusClass='sinus';}
+  else if(/afib|atrial/i.test(rawClass)){classification='Atrial Fibrillation';statusClass='afib';}
+  else if(/inconclusive/i.test(rawClass)){classification='Inconclusive';statusClass='inconclusive';}
+  else if(rawClass){classification=rawClass;statusClass='inconclusive';}
+  var heartRate=parseInt(meta['average heart rate']||meta['heartrate']||meta['heart rate']||'0')||null;
+  var softwareVer=meta['software version']||meta['applewatch software version']||'';
+  var recordDate=meta['recorded date']||meta['date']||'';
+  var vols=samples.map(function(s){return s.v;});
+  var vMin=Math.min.apply(null,vols),vMax=Math.max.apply(null,vols);
+  var rPeaks=detectRPeaks(samples,fs);
+  var rrIntervals=[];
+  for(var i=1;i<rPeaks.length;i++)rrIntervals.push((rPeaks[i].t-rPeaks[i-1].t)*1000);
+  var avgRR=rrIntervals.length?rrIntervals.reduce(function(a,b){return a+b;},0)/rrIntervals.length:null;
+  var hrFromRR=avgRR?Math.round(60000/avgRR):null;
+  var sdnn=null;
+  if(rrIntervals.length>1&&avgRR){
+    var sq=rrIntervals.map(function(r){return(r-avgRR)*(r-avgRR);});
+    sdnn=Math.sqrt(sq.reduce(function(a,b){return a+b;},0)/rrIntervals.length);
+  }
+  return{meta:meta,samples:samples,fs:fs,duration:duration,classification:classification,statusClass:statusClass,
+    avgHR:heartRate||hrFromRR,softwareVer:softwareVer,recordDate:recordDate,
+    vMin:vMin,vMax:vMax,vRange:vMax-vMin,rPeaks:rPeaks,rrIntervals:rrIntervals,avgRR:avgRR,sdnn:sdnn};
+}
+function detectRPeaks(samples,fs){
+  var v=samples.map(function(s){return s.v;});
+  var vMax=Math.max.apply(null,v),vMed=v.reduce(function(a,b){return a+b;},0)/v.length;
+  var thresh=vMed+(vMax-vMed)*0.5;
+  var minDist=Math.round(fs*0.3),peaks=[],last=-minDist;
+  for(var i=1;i<v.length-1;i++){
+    if(v[i]>thresh&&v[i]>v[i-1]&&v[i]>=v[i+1]&&i-last>=minDist){peaks.push(samples[i]);last=i;}
+  }
+  return peaks;
+}
+
+/* ── ECG Render ── */
+function renderEcgData(d){
+  document.getElementById('ecgResults').classList.remove('hidden');
+  document.getElementById('ecgMeta').innerHTML=
+    (d.recordDate?'<div class="meta-pill">Date <strong>'+esc(d.recordDate)+'</strong></div>':'')+
+    '<div class="meta-pill">Duration <strong>'+d.duration.toFixed(1)+' s</strong></div>'+
+    '<div class="meta-pill">Sample Rate <strong>'+Math.round(d.fs)+' Hz</strong></div>'+
+    '<div class="meta-pill">Samples <strong>'+d.samples.length.toLocaleString()+'</strong></div>'+
+    (d.softwareVer?'<div class="meta-pill">SW <strong>'+esc(d.softwareVer)+'</strong></div>':'');
+  var pill=document.getElementById('ecgStatusPill');
+  pill.className='ecg-status-pill pill-'+d.statusClass;
+  pill.innerHTML='<span class="blink"></span><span>'+esc(d.classification)+'</span>';
+  var stats=[
+    {l:'Heart Rate',v:d.avgHR||'--',u:'bpm',c:'red'},
+    {l:'Duration',v:d.duration.toFixed(1),u:'seconds',c:'blue'},
+    {l:'Sample Rate',v:Math.round(d.fs),u:'Hz',c:'blue'},
+    {l:'R-Peaks',v:d.rPeaks.length,u:'detected beats',c:'amber'},
+    {l:'Avg RR',v:d.avgRR?Math.round(d.avgRR):'--',u:'ms',c:'green'},
+    {l:'SDNN (HRV)',v:d.sdnn?d.sdnn.toFixed(1):'--',u:'ms',c:'green'},
+    {l:'Volt Range',v:Math.round(d.vRange)||'--',u:'uV',c:'blue'}
+  ];
+  document.getElementById('ecgStats').innerHTML=stats.map(function(s,i){
+    return '<div class="stat-card '+s.c+'" style="animation-delay:'+i*0.05+'s"><div class="stat-label">'+s.l+'</div><div class="stat-value">'+s.v+'</div><div class="stat-unit">'+s.u+'</div></div>';
+  }).join('');
+  ecgGain=1.0;ecgWinSec=5;ecgScrollPct=0;
+  document.getElementById('gainLabel').textContent='x1';
+  document.getElementById('ecgScroll').value=0;
+  ['wb5','wb10','wb30','wb0'].forEach(function(id){document.getElementById(id).classList.remove('active');});
+  document.getElementById('wb5').classList.add('active');
+  setTimeout(drawEcg,60);
+  whenChart(function(){renderRR(d);});
+  var s=samp(d.samples,300);
+  document.getElementById('ecgSampleCount').textContent=d.samples.length.toLocaleString()+' samples';
+  document.getElementById('ecgRawBody').innerHTML=s.map(function(p,i){
+    return '<tr><td class="cm">'+(i+1)+'</td><td class="cb">'+p.t.toFixed(4)+'</td><td class="cr">'+p.v.toFixed(2)+'</td></tr>';
+  }).join('');
+}
+
+/* ── ECG Canvas ── */
+function drawEcg(){
+  if(!ecgData)return;
+  var canvas=document.getElementById('ecgCanvas');
+  var wrap=canvas.parentElement;
+  var dpr=window.devicePixelRatio||1;
+  var cssW=wrap.clientWidth,cssH=220;
+  canvas.width=cssW*dpr;canvas.height=cssH*dpr;
+  canvas.style.width=cssW+'px';canvas.style.height=cssH+'px';
+  var ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+  var W=cssW,H=cssH;
+  var total=ecgData.duration;
+  var win=ecgWinSec===0?total:Math.min(ecgWinSec,total);
+  var start=ecgScrollPct/100*Math.max(0,total-win);
+  var end=start+win;
+  var vis=ecgData.samples.filter(function(s){return s.t>=start&&s.t<=end;});
+  if(!vis.length)return;
+  var vArr=vis.map(function(s){return s.v*ecgGain;});
+  var vMin=Math.min.apply(null,vArr),vMax=Math.max.apply(null,vArr);
+  var vPad=(vMax-vMin)*0.15||50;
+  var vLo=vMin-vPad,vHi=vMax+vPad;
+  var pad={l:58,r:16,t:16,b:32};
+  var pw=W-pad.l-pad.r,ph=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);
+  function xS(t){return pad.l+(t-start)/win*pw;}
+  function yS(v){return pad.t+(1-(v-vLo)/(vHi-vLo))*ph;}
+  var vMid=(vMax+vMin)/2;
+  ctx.beginPath();ctx.moveTo(pad.l,yS(vMid));ctx.lineTo(pad.l+pw,yS(vMid));
+  ctx.strokeStyle='rgba(74,240,160,0.1)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);
+  ecgData.rPeaks.filter(function(p){return p.t>=start&&p.t<=end;}).forEach(function(p){
+    var x=xS(p.t);
+    ctx.beginPath();ctx.moveTo(x,pad.t);ctx.lineTo(x,pad.t+ph);
+    ctx.strokeStyle='rgba(240,96,64,0.18)';ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(x,yS(p.v*ecgGain),3,0,Math.PI*2);ctx.fillStyle='#f06040';ctx.fill();
+  });
+  ctx.beginPath();
+  for(var i=0;i<vis.length;i++){
+    var x=xS(vis[i].t),y=yS(vis[i].v*ecgGain);
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  ctx.strokeStyle='#4af0a0';ctx.lineWidth=1.5;ctx.shadowColor='rgba(74,240,160,0.4)';ctx.shadowBlur=5;ctx.stroke();ctx.shadowBlur=0;
+  ctx.strokeStyle='rgba(74,240,160,0.2)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad.l,pad.t);ctx.lineTo(pad.l,pad.t+ph);ctx.moveTo(pad.l,pad.t+ph);ctx.lineTo(pad.l+pw,pad.t+ph);ctx.stroke();
+  ctx.fillStyle='#4a6080';ctx.font='9px monospace';ctx.textAlign='right';
+  for(var i=0;i<=5;i++){var v2=vLo+(vHi-vLo)*i/5;ctx.fillText(Math.round(v2)+'uV',pad.l-4,yS(v2)+3);}
+  ctx.textAlign='center';
+  var xt=Math.min(10,Math.floor(win));
+  for(var i=0;i<=xt;i++){var t2=start+i/xt*win;ctx.fillText(t2.toFixed(1)+'s',xS(t2),pad.t+ph+18);}
+  document.getElementById('ecgWindowInfo').textContent=start.toFixed(1)+'s - '+end.toFixed(1)+'s | '+vis.length+' samples | gain x'+ecgGain;
+}
+
+window.setWin=function(sec,btnId){
+  ecgWinSec=sec;ecgScrollPct=0;
+  document.getElementById('ecgScroll').value=0;
+  ['wb5','wb10','wb30','wb0'].forEach(function(id){document.getElementById(id).classList.remove('active');});
+  document.getElementById(btnId).classList.add('active');
+  drawEcg();
+};
+window.onScroll=function(){
+  ecgScrollPct=parseFloat(document.getElementById('ecgScroll').value);
+  drawEcg();
+};
+window.changeGain=function(delta){
+  ecgGain=Math.max(0.5,Math.min(5,Math.round((ecgGain+delta)*10)/10));
+  document.getElementById('gainLabel').textContent='x'+ecgGain;
+  drawEcg();
+};
+
+/* ── RR Charts ── */
+function renderRR(d){
+  var base={responsive:true,maintainAspectRatio:true,animation:{duration:400},plugins:{legend:{display:false},tooltip:{backgroundColor:'#111720',borderColor:'#1f2d3d',borderWidth:1,titleColor:'#4a6080',bodyColor:'#d4e4f4'}},scales:{x:{ticks:{color:'#4a6080',font:{size:9},maxTicksLimit:8},grid:{color:'rgba(31,45,61,0.4)'}},y:{ticks:{color:'#4a6080',font:{size:9},maxTicksLimit:5},grid:{color:'rgba(31,45,61,0.4)'}}}};
+  if(rrCI)rrCI.destroy();
+  rrCI=new Chart(document.getElementById('rrChart'),{type:'line',data:{labels:d.rrIntervals.map(function(_,i){return i+1;}),datasets:[{data:d.rrIntervals.map(function(v){return v.toFixed(1);}),borderColor:'#f0c040',backgroundColor:'rgba(240,192,64,0.06)',borderWidth:1.5,pointRadius:2,pointBackgroundColor:'#f0c040',fill:true,tension:0.3}]},options:base});
+  if(rrHistCI)rrHistCI.destroy();
+  var bins=histogram(d.rrIntervals,20);
+  rrHistCI=new Chart(document.getElementById('rrHistChart'),{type:'bar',data:{labels:bins.map(function(b){return b.lo+'-'+b.hi;}),datasets:[{data:bins.map(function(b){return b.count;}),backgroundColor:'rgba(64,160,240,0.5)',borderColor:'#40a0f0',borderWidth:1}]},options:base});
+}
+function histogram(arr,n){
+  if(!arr.length)return[];
+  var mn=Math.min.apply(null,arr),mx=Math.max.apply(null,arr),w=(mx-mn)/n;
+  if(w===0)return[];
+  var bins=[];
+  for(var i=0;i<n;i++)bins.push({lo:Math.round(mn+i*w),hi:Math.round(mn+(i+1)*w),count:0});
+  arr.forEach(function(v){var i=Math.min(Math.floor((v-mn)/w),n-1);bins[i].count++;});
+  return bins;
+}
+
+/* ── Helpers ── */
+function samp(arr,n){
+  if(arr.length<=n)return arr;
+  var step=arr.length/n,out=[];
+  for(var i=0;i<n;i++)out.push(arr[Math.min(Math.round(i*step),arr.length-1)]);
+  return out;
+}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function showErr(id,msg){var el=document.getElementById(id);el.textContent='! '+msg;el.classList.remove('hidden');}
+function hideErr(id){document.getElementById(id).classList.add('hidden');}
+function showLoader(id,show){document.getElementById(id).classList.toggle('hidden',!show);}
+function whenChart(fn){if(typeof Chart!=='undefined')fn();else setTimeout(function(){whenChart(fn);},100);}
+
+window.addEventListener('resize',function(){if(ecgData)drawEcg();});
+
+})();
+</script>
+</body>
+</html>
