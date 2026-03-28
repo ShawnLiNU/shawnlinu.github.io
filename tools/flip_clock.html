@@ -3,301 +3,551 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flip Clock</title>
+<title>Year Progress + Flip Clock</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 
 <style>
+/* ── TOKENS ── */
 :root {
-    --bg: #121212;
-    --text: #ffffff;
-    --card: #1e1e1e;
-    --sub: #888;
+    --bg:        #111111;
+    --surface:   #1a1a1a;
+    --border:    rgba(255,255,255,0.08);
+    --text:      #e8e8e8;
+    --muted:     rgba(255,255,255,0.28);
+    --dimmer:    rgba(255,255,255,0.10);
+    --half-fill: rgba(255,255,255,0.55);
+    --active:    #e8e8e8;
+    --crease:    rgba(255,255,255,0.06);
+
+    /* single source of truth for all row widths */
+    --row-w: min(90vw, 600px);
 }
 
-/* ===== THEMES (15 total) ===== */
-.theme-0 { --bg:#121212; --text:#fff; --card:#1e1e1e; --sub:#888; }
-.theme-1 { --bg:#f5f5f5; --text:#111; --card:#fff; --sub:#666; }
-.theme-2 { --bg:#0b132b; --text:#e0e1dd; --card:#1c2541; --sub:#778da9; }
-.theme-3 { --bg:#111; --text:#00ffcc; --card:#1a1a1a; --sub:#00aa88; }
-.theme-4 { --bg:#fafafa; --text:#222; --card:#eaeaea; --sub:#999; }
+.light {
+    --bg:        #f5f4f0;
+    --surface:   #ebebeb;
+    --border:    rgba(0,0,0,0.08);
+    --text:      #1a1a1a;
+    --muted:     rgba(0,0,0,0.28);
+    --dimmer:    rgba(0,0,0,0.10);
+    --half-fill: rgba(0,0,0,0.55);
+    --active:    #1a1a1a;
+    --crease:    rgba(0,0,0,0.06);
+}
 
-/* Michigan Tech */
-.theme-5 { --bg:#000000; --text:#ffcc00; --card:#111; --sub:#aa9900; }
-.theme-6 { --bg:#ffcc00; --text:#000; --card:#ffe680; --sub:#333; }
+/* ── RESET & BASE ── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-/* UPenn */
-.theme-7 { --bg:#011F5B; --text:#F2C100; --card:#012a7a; --sub:#F2C100; }
-.theme-8 { --bg:#f4f6f8; --text:#011f5b; --card:#ffffff; --sub:#555; }
-
-/* UVA */
-.theme-9  { --bg:#232d4b; --text:#f84c1e; --card:#2e3a63; --sub:#c8c8c8; }
-.theme-10 { --bg:#ffffff; --text:#232d4b; --card:#f2f2f2; --sub:#666; }
-
-/* Northeastern */
-.theme-11 { --bg:#2d2d2d; --text:#e03c31; --card:#3a3a3a; --sub:#bbb; }
-.theme-12 { --bg:#ffffff; --text:#e03c31; --card:#f4f4f4; --sub:#777; }
-
-/* Bonus */
-.theme-13 { --bg:#0f172a; --text:#e5e7eb; --card:#1e293b; --sub:#94a3b8; }
-.theme-14 { --bg:#f8fafc; --text:#0f172a; --card:#e2e8f0; --sub:#64748b; }
-
-/* ===== BASE ===== */
 body {
-    margin:0;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
-    background:var(--bg);
-    color:var(--text);
-    font-family:Arial, sans-serif;
-    overflow:hidden;
-    transition: all 0.3s;
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 0;
+    gap: 0;
+    transition: background 0.4s, color 0.4s;
 }
 
-.date,.quote {
-    font-size:7.5vw;
-    color:var(--sub);
+/* ── SHARED ROW WIDTH ── */
+.row {
+    width: var(--row-w);
 }
 
+/* ── HEADER ── */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 28px;
+}
+
+.year-label {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(22px, 5vw, 38px);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    line-height: 1;
+}
+
+.percent-label {
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(11px, 2.2vw, 15px);
+    font-weight: 300;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+/* ── DOT GRIDS ── */
+.grid-block {
+    margin-bottom: 10px;
+}
+
+.grid-label {
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 7px;
+    font-weight: 400;
+}
+
+.grid {
+    display: grid;
+    gap: 5px;
+}
+
+/* weeks row: two columns — dots left, quote right */
+.weeks-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+    margin-bottom: 10px;
+}
+
+.weeks-dots {
+    flex-shrink: 0;
+    /* width set by JS to match computed dot size × 13 cols */
+}
+
+.weeks-quote {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    gap: 4px;
+    padding-bottom: 1px; /* optical align with bottom dot row */
+}
+
+.quote-text {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    font-weight: 300;
+    font-style: italic;
+    text-align: right;
+    line-height: 1.5;
+}
+
+
+.dot {
+    position: relative;
+    /* size driven by JS-computed --dot-sz so both grids use identical dots */
+    width:  var(--dot-sz, 14px);
+    height: var(--dot-sz, 14px);
+    border-radius: 50%;
+    background: var(--dimmer);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.dot.active {
+    background: var(--active);
+}
+
+/* half-filled: dim base + bright left half overlay */
+.dot.half {
+    background: var(--dimmer);
+}
+.dot.half::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    width: 50%;
+    background: var(--half-fill);
+    border-radius: 0;
+}
+
+/* ── DIVIDER ── */
+.divider {
+    width: var(--row-w);
+    height: 1px;
+    background: var(--border);
+    margin: 22px 0;
+}
+
+/* ── FLIP CLOCK ── */
+.clock-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+}
+
+.date-label {
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+    font-size: clamp(12px, 2.6vw, 17px);
+    color: var(--muted);
+    letter-spacing: 0.04em;
+}
+
+.quote-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 400;
+}
+
+/* Clock grid:
+   cols:  1fr 1fr  [gap] auto [gap]  1fr 1fr  [gap] auto [gap]  1fr 1fr
+   The colons are auto-width flex elements; we use CSS grid instead.
+   8 digit cols + 2 colon cols = 10 columns total.
+   Each digit col = 1fr, colon col = auto (fixed em).           */
 .clock {
-    display:flex;
-    gap:1vw;
-    font-size:15vw;
-    font-weight:300;
+    display: grid;
+    /* HH : MM : SS  →  d d : d d : d d  = 8 digit + 2 colon cells */
+    grid-template-columns: 1fr 1fr auto 1fr 1fr auto 1fr 1fr;
+    gap: 4px;
+    align-items: stretch;
 }
 
+/* each flip tile */
 .flip {
-    position:relative;
-    width:1em;
-    height:1.5em;
+    position: relative;
+    aspect-ratio: 3 / 4;    /* slightly taller than wide — watch face proportion */
+    min-width: 0;
 }
 
-.card {
-    position:absolute;
-    width:100%;
-    height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:var(--card);
-    border-radius:6px;
+.flip-card {
+    position: absolute;
+    inset: 0;
+    background: var(--surface);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* hairline crease — split-flap aesthetic */
+.flip-card::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 1px;
+    background: var(--crease);
+    transform: translateY(-0.5px);
+    z-index: 2;
 }
 
 .face {
-    width:100%;
-    height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    transition: all 0.4s ease-in-out;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(18px, 9vw, 64px);
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    backface-visibility: hidden;
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    z-index: 1;
 }
 
 .face.back {
-    position:absolute;
-    opacity:0;
-    transform:rotateX(-180deg);
+    opacity: 0;
+    transform: translateY(-8px);
 }
 
-.card.flip .front {
-    opacity:0;
-    transform:rotateX(180deg);
+.flip-card.flipping .face.front {
+    opacity: 0;
+    transform: translateY(8px);
+}
+.flip-card.flipping .face.back {
+    opacity: 1;
+    transform: translateY(0);
 }
 
-.card.flip .back {
-    opacity:1;
-    transform:rotateX(0);
-}
-
+/* colon */
 .colon {
-    display:flex;
-    align-items:center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: clamp(10px, 2.5vw, 20px);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: clamp(16px, 7vw, 52px);
+    font-weight: 300;
+    line-height: 1;
+    padding-bottom: 2px;  /* optical alignment */
+    user-select: none;
 }
 
-/* ===== SUBTLE UI ===== */
-.ui-left, .ui-right {
-    position:fixed;
-    bottom:12px;
-    font-size:12px;
-    opacity:0.25;
-    color:var(--text);
-    letter-spacing:0.5px;
-    user-select:none;
-}
-
-.ui-left { left:16px; }
-.ui-right { right:16px; }
-
-a {
-    color:inherit;
-    text-decoration:none;
+/* ── FOOTER HINT ── */
+.hint {
+    margin-top: 22px;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: 0.5;
+    text-align: center;
 }
 </style>
 </head>
 
-<body class="theme-0">
+<body>
 
-<div class="date" id="date"></div>
-
-<div class="clock">
-    <div class="flip" id="hourTens"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
-    <div class="flip" id="hourOnes"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
-    <div class="colon">:</div>
-    <div class="flip" id="minuteTens"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
-    <div class="flip" id="minuteOnes"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
-    <div class="colon">:</div>
-    <div class="flip" id="secondTens"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
-    <div class="flip" id="secondOnes"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
+<!-- HEADER -->
+<div class="row header">
+    <div class="year-label" id="yearText"></div>
+    <div class="percent-label" id="percentText"></div>
 </div>
 
-<div class="quote">Time Flies</div>
+<!-- FLIP CLOCK -->
+<div class="row">
+    <div class="clock-meta">
+        <div class="date-label" id="date"></div>
+        <div class="quote-label">Time Flies</div>
+    </div>
 
-<!-- Subtle UI -->
-<div class="ui-left" id="uiLeft"></div>
-<div class="ui-right">
-    Author: <a href="https://www.linkedin.com/in/xian-shawn-l-51034b135/" target="_blank">Dr. Xian Li</a>
+    <div class="clock">
+        <div class="flip" id="hourTens">
+            <div class="flip-card">
+                <div class="face front">0</div>
+                <div class="face back">0</div>
+            </div>
+        </div>
+        <div class="flip" id="hourOnes">
+            <div class="flip-card">
+                <div class="face front">0</div>
+                <div class="face back">0</div>
+            </div>
+        </div>
+        <div class="colon">:</div>
+        <div class="flip" id="minuteTens">
+            <div class="flip-card">
+                <div class="face front">0</div>
+                <div class="face back">0</div>
+            </div>
+        </div>
+        <div class="flip" id="minuteOnes">
+            <div class="flip-card">
+                <div class="face front">0</div>
+                <div class="face back">0</div>
+            </div>
+        </div>
+        <div class="colon">:</div>
+        <div class="flip" id="secondTens">
+            <div class="flip-card">
+                <div class="face front">0</div>
+                <div class="face back">0</div>
+            </div>
+        </div>
+        <div class="flip" id="secondOnes">
+            <div class="flip-card">
+                <div class="face front">0</div>
+                <div class="face back">0</div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- WEEKS ROW: dots + quote side by side -->
+<div class="row weeks-row">
+    <div class="weeks-dots">
+        <div class="grid-label">weeks</div>
+        <div class="grid" id="weeksGrid"></div>
+    </div>
+    <div class="weeks-quote">
+        <div class="quote-text">
+          No guts. No glory.<br>
+          No fun. No story.<br>
+          — R. G. Nuranen
+        </div>
+    </div>
+</div>
+
+<!-- DAYS GRID -->
+<div class="row grid-block">
+    <div class="grid-label">days</div>
+    <div class="grid" id="daysGrid"></div>
+</div>
+
+<!-- HINT -->
+<div class="hint" id="hintText"></div>
 
 <script>
-let currentTheme = 0;
-
-const themes = [
-    "Dark","Light","Deep Blue","Neon","Soft",
-    "MTU Dark","MTU Light",
-    "UPenn Dark","UPenn Light",
-    "UVA Dark","UVA Light",
-    "NEU Dark","NEU Light",
-    "Slate Dark","Slate Light"
-];
-
-const totalThemes = themes.length;
-
-/* CAPABILITY DETECTION (real solution) */
-const isTouchPrimary = window.matchMedia("(pointer: coarse)").matches;
+/* ── CAPABILITY DETECTION ── */
+const isTouch  = window.matchMedia("(pointer: coarse)").matches;
 const hasHover = window.matchMedia("(hover: hover)").matches;
-const isDesktopLike = hasHover && !isTouchPrimary;
+const isDesktop = hasHover && !isTouch;
 
-/* CLOCK */
-function updateClock() {
-    const now = new Date();
-    const h = now.getHours().toString().padStart(2,'0');
-    const m = now.getMinutes().toString().padStart(2,'0');
-    const s = now.getSeconds().toString().padStart(2,'0');
+document.getElementById("hintText").textContent =
+    isDesktop ? "F  fullscreen   ·   N  toggle theme   ·   Dr. Xian Li" : "double-tap  fullscreen   ·   single-tap  theme   ·   Dr. Xian Li";
 
-    document.getElementById('date').textContent = now.toDateString();
+/* ── YEAR PROGRESS ── */
+const now0   = new Date();
+const year   = now0.getFullYear();
+const start  = new Date(year, 0, 1);
+const end    = new Date(year + 1, 0, 1);
 
-    updateFlip('hourTens', h[0]);
-    updateFlip('hourOnes', h[1]);
-    updateFlip('minuteTens', m[0]);
-    updateFlip('minuteOnes', m[1]);
-    updateFlip('secondTens', s[0]);
-    updateFlip('secondOnes', s[1]);
+const totalDays  = Math.floor((end - start) / 864e5);
+const dayOfYear  = Math.floor((now0 - start) / 864e5);
+const totalWeeks = 52;
+const weekOfYear = Math.floor(dayOfYear / 7);
+const percentLeft = (100 * (1 - dayOfYear / totalDays)).toFixed(1);
 
-    updateUI();
+document.getElementById("yearText").textContent = year;
+document.getElementById("percentText").textContent = percentLeft + "% left";
+
+/* ── BUILD DOT GRID ── */
+/*  Dot size computed from days grid (31 cols — the denser one)
+    so both week and day dots are exactly the same pixel size.
+    active  = fully lit (index 0 … active-1)
+    active  = half-filled current dot
+    beyond  = dim                                              */
+
+const GAP = 5;
+const DAYS_COLS = 31;
+const WEEKS_COLS = 13;
+
+function computeDotSize() {
+    const rowW = Math.min(window.innerWidth * 0.9, 600);
+    return (rowW - (DAYS_COLS - 1) * GAP) / DAYS_COLS;
 }
 
-function updateFlip(id, val) {
-    const el = document.getElementById(id);
-    const front = el.querySelector('.front');
+function applyDotSize() {
+    const sz = computeDotSize();
+    document.documentElement.style.setProperty('--dot-sz', sz + 'px');
+    // set weeks-dots column to its natural width so quote fills the rest
+    const weeksW = WEEKS_COLS * sz + (WEEKS_COLS - 1) * GAP;
+    document.querySelector('.weeks-dots').style.width = weeksW + 'px';
+    return sz;
+}
 
-    if (front.textContent !== val) {
-        const card = el.querySelector('.card');
-        card.classList.add('flip');
-
-        setTimeout(()=>{
-            el.querySelector('.back').textContent = val;
-            card.classList.remove('flip');
-            setTimeout(()=>{ front.textContent = val; },200);
-        },200);
+function buildGrid(id, total, active, cols) {
+    const sz = computeDotSize();
+    const grid = document.getElementById(id);
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${sz}px)`;
+    grid.innerHTML = "";
+    for (let i = 0; i < total; i++) {
+        const dot = document.createElement("div");
+        dot.className = "dot";
+        if (i < active)        dot.classList.add("active");
+        else if (i === active) dot.classList.add("half");
+        grid.appendChild(dot);
     }
 }
 
-/* UI TEXT */
-function updateUI() {
-    const ui = document.getElementById('uiLeft');
+applyDotSize();
 
-    if (isTouchPrimary) {
-        ui.textContent =
-            `Tap Left: Prev | Tap Right: Next | Double Tap: Fullscreen  •  Theme #${currentTheme} (${themes[currentTheme]})`;
-    } else {
-        ui.textContent =
-            `F: Fullscreen | N: Next | P: Prev  •  Theme #${currentTheme} (${themes[currentTheme]})`;
-    }
-}
+// weeks: 52 dots, 13 cols → 4 rows
+buildGrid("weeksGrid", totalWeeks, weekOfYear, WEEKS_COLS);
 
-/* FULLSCREEN */
-function toggleFullscreen() {
-    const el = document.documentElement;
+// days: totalDays dots, 31 cols
+buildGrid("daysGrid", totalDays, dayOfYear, DAYS_COLS);
 
-    if (!document.fullscreenElement) {
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-    } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-    }
-}
-
-/* THEME CONTROL */
-function nextTheme() {
-    document.body.classList.remove(`theme-${currentTheme}`);
-    currentTheme = (currentTheme + 1) % totalThemes;
-    document.body.classList.add(`theme-${currentTheme}`);
-    updateUI();
-}
-
-function prevTheme() {
-    document.body.classList.remove(`theme-${currentTheme}`);
-    currentTheme = (currentTheme - 1 + totalThemes) % totalThemes;
-    document.body.classList.add(`theme-${currentTheme}`);
-    updateUI();
-}
-
-/* DESKTOP KEY CONTROLS */
-document.addEventListener('keydown', (e) => {
-    if (!isDesktopLike) return;
-
-    const key = e.key.toLowerCase();
-
-    if (key === 'f') toggleFullscreen();
-    if (key === 'n') nextTheme();
-    if (key === 'p') prevTheme();
+// re-compute on resize / orientation change
+window.addEventListener("resize", () => {
+    applyDotSize();
+    const sz = computeDotSize();
+    [["weeksGrid", WEEKS_COLS], ["daysGrid", DAYS_COLS]].forEach(([id, cols]) => {
+        const g = document.getElementById(id);
+        g.style.gridTemplateColumns = `repeat(${cols}, ${sz}px)`;
+        g.querySelectorAll(".dot").forEach(d => {
+            d.style.width  = sz + "px";
+            d.style.height = sz + "px";
+        });
+    });
 });
 
-/* TOUCH GESTURES (only if touch-primary) */
-let lastTap = 0;
-let tapTimeout = null;
+/* ── FLIP CLOCK ── */
+function updateClock() {
+    const t = new Date();
+    const h = t.getHours().toString().padStart(2, "0");
+    const m = t.getMinutes().toString().padStart(2, "0");
+    const s = t.getSeconds().toString().padStart(2, "0");
 
-if (isTouchPrimary) {
-    document.addEventListener("touchend", (e) => {
-        const currentTime = Date.now();
-        const tapLength = currentTime - lastTap;
+    // Date formatted as "Saturday, March 28"
+    document.getElementById("date").textContent =
+        t.toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
 
-        if (tapLength < 300 && tapLength > 0) {
-            // DOUBLE TAP
-            clearTimeout(tapTimeout);
-            toggleFullscreen();
-        } else {
-            // SINGLE TAP
-            tapTimeout = setTimeout(() => {
-                const x = e.changedTouches[0].clientX;
-                const width = window.innerWidth;
-
-                if (x < width / 2) {
-                    prevTheme();
-                } else {
-                    nextTheme();
-                }
-            }, 250);
-        }
-
-        lastTap = currentTime;
-    });
+    flip("hourTens",   h[0]);
+    flip("hourOnes",   h[1]);
+    flip("minuteTens", m[0]);
+    flip("minuteOnes", m[1]);
+    flip("secondTens", s[0]);
+    flip("secondOnes", s[1]);
 }
 
-/* INIT */
+// Track the displayed value to avoid redundant flips
+const _displayed = {};
+
+function flip(id, val) {
+    if (_displayed[id] === val) return;
+    _displayed[id] = val;
+
+    const tile  = document.getElementById(id);
+    const card  = tile.querySelector(".flip-card");
+    const front = tile.querySelector(".face.front");
+    const back  = tile.querySelector(".face.back");
+
+    if (card.classList.contains("flipping")) return; // guard mid-animation
+
+    back.textContent = val;
+    card.classList.add("flipping");
+
+    setTimeout(() => {
+        front.textContent = val;
+        card.classList.remove("flipping");
+    }, 240);
+}
+
 setInterval(updateClock, 1000);
 updateClock();
+
+/* ── FULLSCREEN ── */
+function toggleFullscreen() {
+    const el = document.documentElement;
+    if (!document.fullscreenElement) {
+        (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+    } else {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    }
+}
+
+/* ── THEME ── */
+function toggleTheme() {
+    document.body.classList.toggle("light");
+}
+
+/* ── DESKTOP KEYS ── */
+document.addEventListener("keydown", e => {
+    if (!isDesktop) return;
+    const k = e.key.toLowerCase();
+    if (k === "f") toggleFullscreen();
+    if (k === "n") toggleTheme();
+});
+
+/* ── TOUCH GESTURES ── */
+let lastTap = 0, tapTimer = null;
+if (isTouch) {
+    document.addEventListener("touchend", e => {
+        const now = Date.now();
+        const delta = now - lastTap;
+        if (delta < 300 && delta > 0) {
+            clearTimeout(tapTimer);
+            toggleFullscreen();
+        } else {
+            tapTimer = setTimeout(toggleTheme, 260);
+        }
+        lastTap = now;
+    });
+}
 </script>
 
 </body>
