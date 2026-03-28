@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flip Clock</title>
+
+<style>
+:root {
+    --bg: #121212;
+    --text: #ffffff;
+    --card: #1e1e1e;
+    --sub: #888;
+}
+
+/* ===== THEMES (15 total) ===== */
+.theme-0 { --bg:#121212; --text:#fff; --card:#1e1e1e; --sub:#888; }
+.theme-1 { --bg:#f5f5f5; --text:#111; --card:#fff; --sub:#666; }
+.theme-2 { --bg:#0b132b; --text:#e0e1dd; --card:#1c2541; --sub:#778da9; }
+.theme-3 { --bg:#111; --text:#00ffcc; --card:#1a1a1a; --sub:#00aa88; }
+.theme-4 { --bg:#fafafa; --text:#222; --card:#eaeaea; --sub:#999; }
+
+/* Michigan Tech */
+.theme-5 { --bg:#000000; --text:#ffcc00; --card:#111; --sub:#aa9900; }
+.theme-6 { --bg:#ffcc00; --text:#000; --card:#ffe680; --sub:#333; }
+
+/* UPenn */
+.theme-7 { --bg:#011F5B; --text:#F2C100; --card:#012a7a; --sub:#F2C100; }
+.theme-8 { --bg:#f4f6f8; --text:#011f5b; --card:#ffffff; --sub:#555; }
+
+/* UVA */
+.theme-9  { --bg:#232d4b; --text:#f84c1e; --card:#2e3a63; --sub:#c8c8c8; }
+.theme-10 { --bg:#ffffff; --text:#232d4b; --card:#f2f2f2; --sub:#666; }
+
+/* Northeastern */
+.theme-11 { --bg:#2d2d2d; --text:#e03c31; --card:#3a3a3a; --sub:#bbb; }
+.theme-12 { --bg:#ffffff; --text:#e03c31; --card:#f4f4f4; --sub:#777; }
+
+/* Bonus */
+.theme-13 { --bg:#0f172a; --text:#e5e7eb; --card:#1e293b; --sub:#94a3b8; }
+.theme-14 { --bg:#f8fafc; --text:#0f172a; --card:#e2e8f0; --sub:#64748b; }
+
+/* ===== BASE ===== */
+body {
+    margin:0;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Arial, sans-serif;
+    overflow:hidden;
+    transition: all 0.3s;
+}
+
+.date,.quote {
+    font-size:7.5vw;
+    color:var(--sub);
+}
+
+.clock {
+    display:flex;
+    gap:1vw;
+    font-size:15vw;
+    font-weight:300;
+}
+
+.flip {
+    position:relative;
+    width:1em;
+    height:1.5em;
+}
+
+.card {
+    position:absolute;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--card);
+    border-radius:6px;
+}
+
+.face {
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: all 0.4s ease-in-out;
+}
+
+.face.back {
+    position:absolute;
+    opacity:0;
+    transform:rotateX(-180deg);
+}
+
+.card.flip .front {
+    opacity:0;
+    transform:rotateX(180deg);
+}
+
+.card.flip .back {
+    opacity:1;
+    transform:rotateX(0);
+}
+
+.colon {
+    display:flex;
+    align-items:center;
+}
+
+/* ===== SUBTLE UI ===== */
+.ui-left, .ui-right {
+    position:fixed;
+    bottom:12px;
+    font-size:12px;
+    opacity:0.25;
+    color:var(--text);
+    letter-spacing:0.5px;
+    user-select:none;
+}
+
+.ui-left { left:16px; }
+.ui-right { right:16px; }
+
+a {
+    color:inherit;
+    text-decoration:none;
+}
+</style>
+</head>
+
+<body class="theme-0">
+
+<div class="date" id="date"></div>
+
+<div class="clock">
+    <div class="flip" id="hourTens"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
+    <div class="flip" id="hourOnes"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
+    <div class="colon">:</div>
+    <div class="flip" id="minuteTens"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
+    <div class="flip" id="minuteOnes"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
+    <div class="colon">:</div>
+    <div class="flip" id="secondTens"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
+    <div class="flip" id="secondOnes"><div class="card"><div class="face front">0</div><div class="face back">0</div></div></div>
+</div>
+
+<div class="quote">Time Flies</div>
+
+<!-- Subtle UI -->
+<div class="ui-left" id="uiLeft"></div>
+<div class="ui-right">
+    Author: <a href="https://www.linkedin.com/in/xian-shawn-l-51034b135/" target="_blank">Dr. Xian Li</a>
+</div>
+
+<script>
+let currentTheme = 0;
+
+const themes = [
+    "Dark","Light","Deep Blue","Neon","Soft",
+    "MTU Dark","MTU Light",
+    "UPenn Dark","UPenn Light",
+    "UVA Dark","UVA Light",
+    "NEU Dark","NEU Light",
+    "Slate Dark","Slate Light"
+];
+
+const totalThemes = themes.length;
+
+/* CAPABILITY DETECTION (real solution) */
+const isTouchPrimary = window.matchMedia("(pointer: coarse)").matches;
+const hasHover = window.matchMedia("(hover: hover)").matches;
+const isDesktopLike = hasHover && !isTouchPrimary;
+
+/* CLOCK */
+function updateClock() {
+    const now = new Date();
+    const h = now.getHours().toString().padStart(2,'0');
+    const m = now.getMinutes().toString().padStart(2,'0');
+    const s = now.getSeconds().toString().padStart(2,'0');
+
+    document.getElementById('date').textContent = now.toDateString();
+
+    updateFlip('hourTens', h[0]);
+    updateFlip('hourOnes', h[1]);
+    updateFlip('minuteTens', m[0]);
+    updateFlip('minuteOnes', m[1]);
+    updateFlip('secondTens', s[0]);
+    updateFlip('secondOnes', s[1]);
+
+    updateUI();
+}
+
+function updateFlip(id, val) {
+    const el = document.getElementById(id);
+    const front = el.querySelector('.front');
+
+    if (front.textContent !== val) {
+        const card = el.querySelector('.card');
+        card.classList.add('flip');
+
+        setTimeout(()=>{
+            el.querySelector('.back').textContent = val;
+            card.classList.remove('flip');
+            setTimeout(()=>{ front.textContent = val; },200);
+        },200);
+    }
+}
+
+/* UI TEXT */
+function updateUI() {
+    const ui = document.getElementById('uiLeft');
+
+    if (isTouchPrimary) {
+        ui.textContent =
+            `Tap Left: Prev | Tap Right: Next | Double Tap: Fullscreen  •  Theme #${currentTheme} (${themes[currentTheme]})`;
+    } else {
+        ui.textContent =
+            `F: Fullscreen | N: Next | P: Prev  •  Theme #${currentTheme} (${themes[currentTheme]})`;
+    }
+}
+
+/* FULLSCREEN */
+function toggleFullscreen() {
+    const el = document.documentElement;
+
+    if (!document.fullscreenElement) {
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    }
+}
+
+/* THEME CONTROL */
+function nextTheme() {
+    document.body.classList.remove(`theme-${currentTheme}`);
+    currentTheme = (currentTheme + 1) % totalThemes;
+    document.body.classList.add(`theme-${currentTheme}`);
+    updateUI();
+}
+
+function prevTheme() {
+    document.body.classList.remove(`theme-${currentTheme}`);
+    currentTheme = (currentTheme - 1 + totalThemes) % totalThemes;
+    document.body.classList.add(`theme-${currentTheme}`);
+    updateUI();
+}
+
+/* DESKTOP KEY CONTROLS */
+document.addEventListener('keydown', (e) => {
+    if (!isDesktopLike) return;
+
+    const key = e.key.toLowerCase();
+
+    if (key === 'f') toggleFullscreen();
+    if (key === 'n') nextTheme();
+    if (key === 'p') prevTheme();
+});
+
+/* TOUCH GESTURES (only if touch-primary) */
+let lastTap = 0;
+let tapTimeout = null;
+
+if (isTouchPrimary) {
+    document.addEventListener("touchend", (e) => {
+        const currentTime = Date.now();
+        const tapLength = currentTime - lastTap;
+
+        if (tapLength < 300 && tapLength > 0) {
+            // DOUBLE TAP
+            clearTimeout(tapTimeout);
+            toggleFullscreen();
+        } else {
+            // SINGLE TAP
+            tapTimeout = setTimeout(() => {
+                const x = e.changedTouches[0].clientX;
+                const width = window.innerWidth;
+
+                if (x < width / 2) {
+                    prevTheme();
+                } else {
+                    nextTheme();
+                }
+            }, 250);
+        }
+
+        lastTap = currentTime;
+    });
+}
+
+/* INIT */
+setInterval(updateClock, 1000);
+updateClock();
+</script>
+
+</body>
+</html>

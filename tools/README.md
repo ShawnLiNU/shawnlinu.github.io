@@ -63,6 +63,17 @@ Real-time PID tuning tool for EECE 5580 — Classical Control Systems.
 
 ---
 
+### Flip Clock
+`flip_clock.html`
+
+A minimalist flip clock with smooth card-flip animations.
+
+- Displays hours, minutes, and seconds with realistic flip card transitions
+- Designed for large displays, desktops, and mobile with adaptive layout
+- Theme customization options
+
+---
+
 ### Serial Data Logger Viewer
 `serial_logger.html`
 
@@ -85,6 +96,7 @@ tools/
 ├── index.html                    ← this page (tools gallery)
 ├── README.md                     ← this file
 ├── apple_health_viewer.html
+├── flip_clock.html
 ├── kalman_filter_visualizer.html
 ├── robot_kinematics.html
 ├── pid_tuner.html
