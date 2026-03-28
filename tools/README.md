@@ -35,22 +35,38 @@ Interactive Kalman filter demo for EECE 5554 — Robot Sensing & Navigation.
 
 ---
 
+### Robot Kinematics Calculator
+`robot_kinematics.html`
+
+Forward kinematics calculator for serial manipulators using Denavit-Hartenberg parameters — for EECE 5554.
+
+- Enter DH parameters (a, α, d, θ) for any number of joints; toggle between Revolute and Prismatic joint types
+- Computes the full T₀ⁿ transformation matrix and end-effector pose (XYZ position + Roll/Pitch/Yaw)
+- **3D interactive view** — drag to orbit, scroll to zoom; all joints and frame axes always visible even when links have zero length
+- **2D projection** — auto-selects side (XZ) or top (XY) view based on arm geometry
+- Presets: **3R Planar**, **Stanford**, **PUMA 560**, **UR12e** (official Universal Robots parameters), **Custom**
+- Uses Modified DH (Craig) convention, consistent with Craig's *Introduction to Robotics*
+
+---
+
 ## File Structure
 
 ```
 tools/
-├── index.html                    ← this page
+├── index.html                    ← this page (tools gallery)
 ├── README.md                     ← this file
 ├── apple_health_viewer.html
-└── kalman_filter_visualizer.html
+├── kalman_filter_visualizer.html
+└── robot_kinematics.html
 ```
 
 ## Adding a New Tool
 
 1. Drop the `.html` file into `tools/`
-2. Copy the commented template card in `index.html` and fill in `href`, icon, name, description, and badges
+2. Copy the commented template card in `index.html`, fill in `href`, icon, name, description, and badges; bump `animation-delay` by `0.05s`
 3. Add a `###` section here in `README.md`
-4. Commit and push — GitHub Pages deploys in ~60 seconds
+4. Update the file structure block above
+5. Commit and push — GitHub Pages deploys in ~60 seconds
 
 ---
 

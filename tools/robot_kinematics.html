@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robot Kinematics Calculator &mdash; EECE 5554</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #070b0f;
+  --panel:    #0c1118;
+  --surface:  #101820;
+  --surface2: #141f28;
+  --border:   #1a2d3d;
+  --border2:  #223344;
+  --cyan:     #00d4ff;
+  --cyan-dim: rgba(0,212,255,0.10);
+  --cyan-glow:rgba(0,212,255,0.22);
+  --green:    #39e896;
+  --amber:    #f0b840;
+  --red:      #f05060;
+  --blue:     #4a90e8;
+  --violet:   #a070f0;
+  --text:     #c0d8e8;
+  --muted:    #3d5568;
+  --muted2:   #253545;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Mono',monospace;
+  min-height:100vh;overflow-x:hidden;
+}
+/* blueprint grid */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,0.028) 1px,transparent 1px),
+    linear-gradient(rgba(0,212,255,0.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,0.012) 1px,transparent 1px);
+  background-size:80px 80px,80px 80px,16px 16px,16px 16px;
+  pointer-events:none;
+}
+.app{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:28px 20px 60px;}
+
+/* ── Header ── */
+header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  flex-wrap:wrap;gap:14px;margin-bottom:28px;
+  padding-bottom:20px;border-bottom:1px solid var(--border);
+}
+.breadcrumb{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.breadcrumb a{color:var(--muted);text-decoration:none;transition:color 0.2s;}
+.breadcrumb a:hover{color:var(--cyan);}
+.breadcrumb .sep{margin:0 6px;opacity:0.4;}
+h1{font-family:'Instrument Serif',serif;font-size:1.8rem;font-weight:400;letter-spacing:-0.01em;line-height:1.1;margin-bottom:4px;}
+h1 em{color:var(--cyan);font-style:italic;}
+.tagline{font-size:0.65rem;color:var(--muted);letter-spacing:0.08em;}
+
+/* preset selector */
+.preset-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;align-self:flex-end;}
+.preset-label{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);}
+.preset-btn{
+  background:var(--surface);border:1px solid var(--border2);
+  color:var(--text);font-family:'DM Mono',monospace;font-size:0.68rem;
+  padding:5px 13px;border-radius:7px;cursor:pointer;transition:all 0.2s;
+}
+.preset-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.preset-btn.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim);}
+
+/* ── Main layout ── */
+.main-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  grid-template-rows:auto auto;
+  gap:16px;
+}
+@media(max-width:1000px){.main-grid{grid-template-columns:1fr;}}
+
+/* ── Panel shell ── */
+.panel{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;
+}
+.panel-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;background:var(--surface);border-bottom:1px solid var(--border);
+}
+.panel-title{font-size:0.6rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);}
+.panel-actions{display:flex;gap:6px;}
+.act-btn{
+  background:none;border:1px solid var(--border2);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:0.65rem;
+  padding:3px 10px;border-radius:6px;cursor:pointer;transition:all 0.18s;
+}
+.act-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+.act-btn.danger:hover{border-color:var(--red);color:var(--red);}
+
+/* ── DH Table ── */
+.dh-table-wrap{overflow-x:auto;padding:0;}
+table.dh{width:100%;border-collapse:collapse;font-size:0.72rem;}
+table.dh thead th{
+  padding:8px 10px;text-align:center;
+  font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--border);
+  background:var(--surface2);font-weight:500;
+}
+table.dh thead th:first-child{text-align:left;padding-left:14px;}
+table.dh tbody tr{border-bottom:1px solid rgba(26,45,61,0.6);transition:background 0.15s;}
+table.dh tbody tr:last-child{border-bottom:none;}
+table.dh tbody tr:hover{background:rgba(0,212,255,0.03);}
+table.dh tbody td{padding:6px 6px;text-align:center;vertical-align:middle;}
+table.dh tbody td:first-child{text-align:left;padding-left:14px;}
+
+/* joint label */
+.jt-label{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:22px;height:22px;border-radius:50%;
+  font-size:0.65rem;font-weight:500;
+  border:1.5px solid var(--cyan);color:var(--cyan);
+  background:var(--cyan-dim);
+}
+
+/* DH inputs */
+.dh-input{
+  font-family:'DM Mono',monospace;font-size:0.72rem;
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--text);border-radius:5px;
+  padding:4px 6px;width:80px;text-align:right;outline:none;
+  transition:border-color 0.15s,box-shadow 0.15s;
+  -moz-appearance:textfield;
+}
+.dh-input::-webkit-outer-spin-button,.dh-input::-webkit-inner-spin-button{-webkit-appearance:none;}
+.dh-input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px var(--cyan-dim);}
+.dh-input.theta{color:var(--amber);}
+.dh-input.theta:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(240,184,64,0.12);}
+
+/* joint type toggle */
+.jtype-btn{
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--muted);font-family:'DM Mono',monospace;font-size:0.6rem;
+  padding:3px 7px;border-radius:5px;cursor:pointer;transition:all 0.15s;
+  letter-spacing:0.06em;
+}
+.jtype-btn.revolute{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim);}
+.jtype-btn.prismatic{border-color:var(--violet);color:var(--violet);background:rgba(160,112,240,0.1);}
+
+.del-btn{
+  background:none;border:none;cursor:pointer;color:var(--muted2);
+  font-size:0.9rem;padding:2px 5px;border-radius:4px;transition:color 0.15s;
+}
+.del-btn:hover{color:var(--red);}
+
+/* add joint bar */
+.add-row{padding:10px 14px;border-top:1px solid var(--border);}
+.add-btn{
+  background:none;border:1px dashed var(--border2);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:0.65rem;letter-spacing:0.08em;
+  padding:6px 14px;border-radius:7px;cursor:pointer;width:100%;
+  transition:all 0.2s;
+}
+.add-btn:hover{border-color:var(--cyan);color:var(--cyan);}
+
+/* ── Compute button ── */
+.compute-bar{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;}
+.compute-btn{
+  flex:1;background:var(--cyan-dim);border:1px solid var(--cyan);
+  color:var(--cyan);font-family:'DM Mono',monospace;font-size:0.72rem;
+  letter-spacing:0.1em;text-transform:uppercase;
+  padding:9px;border-radius:8px;cursor:pointer;
+  transition:all 0.2s;
+  box-shadow:0 0 14px var(--cyan-dim);
+}
+.compute-btn:hover{background:rgba(0,212,255,0.18);box-shadow:0 0 22px var(--cyan-glow);}
+
+/* ── View toggle ── */
+.view-toggle{display:flex;gap:4px;}
+.view-btn{
+  background:none;border:1px solid var(--border2);
+  color:var(--muted);font-family:'DM Mono',monospace;font-size:0.62rem;
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:4px 12px;border-radius:6px;cursor:pointer;transition:all 0.18s;
+}
+.view-btn:hover{color:var(--text);}
+.view-btn.active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim);}
+
+/* ── Canvas panels ── */
+.viz-panel{grid-row:1/3;}
+.canvas-wrap{position:relative;background:#060a0d;}
+#canvas2d,#canvas3d{display:block;width:100%;}
+#canvas3d{cursor:grab;}
+#canvas3d:active{cursor:grabbing;}
+.canvas-overlay{
+  position:absolute;top:10px;left:12px;
+  font-size:0.58rem;color:var(--muted);letter-spacing:0.08em;
+  pointer-events:none;
+}
+.canvas-overlay span{display:block;line-height:1.8;}
+.canvas-overlay .hi{color:var(--cyan);}
+
+/* ── EE Pose panel ── */
+.pose-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:14px;}
+.pose-cell{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:9px;padding:10px 12px;
+}
+.pose-label{font-size:0.52rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.pose-val{font-family:'Instrument Serif',serif;font-size:1.3rem;line-height:1;}
+.pose-val.cx{color:var(--red);}
+.pose-val.cy{color:var(--green);}
+.pose-val.cz{color:var(--blue);}
+.pose-val.ca{color:var(--amber);}
+
+/* ── Transform matrix display ── */
+.matrix-wrap{padding:14px;overflow-x:auto;}
+.matrix-label{font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.matrix-grid{
+  display:inline-grid;grid-template-columns:repeat(4,1fr);
+  gap:3px;background:var(--surface2);
+  border:1px solid var(--border);border-radius:8px;
+  padding:10px;min-width:260px;
+}
+.m-cell{
+  font-size:0.68rem;text-align:right;padding:3px 8px;
+  color:var(--text);border-radius:3px;
+  font-family:'DM Mono',monospace;
+}
+.m-cell.rot{color:var(--cyan);}
+.m-cell.pos{color:var(--amber);}
+.m-cell.bot{color:var(--muted);}
+
+/* ── Joint transforms accordion ── */
+.joint-transforms{padding:0 14px 14px;}
+.jt-toggle{
+  width:100%;background:none;border:1px solid var(--border);
+  color:var(--muted);font-family:'DM Mono',monospace;font-size:0.62rem;
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:7px 12px;border-radius:7px;cursor:pointer;text-align:left;
+  transition:all 0.18s;margin-bottom:6px;display:flex;justify-content:space-between;
+}
+.jt-toggle:hover{border-color:var(--cyan);color:var(--cyan);}
+.jt-toggle.open{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-dim);}
+
+/* ── Animations ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.app>*{animation:fadeUp 0.35s ease both;}
+header{animation-delay:0s;}
+.main-grid{animation-delay:0.07s;}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 14px var(--cyan-dim);}50%{box-shadow:0 0 28px var(--cyan-glow);}}
+
+/* ── Responsive ── */
+@media(max-width:700px){
+  .pose-grid{grid-template-columns:1fr 1fr;}
+  h1{font-size:1.4rem;}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ── Header ── -->
+<header>
+  <div>
+    <div class="breadcrumb">
+      <a href="/">shawnlinu.github.io</a><span class="sep">/</span>
+      <a href="/tools/">tools</a><span class="sep">/</span>
+      <span style="color:var(--cyan)">robot-kinematics</span>
+    </div>
+    <h1>Robot Kinematics <em>Calculator</em></h1>
+    <div class="tagline">EECE 5554 &mdash; Forward Kinematics via Denavit-Hartenberg Parameters</div>
+  </div>
+  <div class="preset-bar">
+    <span class="preset-label">Presets</span>
+    <button class="preset-btn active" id="pre-3r" onclick="loadPreset('3R')">3R Planar</button>
+    <button class="preset-btn" id="pre-stanford" onclick="loadPreset('Stanford')">Stanford</button>
+    <button class="preset-btn" id="pre-puma" onclick="loadPreset('PUMA')">PUMA 560</button>
+    <button class="preset-btn" id="pre-ur12e" onclick="loadPreset('UR12e')">UR12e</button>
+    <button class="preset-btn" id="pre-custom" onclick="loadPreset('Custom')">Custom</button>
+  </div>
+</header>
+
+<!-- ── Main ── -->
+<div class="main-grid">
+
+  <!-- LEFT: DH Table -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">DH Parameters &mdash; Modified (Craig) Convention</span>
+        <div class="panel-actions">
+          <button class="act-btn" onclick="clearAll()">Clear</button>
+        </div>
+      </div>
+      <div class="dh-table-wrap">
+        <table class="dh">
+          <thead>
+            <tr>
+              <th>Joint</th>
+              <th>Type</th>
+              <th title="Link length along X_{i-1}">a (mm)</th>
+              <th title="Link twist about X_{i-1}">&#945; (deg)</th>
+              <th title="Link offset along Z_i">d (mm)</th>
+              <th title="Joint angle about Z_i">&#952; (deg)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="dhBody"></tbody>
+        </table>
+      </div>
+      <div class="add-row">
+        <button class="add-btn" onclick="addJoint()">+ Add Joint</button>
+      </div>
+      <div class="compute-bar">
+        <button class="compute-btn" onclick="compute()">&#9654; Compute Forward Kinematics</button>
+      </div>
+    </div>
+
+    <!-- EE Pose -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">End-Effector Pose</span>
+      </div>
+      <div class="pose-grid">
+        <div class="pose-cell">
+          <div class="pose-label">X position</div>
+          <div class="pose-val cx" id="ee-x">--</div>
+          <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">mm</div>
+        </div>
+        <div class="pose-cell">
+          <div class="pose-label">Y position</div>
+          <div class="pose-val cy" id="ee-y">--</div>
+          <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">mm</div>
+        </div>
+        <div class="pose-cell">
+          <div class="pose-label">Z position</div>
+          <div class="pose-val cz" id="ee-z">--</div>
+          <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">mm</div>
+        </div>
+        <div class="pose-cell">
+          <div class="pose-label">Roll (X)</div>
+          <div class="pose-val ca" id="ee-roll">--</div>
+          <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">deg</div>
+        </div>
+        <div class="pose-cell">
+          <div class="pose-label">Pitch (Y)</div>
+          <div class="pose-val ca" id="ee-pitch">--</div>
+          <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">deg</div>
+        </div>
+        <div class="pose-cell">
+          <div class="pose-label">Yaw (Z)</div>
+          <div class="pose-val ca" id="ee-yaw">--</div>
+          <div style="font-size:0.58rem;color:var(--muted);margin-top:3px">deg</div>
+        </div>
+      </div>
+      <!-- T matrix -->
+      <div class="matrix-wrap">
+        <div class="matrix-label">Transformation Matrix &mdash; T<sub>0</sub><sup>n</sup> (base to end-effector)</div>
+        <div class="matrix-grid" id="tMatrix">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Visualization -->
+  <div class="panel viz-panel">
+    <div class="panel-header">
+      <span class="panel-title" id="vizTitle">3D View &mdash; Drag to rotate &middot; Scroll to zoom</span>
+      <div class="view-toggle">
+        <button class="view-btn" id="vbtn2d" onclick="setView('2d')">2D</button>
+        <button class="view-btn active" id="vbtn3d" onclick="setView('3d')">3D</button>
+      </div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="canvas2d" style="display:none"></canvas>
+      <canvas id="canvas3d"></canvas>
+      <div class="canvas-overlay" id="canvasHint">
+        <span class="hi" id="hintLine1">Ready</span>
+        <span id="hintLine2">Set DH params &amp; compute</span>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main-grid -->
+</div><!-- /app -->
+
+<script>
+(function(){
+'use strict';
+
+/* ══════════════════════════════════════════
+   MATH UTILS
+══════════════════════════════════════════ */
+var D2R=Math.PI/180, R2D=180/Math.PI;
+
+function mat4(){
+  return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];
+}
+function identity(){return mat4();}
+
+/* Column-major 4x4 matrix multiply: C = A*B */
+function mul4(A,B){
+  var C=mat4();
+  for(var col=0;col<4;col++){
+    for(var row=0;row<4;row++){
+      var s=0;
+      for(var k=0;k<4;k++) s+=A[row+k*4]*B[k+col*4];
+      C[row+col*4]=s;
+    }
+  }
+  return C;
+}
+
+/* DH transform (Modified Craig convention)
+   T_i = Rot_x(alpha_{i-1}) * Trans_x(a_{i-1}) * Rot_z(theta_i) * Trans_z(d_i) */
+function dhTransform(a, alpha, d, theta){
+  var ca=Math.cos(alpha*D2R), sa=Math.sin(alpha*D2R);
+  var ct=Math.cos(theta*D2R), st=Math.sin(theta*D2R);
+  /* Column-major storage */
+  return [
+    ct,       sa*st,   -ca*st,  0,
+   -st,       sa*ct,   -ca*ct,  0, // Hmm — let me use row-major and transpose mentally
+    0,        0,       0,       0,
+    0,        0,       0,       1
+  ];
+  /* Actually let's use row-major and store row by row for clarity */
+}
+
+/* Row-major 4x4 */
+function mul4r(A,B){
+  var C=new Array(16).fill(0);
+  for(var i=0;i<4;i++)
+    for(var j=0;j<4;j++)
+      for(var k=0;k<4;k++)
+        C[i*4+j]+=A[i*4+k]*B[k*4+j];
+  return C;
+}
+
+/* Modified DH (Craig) row-major:
+   T_i^{i-1} =
+   [ ct,   -st,    0,    a_{i-1}             ]
+   [ st*ca, ct*ca, -sa,  -sa*d_i             ]
+   [ st*sa, ct*sa,  ca,   ca*d_i             ]
+   [ 0,     0,      0,    1                  ]
+*/
+function dhT(a_prev, alpha_prev, d, theta){
+  var ca=Math.cos(alpha_prev*D2R), sa=Math.sin(alpha_prev*D2R);
+  var ct=Math.cos(theta*D2R),      st=Math.sin(theta*D2R);
+  return [
+    ct,     -st,     0,    a_prev,
+    st*ca,  ct*ca,  -sa,  -sa*d,
+    st*sa,  ct*sa,   ca,   ca*d,
+    0,       0,      0,    1
+  ];
+}
+
+function identityR(){return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1];}
+
+/* Extract RPY from rotation matrix (ZYX order) */
+function matToRPY(T){
+  var r11=T[0],r12=T[1],r13=T[2];
+  var r21=T[4],r22=T[5],r23=T[6];
+  var r31=T[8],r32=T[9],r33=T[10];
+  var pitch=Math.atan2(-r31, Math.sqrt(r11*r11+r21*r21));
+  var roll, yaw;
+  if(Math.abs(Math.cos(pitch))<1e-6){
+    roll=0;
+    yaw=Math.atan2(-r12,r22);
+  } else {
+    roll=Math.atan2(r32,r33);
+    yaw=Math.atan2(r21,r11);
+  }
+  return{roll:roll*R2D, pitch:pitch*R2D, yaw:yaw*R2D};
+}
+
+/* ══════════════════════════════════════════
+   JOINT STATE
+══════════════════════════════════════════ */
+var joints=[];  /* [{a,alpha,d,theta,type}] */
+var transforms=[];  /* per-joint T matrices */
+var frames=[];  /* world positions of each frame origin */
+var lastT=null;
+
+/* ══════════════════════════════════════════
+   PRESETS
+══════════════════════════════════════════ */
+var PRESETS={
+  '3R':[
+    {a:0,   alpha:0,  d:0,   theta:0,   type:'R'},
+    {a:300, alpha:0,  d:0,   theta:45,  type:'R'},
+    {a:250, alpha:0,  d:0,   theta:-30, type:'R'},
+    {a:200, alpha:0,  d:0,   theta:20,  type:'R'}
+  ],
+  'Stanford':[
+    {a:0,   alpha:-90, d:0,   theta:0,   type:'R'},
+    {a:0,   alpha:90,  d:0,   theta:0,   type:'R'},
+    {a:0,   alpha:0,   d:150, theta:0,   type:'P'},
+    {a:0,   alpha:-90, d:0,   theta:0,   type:'R'},
+    {a:0,   alpha:90,  d:0,   theta:0,   type:'R'},
+    {a:0,   alpha:0,   d:0,   theta:0,   type:'R'}
+  ],
+  'PUMA':[
+    {a:0,   alpha:90,  d:0,   theta:0,   type:'R'},
+    {a:431, alpha:0,   d:149, theta:0,   type:'R'},
+    {a:-20, alpha:90,  d:0,   theta:0,   type:'R'},
+    {a:0,   alpha:-90, d:433, theta:0,   type:'R'},
+    {a:0,   alpha:90,  d:0,   theta:0,   type:'R'},
+    {a:0,   alpha:0,   d:0,   theta:0,   type:'R'}
+  ],
+  'UR12e':[
+    {a:0,       alpha:0,   d:180.7,  theta:0, type:'R'},
+    {a:0,       alpha:90,  d:0,      theta:0, type:'R'},
+    {a:-612.7,  alpha:0,   d:0,      theta:0, type:'R'},
+    {a:-571.55, alpha:0,   d:174.15, theta:0, type:'R'},
+    {a:0,       alpha:90,  d:119.85, theta:0, type:'R'},
+    {a:0,       alpha:-90, d:116.55, theta:0, type:'R'}
+  ],
+  'Custom':[
+    {a:0,   alpha:0,  d:0,   theta:0,   type:'R'}
+  ]
+};
+
+/* ══════════════════════════════════════════
+   TABLE RENDERING
+══════════════════════════════════════════ */
+function renderTable(){
+  var body=document.getElementById('dhBody');
+  body.innerHTML='';
+  joints.forEach(function(j,i){
+    var tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><span class="jt-label">'+(i+1)+'</span></td>'+
+      '<td><button class="jtype-btn '+j.type.toLowerCase()+(j.type==='R'?' revolute':' prismatic')+'" onclick="toggleType('+i+')">'+
+        (j.type==='R'?'Revolute':'Prismatic')+
+      '</button></td>'+
+      '<td><input class="dh-input" type="number" step="any" value="'+j.a+'" oninput="setParam('+i+',\'a\',this.value)"></td>'+
+      '<td><input class="dh-input" type="number" step="any" value="'+j.alpha+'" oninput="setParam('+i+',\'alpha\',this.value)"></td>'+
+      '<td><input class="dh-input '+(j.type==='P'?'theta':'')+'" type="number" step="any" value="'+j.d+'" oninput="setParam('+i+',\'d\',this.value)"></td>'+
+      '<td><input class="dh-input theta '+(j.type==='P'?'disabled':'')+'" type="number" step="any" value="'+j.theta+'" '+(j.type==='P'?'disabled title="Fixed for prismatic"':'')+' oninput="setParam('+i+',\'theta\',this.value)"></td>'+
+      '<td><button class="del-btn" onclick="removeJoint('+i+')" title="Remove joint">&#215;</button></td>';
+    body.appendChild(tr);
+  });
+}
+
+window.toggleType=function(i){
+  joints[i].type=joints[i].type==='R'?'P':'R';
+  renderTable();
+};
+window.setParam=function(i,key,val){
+  joints[i][key]=parseFloat(val)||0;
+};
+window.addJoint=function(){
+  joints.push({a:0,alpha:0,d:0,theta:0,type:'R'});
+  renderTable();
+};
+window.removeJoint=function(i){
+  if(joints.length<=1) return;
+  joints.splice(i,1);
+  renderTable();
+  compute();
+};
+window.clearAll=function(){
+  joints=[{a:0,alpha:0,d:0,theta:0,type:'R'}];
+  renderTable();
+  clearResults();
+};
+
+/* ══════════════════════════════════════════
+   PRESETS
+══════════════════════════════════════════ */
+window.loadPreset=function(name){
+  document.querySelectorAll('.preset-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('pre-'+name.toLowerCase().replace(' ','-')).classList.add('active');
+  joints=PRESETS[name].map(function(j){return Object.assign({},j);});
+  renderTable();
+  compute();
+};
+
+/* ══════════════════════════════════════════
+   FORWARD KINEMATICS
+══════════════════════════════════════════ */
+window.compute=function(){
+  /* read current input values fresh from DOM */
+  var rows=document.querySelectorAll('#dhBody tr');
+  rows.forEach(function(row,i){
+    var ins=row.querySelectorAll('input');
+    if(ins.length>=4){
+      joints[i].a=parseFloat(ins[0].value)||0;
+      joints[i].alpha=parseFloat(ins[1].value)||0;
+      joints[i].d=parseFloat(ins[2].value)||0;
+      joints[i].theta=parseFloat(ins[3].value)||0;
+    }
+  });
+
+  transforms=[];
+  frames=[];
+  var T=identityR();
+  /* base frame at origin */
+  frames.push({x:T[3],y:T[7],z:T[11],T:T.slice()});
+
+  for(var i=0;i<joints.length;i++){
+    var j=joints[i];
+    var Ti=dhT(j.a, j.alpha, j.d, j.theta);
+    T=mul4r(T,Ti);
+    transforms.push(Ti);
+    frames.push({x:T[3],y:T[7],z:T[11],T:T.slice()});
+  }
+  lastT=T;
+
+  /* EE pose */
+  var x=T[3], y=T[7], z=T[11];
+  var rpy=matToRPY(T);
+  document.getElementById('ee-x').textContent=x.toFixed(2);
+  document.getElementById('ee-y').textContent=y.toFixed(2);
+  document.getElementById('ee-z').textContent=z.toFixed(2);
+  document.getElementById('ee-roll').textContent=rpy.roll.toFixed(2);
+  document.getElementById('ee-pitch').textContent=rpy.pitch.toFixed(2);
+  document.getElementById('ee-yaw').textContent=rpy.yaw.toFixed(2);
+
+  /* T matrix display */
+  renderTMatrix(T);
+
+  /* hint */
+  document.getElementById('hintLine1').textContent=joints.length+'-DOF arm';
+  document.getElementById('hintLine2').textContent=
+    'EE: ('+x.toFixed(1)+', '+y.toFixed(1)+', '+z.toFixed(1)+') mm';
+
+  /* draw */
+  if(currentView==='2d') draw2D(); else draw3D();
+};
+
+function clearResults(){
+  ['ee-x','ee-y','ee-z','ee-roll','ee-pitch','ee-yaw'].forEach(function(id){
+    document.getElementById(id).textContent='--';
+  });
+  document.getElementById('tMatrix').innerHTML='';
+  frames=[];transforms=[];lastT=null;
+  if(currentView==='2d') draw2D(); else draw3D();
+}
+
+function renderTMatrix(T){
+  var el=document.getElementById('tMatrix');
+  el.innerHTML='';
+  var labels=['rot','rot','rot','pos','rot','rot','rot','pos','rot','rot','rot','pos','bot','bot','bot','bot'];
+  for(var i=0;i<16;i++){
+    var cell=document.createElement('div');
+    cell.className='m-cell '+labels[i];
+    var row=Math.floor(i/4), col=i%4;
+    cell.textContent=T[row*4+col].toFixed(3);
+    el.appendChild(cell);
+  }
+}
+
+/* ══════════════════════════════════════════
+   2D DRAW
+══════════════════════════════════════════ */
+var canvas2=document.getElementById('canvas2d');
+var ctx2=canvas2.getContext('2d');
+
+function draw2D(){
+  var wrap=document.getElementById('canvasWrap');
+  var W=wrap.clientWidth, H=Math.max(400,wrap.clientHeight||500);
+  var dpr=window.devicePixelRatio||1;
+  canvas2.width=W*dpr; canvas2.height=H*dpr;
+  canvas2.style.width=W+'px'; canvas2.style.height=H+'px';
+  ctx2.scale(dpr,dpr);
+  ctx2.clearRect(0,0,W,H);
+
+  /* background */
+  ctx2.fillStyle='#060a0d'; ctx2.fillRect(0,0,W,H);
+  drawGrid2D(ctx2,W,H);
+
+  if(frames.length<2){
+    ctx2.fillStyle='#3d5568';ctx2.font='13px DM Mono,monospace';
+    ctx2.textAlign='center';ctx2.fillText('Add joints and compute',W/2,H/2);
+    return;
+  }
+
+  /* scale to fit */
+  var xs=frames.map(function(f){return f.x;}), ys=frames.map(function(f){return f.y;}), zs=frames.map(function(f){return f.z;});
+  /* top view: x-y plane; side view: x-z; pick whichest has more spread */
+  var rangeY=Math.max.apply(null,ys)-Math.min.apply(null,ys);
+  var rangeZ=Math.max.apply(null,zs)-Math.min.apply(null,zs);
+  /* always show x-z (side view) as primary for manipulators */
+  var px=xs, py=zs, plabel='Side view (XZ plane)';
+  if(rangeY>rangeZ+50){ px=xs; py=ys; plabel='Top view (XY plane)'; }
+
+  var pad=60;
+  var xMin=Math.min.apply(null,px)-20, xMax=Math.max.apply(null,px)+20;
+  var yMin=Math.min.apply(null,py)-20, yMax=Math.max.apply(null,py)+20;
+  var rangeX=xMax-xMin, rangeYp=yMax-yMin;
+  var scale=Math.min((W-pad*2)/Math.max(rangeX,1),(H-pad*2)/Math.max(rangeYp,1));
+  var cx=W/2-(xMin+xMax)/2*scale, cy=H/2+(yMin+yMax)/2*scale;
+
+  function sx(v){return cx+v*scale;}
+  function sy(v){return cy-v*scale;}
+
+  /* shadow / reach circle */
+  var reach=0;
+  for(var i=1;i<frames.length;i++){
+    var dx=frames[i].x-frames[i-1].x, dz=frames[i].z-frames[i-1].z;
+    reach+=Math.sqrt(dx*dx+dz*dz);
+  }
+  /* draw link segments */
+  for(var i=0;i<frames.length-1;i++){
+    var f0=frames[i], f1=frames[i+1];
+    var x0=px[i],y0=py[i],x1=px[i+1],y1=py[i+1];
+    /* link tube glow */
+    ctx2.beginPath();
+    ctx2.moveTo(sx(x0),sy(y0));
+    ctx2.lineTo(sx(x1),sy(y1));
+    ctx2.strokeStyle='rgba(0,212,255,0.12)';
+    ctx2.lineWidth=12;
+    ctx2.lineCap='round';
+    ctx2.stroke();
+    /* link */
+    ctx2.beginPath();
+    ctx2.moveTo(sx(x0),sy(y0));
+    ctx2.lineTo(sx(x1),sy(y1));
+    ctx2.strokeStyle='#00d4ff';
+    ctx2.lineWidth=3;
+    ctx2.shadowColor='rgba(0,212,255,0.5)';
+    ctx2.shadowBlur=8;
+    ctx2.stroke();
+    ctx2.shadowBlur=0;
+  }
+
+  /* frame axes at each joint */
+  var axLen=18/scale*10;
+  for(var i=0;i<frames.length;i++){
+    var f=frames[i];
+    var lx=px[i],ly=py[i];
+    /* x-axis */
+    var axX=f.T[0]*axLen, axY=(plabel.indexOf('XY')>=0?f.T[4]:f.T[8])*axLen;
+    ctx2.beginPath();ctx2.moveTo(sx(lx),sy(ly));ctx2.lineTo(sx(lx+axX),sy(ly+axY));
+    ctx2.strokeStyle='rgba(240,80,96,0.8)';ctx2.lineWidth=1.5;ctx2.stroke();
+    /* z-axis */
+    var azX=f.T[2]*axLen, azY=(plabel.indexOf('XY')>=0?f.T[6]:f.T[10])*axLen;
+    ctx2.beginPath();ctx2.moveTo(sx(lx),sy(ly));ctx2.lineTo(sx(lx+azX),sy(ly+azY));
+    ctx2.strokeStyle='rgba(74,144,232,0.8)';ctx2.lineWidth=1.5;ctx2.stroke();
+  }
+
+  /* joint dots */
+  for(var i=0;i<frames.length;i++){
+    var isEE=(i===frames.length-1);
+    var jt=i>0?joints[i-1]:null;
+    ctx2.beginPath();
+    ctx2.arc(sx(px[i]),sy(py[i]),isEE?7:5,0,Math.PI*2);
+    if(isEE){
+      ctx2.fillStyle='#f0b840';
+      ctx2.shadowColor='rgba(240,184,64,0.6)';ctx2.shadowBlur=12;
+    } else if(jt&&jt.type==='P'){
+      ctx2.fillStyle='#a070f0';
+      ctx2.shadowColor='rgba(160,112,240,0.5)';ctx2.shadowBlur=8;
+    } else {
+      ctx2.fillStyle='#00d4ff';
+      ctx2.shadowColor='rgba(0,212,255,0.5)';ctx2.shadowBlur=8;
+    }
+    ctx2.fill();
+    ctx2.shadowBlur=0;
+    /* border */
+    ctx2.beginPath();ctx2.arc(sx(px[i]),sy(py[i]),isEE?7:5,0,Math.PI*2);
+    ctx2.strokeStyle='rgba(255,255,255,0.2)';ctx2.lineWidth=1;ctx2.stroke();
+    /* label */
+    ctx2.fillStyle='#c0d8e8';ctx2.font='9px DM Mono,monospace';ctx2.textAlign='center';
+    ctx2.fillText(i===0?'Base':i===frames.length-1?'EE':i,sx(px[i]),sy(py[i])-10);
+  }
+
+  /* view label */
+  ctx2.fillStyle='#3d5568';ctx2.font='10px DM Mono,monospace';ctx2.textAlign='left';
+  ctx2.fillText(plabel,10,H-10);
+  /* scale bar */
+  var barLen=100; /* mm */
+  var barPx=barLen*scale;
+  ctx2.fillStyle='#3d5568';ctx2.fillRect(W-barPx-14,H-18,barPx,1);
+  ctx2.fillText(barLen+'mm',W-barPx/2-14,H-22);
+}
+
+function drawGrid2D(ctx,W,H){
+  ctx.strokeStyle='rgba(0,212,255,0.04)';ctx.lineWidth=1;
+  var step=40;
+  for(var x=0;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(var y=0;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+}
+
+/* ══════════════════════════════════════════
+   3D DRAW (Three.js)
+══════════════════════════════════════════ */
+var threeLoaded=false;
+var renderer=null, scene=null, camera=null, armGroup=null;
+var isDragging=false, lastMouse={x:0,y:0};
+var camTheta=Math.PI/4, camPhi=Math.PI/3, camDist=1000;
+var camTarget={x:0,y:0,z:0};
+
+function initThree(){
+  if(threeLoaded) return;
+  threeLoaded=true;
+  var canvas3=document.getElementById('canvas3d');
+  var wrap=document.getElementById('canvasWrap');
+  var W=wrap.clientWidth, H=Math.max(400,600);
+  var dpr=window.devicePixelRatio||1;
+  canvas3.style.width=W+'px'; canvas3.style.height=H+'px';
+  canvas3.width=W*dpr; canvas3.height=H*dpr;
+
+  renderer=new THREE.WebGLRenderer({canvas:canvas3,antialias:true,alpha:true});
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(W,H);
+  renderer.setClearColor(0x060a0d,1);
+
+  scene=new THREE.Scene();
+  camera=new THREE.PerspectiveCamera(45,W/H,1,50000);
+  updateCamera();
+
+  /* grid */
+  var gridHelper=new THREE.GridHelper(1000,20,0x0a1a28,0x0a1a28);
+  scene.add(gridHelper);
+
+  /* global axes */
+  addAxis(scene,{x:0,y:0,z:0},{x:120,y:0,z:0},0xff3344,2);
+  addAxis(scene,{x:0,y:0,z:0},{x:0,y:120,z:0},0x39e896,2);
+  addAxis(scene,{x:0,y:0,z:0},{x:0,y:0,z:120},0x4a90e8,2);
+
+  armGroup=new THREE.Group();
+  scene.add(armGroup);
+
+  /* mouse controls */
+  canvas3.addEventListener('mousedown',function(e){isDragging=true;lastMouse={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',function(){isDragging=false;});
+  window.addEventListener('mousemove',function(e){
+    if(!isDragging)return;
+    var dx=e.clientX-lastMouse.x, dy=e.clientY-lastMouse.y;
+    camTheta-=dx*0.008; camPhi-=dy*0.008;
+    camPhi=Math.max(0.05,Math.min(Math.PI-0.05,camPhi));
+    lastMouse={x:e.clientX,y:e.clientY};
+    updateCamera(); renderer.render(scene,camera);
+  });
+  canvas3.addEventListener('wheel',function(e){
+    e.preventDefault();
+    camDist*=(1+e.deltaY*0.001);
+    camDist=Math.max(100,Math.min(8000,camDist));
+    updateCamera(); renderer.render(scene,camera);
+  },{passive:false});
+  /* touch */
+  var lastTouchDist=null;
+  canvas3.addEventListener('touchstart',function(e){
+    if(e.touches.length===1){isDragging=true;lastMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};}
+    if(e.touches.length===2){isDragging=false;lastTouchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}
+  },{passive:true});
+  canvas3.addEventListener('touchmove',function(e){
+    if(e.touches.length===1&&isDragging){
+      var dx=e.touches[0].clientX-lastMouse.x, dy=e.touches[0].clientY-lastMouse.y;
+      camTheta-=dx*0.01; camPhi-=dy*0.01;
+      camPhi=Math.max(0.05,Math.min(Math.PI-0.05,camPhi));
+      lastMouse={x:e.touches[0].clientX,y:e.touches[0].clientY};
+      updateCamera(); renderer.render(scene,camera);
+    }
+    if(e.touches.length===2){
+      var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+      if(lastTouchDist) camDist*=lastTouchDist/d;
+      lastTouchDist=d;
+      camDist=Math.max(100,Math.min(8000,camDist));
+      updateCamera(); renderer.render(scene,camera);
+    }
+  },{passive:true});
+
+  renderer.render(scene,camera);
+}
+
+function updateCamera(){
+  if(!camera)return;
+  var x=camDist*Math.sin(camPhi)*Math.sin(camTheta)+camTarget.x;
+  var y=camDist*Math.cos(camPhi)+camTarget.y;
+  var z=camDist*Math.sin(camPhi)*Math.cos(camTheta)+camTarget.z;
+  camera.position.set(x,y,z);
+  camera.lookAt(camTarget.x,camTarget.y,camTarget.z);
+  camera.updateProjectionMatrix();
+}
+
+function addAxis(parent,from,to,color,w){
+  var mat=new THREE.LineBasicMaterial({color:color,linewidth:w||1});
+  var geo=new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(from.x,from.y,from.z),
+    new THREE.Vector3(to.x,to.y,to.z)
+  ]);
+  parent.add(new THREE.Line(geo,mat));
+}
+
+function draw3D(){
+  if(!threeLoaded){initThree();}
+  if(!renderer)return;
+
+  /* clear arm */
+  while(armGroup.children.length) armGroup.remove(armGroup.children[0]);
+
+  if(frames.length<2){renderer.render(scene,camera);return;}
+
+  /* auto-center camera on arm */
+  var cx=0,cy=0,cz=0;
+  frames.forEach(function(f){cx+=f.x;cy+=f.y;cz+=f.z;});
+  cx/=frames.length; cy/=frames.length; cz/=frames.length;
+  camTarget={x:cx,y:cy,z:cz};
+
+  /* Three.js Y is up, robotics Z is up — convert: robot(x,y,z) -> three(x,z,-y) */
+  function rv(f){return new THREE.Vector3(f.x, f.z, -f.y);}
+
+  var colors=[0x00d4ff,0x39e896,0xf0b840,0xa070f0,0xf05060,0x4a90e8];
+
+  for(var i=0;i<frames.length-1;i++){
+    var p0=rv(frames[i]), p1=rv(frames[i+1]);
+    var col=colors[i%colors.length];
+    var dir=new THREE.Vector3().subVectors(p1,p0);
+    var len=dir.length();
+
+    /* link cylinder — only draw if the two frames are meaningfully apart */
+    if(len>=1){
+      var mid=new THREE.Vector3().addVectors(p0,p1).multiplyScalar(0.5);
+      var rad=Math.max(5, len*0.04);
+      var geo=new THREE.CylinderGeometry(rad,rad,len,12);
+      var mat=new THREE.MeshPhongMaterial({color:col,emissive:col,emissiveIntensity:0.25,transparent:true,opacity:0.85});
+      var mesh=new THREE.Mesh(geo,mat);
+      mesh.position.copy(mid);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.clone().normalize());
+      armGroup.add(mesh);
+    }
+  }
+
+  /* Joint spheres + frame axes — always draw for every frame, independent of link length */
+  for(var i=0;i<frames.length;i++){
+    var fp=rv(frames[i]);
+    var isEE=(i===frames.length-1);
+    var jt=i>0?joints[i-1]:null;
+    var col=colors[Math.max(0,i-1)%colors.length];
+
+    /* sphere */
+    var srad=isEE?12:9;
+    var scol=isEE?0xf0b840:(jt&&jt.type==='P'?0xa070f0:col);
+    var sgeo=new THREE.SphereGeometry(srad,16,16);
+    var smat=new THREE.MeshPhongMaterial({color:scol,emissive:scol,emissiveIntensity:isEE?0.7:0.45});
+    var sphere=new THREE.Mesh(sgeo,smat);
+    sphere.position.copy(fp);
+    armGroup.add(sphere);
+
+    /* frame axes — fixed size so they're always visible even when link is zero-length */
+    var f=frames[i];
+    var axL=35;
+    var rx=new THREE.Vector3(f.T[0],f.T[8],-f.T[4]).normalize().multiplyScalar(axL);
+    var ry=new THREE.Vector3(f.T[1],f.T[9],-f.T[5]).normalize().multiplyScalar(axL);
+    var rz=new THREE.Vector3(f.T[2],f.T[10],-f.T[6]).normalize().multiplyScalar(axL);
+    addAxis(armGroup,{x:fp.x,y:fp.y,z:fp.z},{x:fp.x+rx.x,y:fp.y+rx.y,z:fp.z+rx.z},0xff3344,2);
+    addAxis(armGroup,{x:fp.x,y:fp.y,z:fp.z},{x:fp.x+ry.x,y:fp.y+ry.y,z:fp.z+ry.z},0x39e896,2);
+    addAxis(armGroup,{x:fp.x,y:fp.y,z:fp.z},{x:fp.x+rz.x,y:fp.y+rz.y,z:fp.z+rz.z},0x4a90e8,2);
+  }
+
+  /* lighting */
+  scene.children=scene.children.filter(function(c){return !(c instanceof THREE.Light);});
+  var amb=new THREE.AmbientLight(0x112233,2);
+  var pt1=new THREE.PointLight(0x00d4ff,1.5,5000);
+  pt1.position.set(500,800,500);
+  var pt2=new THREE.PointLight(0xffffff,0.8,5000);
+  pt2.position.set(-500,600,-300);
+  scene.add(amb,pt1,pt2);
+
+  updateCamera();
+  renderer.render(scene,camera);
+}
+
+/* ══════════════════════════════════════════
+   VIEW TOGGLE
+══════════════════════════════════════════ */
+var currentView='3d';
+window.setView=function(v){
+  currentView=v;
+  document.getElementById('vbtn2d').classList.toggle('active',v==='2d');
+  document.getElementById('vbtn3d').classList.toggle('active',v==='3d');
+  document.getElementById('canvas2d').style.display=v==='2d'?'block':'none';
+  document.getElementById('canvas3d').style.display=v==='3d'?'block':'none';
+  var title=v==='3d'?'3D View \u2014 Drag to rotate \u00b7 Scroll to zoom':'2D View \u2014 Side / Top projection';
+  document.getElementById('vizTitle').textContent=title;
+  if(v==='3d'){
+    if(!threeLoaded) initThree();
+    if(frames.length>1) draw3D();
+  } else {
+    if(frames.length>1) draw2D(); else draw2D();
+  }
+};
+
+/* ══════════════════════════════════════════
+   RESIZE
+══════════════════════════════════════════ */
+window.addEventListener('resize',function(){
+  if(currentView==='2d'&&frames.length>0) draw2D();
+  if(currentView==='3d'&&renderer){
+    var wrap=document.getElementById('canvasWrap');
+    var W=wrap.clientWidth, H=Math.max(400,600);
+    var dpr=window.devicePixelRatio||1;
+    renderer.setSize(W,H);
+    camera.aspect=W/H;
+    camera.updateProjectionMatrix();
+    renderer.render(scene,camera);
+  }
+});
+
+/* ══════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════ */
+/* set canvas height */
+(function(){
+  var wrap=document.getElementById('canvasWrap');
+  wrap.style.minHeight='600px';
+  document.getElementById('canvas3d').style.minHeight='600px';
+  document.getElementById('canvas2d').style.minHeight='600px';
+})();
+
+/* load Three.js then boot */
+var s=document.createElement('script');
+s.src='https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+s.onload=function(){
+  initThree();
+  loadPreset('3R');
+};
+document.head.appendChild(s);
+
+})();
+</script>
+</body>
+</html>
