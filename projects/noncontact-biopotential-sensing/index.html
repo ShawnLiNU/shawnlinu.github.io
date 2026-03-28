@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Non-Contact Biopotential Sensing — Xian (Shawn) Li</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#f8f7f4;--bg-card:#ffffff;--border:#e0ddd6;--border-soft:#ede9e0;--text:#1a1814;--text-muted:#7a756a;--text-light:#b0a998;--accent:#2b4a8c;--accent-soft:#e8edf6;--tag-bg:#f0ede6;--tag-text:#5a5448;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);--shadow-sm:0 1px 2px rgba(0,0,0,.05);--radius:6px}
+    @media(prefers-color-scheme:dark){:root{--bg:#111110;--bg-card:#1a1917;--border:#2c2a27;--border-soft:#252320;--text:#e8e5df;--text-muted:#8a8680;--text-light:#5a5650;--accent:#7ba3e0;--accent-soft:#1a2236;--tag-bg:#232220;--tag-text:#a0998e;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-sm:0 1px 2px rgba(0,0,0,.2)}}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{font-size:16px;scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;line-height:1.6;min-height:100vh}
+    .container{max-width:800px;margin:0 auto;padding:0 24px}.topbar{border-bottom:1px solid var(--border);padding:14px 0;position:sticky;top:0;background:var(--bg);z-index:100;backdrop-filter:blur(8px)}.topbar-inner{display:flex;align-items:center;justify-content:space-between}a.home{font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:.85rem;color:var(--text-muted);text-decoration:none;letter-spacing:.02em;transition:color .15s}a.home:hover{color:var(--text)}.crumb{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-light);letter-spacing:.03em}
+    .hero{padding:56px 0 40px;border-bottom:1px solid var(--border-soft)}.proj-num{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:12px;display:flex;align-items:center;gap:8px}.proj-num::before{content:'';display:block;width:18px;height:1px;background:var(--text-light)}
+    h1{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:clamp(1.55rem,3.5vw,2rem);line-height:1.28;letter-spacing:-.01em;color:var(--text);margin-bottom:16px}.hero-desc{font-size:.93rem;color:var(--text-muted);line-height:1.72;max-width:640px;margin-bottom:22px}.tags{display:flex;flex-wrap:wrap;gap:7px}.tag{font-family:'DM Mono',monospace;font-size:.70rem;letter-spacing:.02em;color:var(--tag-text);background:var(--tag-bg);border:1px solid var(--border);padding:3px 10px;border-radius:3px}
+    section{padding:38px 0;border-bottom:1px solid var(--border-soft)}section:last-child{border-bottom:none;padding-bottom:80px}.sec-label{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:14px}
+    h2{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.18rem;letter-spacing:-.005em;color:var(--text);margin-bottom:13px}p{font-size:.92rem;color:var(--text-muted);line-height:1.72}p+p{margin-top:11px}strong.em{color:var(--text);font-weight:500}
+    .callout{background:var(--accent-soft);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:16px 20px;margin:18px 0}.callout p{font-size:.86rem;line-height:1.65}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.stat{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;text-align:center;box-shadow:var(--shadow-sm)}.stat-val{font-family:'EB Garamond',Georgia,serif;font-size:1.50rem;font-weight:500;color:var(--accent);display:block;line-height:1.1;margin-bottom:4px}.stat-lbl{font-size:.70rem;color:var(--text-light);font-family:'DM Mono',monospace;letter-spacing:.04em}
+    .signal-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}.signal-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow-sm);text-align:center}.signal-abbr{font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:500;color:var(--accent);display:block;margin-bottom:3px}.signal-name{font-size:.72rem;color:var(--text-light);display:block;margin-bottom:8px;font-family:'DM Mono',monospace;letter-spacing:.04em}.signal-card p{font-size:.79rem;line-height:1.55;text-align:left}
+    .divider{height:1px;background:var(--border-soft);margin:18px 0}
+    .pub-list{display:flex;flex-direction:column;gap:14px}.pub{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm)}.pub-venue{font-family:'DM Mono',monospace;font-size:.67rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}.pub-title{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.03rem;color:var(--text);line-height:1.35;margin-bottom:5px}.pub-authors{font-size:.79rem;color:var(--text-light);margin-bottom:9px}.pub-authors strong{color:var(--text-muted);font-weight:500}.pub-abs{font-size:.82rem;color:var(--text-muted);line-height:1.65;margin-bottom:11px}.pub-links{display:flex;gap:7px;flex-wrap:wrap}.pub-link{font-family:'DM Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--tag-bg);border:1px solid var(--border);padding:3px 9px;border-radius:3px;text-decoration:none;transition:all .15s}.pub-link:hover{color:var(--accent);border-color:var(--accent)}
+    .nav-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:28px 0}.nav-link{font-size:.82rem;color:var(--text-muted);text-decoration:none;font-family:'DM Mono',monospace;letter-spacing:.02em}.nav-link:hover{color:var(--accent)}
+    footer{border-top:1px solid var(--border);padding:22px 0;text-align:center}footer p{font-size:.78rem;color:var(--text-light)}footer a{color:var(--text-muted);text-decoration:none}footer a:hover{color:var(--accent)}
+    @media(max-width:600px){.stats,.signal-row{grid-template-columns:1fr 1fr}.stats .stat:last-child,.signal-row .signal-card:last-child{grid-column:span 2}}
+  </style>
+</head>
+<body>
+<nav class="topbar"><div class="container topbar-inner"><a href="../../index.html" class="home">Xian (Shawn) Li</a><span class="crumb">research / noncontact-biopotential</span></div></nav>
+<div class="container">
+  <header class="hero">
+    <div class="proj-num">Project 03 · 4 publications</div>
+    <h1>Non-Contact Biopotential Sensing</h1>
+    <p class="hero-desc">Capacitive, non-contact electrode systems for acquiring ECG, EMG, and EEG through clothing and without skin contact or conductive gel — enabling truly unobtrusive long-term health monitoring and in-vehicle driver safety applications.</p>
+    <div class="tags"><span class="tag">Non-Contact ECG</span><span class="tag">Capacitive Electrodes</span><span class="tag">Wearable Health</span><span class="tag">Motion Artifact</span><span class="tag">Smart Health</span></div>
+  </header>
+
+  <section>
+    <div class="sec-label">Overview</div>
+    <h2>Biopotential Monitoring Without Skin Contact</h2>
+    <p>Wet Ag/AgCl electrodes — the clinical standard for ECG, EEG, and EMG — require conductive gel, direct skin contact, and skilled placement. Non-contact capacitive electrodes go further: they couple to the body through one or more dielectric layers (clothing, air gaps, hair), making them compatible with fully unobtrusive embedding in garments, car seats, or small button-sized wearable modules.</p>
+    <p>This project developed the hardware, analog front-end circuit design, and motion-artifact mitigation strategies for practical non-contact biopotential systems — advancing them from bench demonstrations to wearable and automotive deployment scenarios.</p>
+    <div class="callout"><p><strong>Key challenge — motion artifacts:</strong> The small coupling capacitance of non-contact electrodes is highly sensitive to relative motion between the electrode and skin. Critically, the same triboelectric effect that powers harvesters corrupts biopotential signals. This project studied that crossover — characterizing, modeling, and mitigating triboelectric artifacts in non-contact wearable devices through analog feedback design and signal processing.</p></div>
+    <div class="stats">
+      <div class="stat"><span class="stat-val">19</span><span class="stat-lbl">Fabric layers (ECG through)</span></div>
+      <div class="stat"><span class="stat-val">24 g</span><span class="stat-lbl">NCMB-Button weight</span></div>
+      <div class="stat"><span class="stat-val">ECG EMG EEG</span><span class="stat-lbl">All three signals acquired</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Acquired Signals</div>
+    <h2>Multi-Modal Biopotential Coverage</h2>
+    <p>The non-contact sensing framework was validated across three distinct biopotential modalities, each with different amplitude, frequency, and clinical relevance:</p>
+    <div class="signal-row">
+      <div class="signal-card"><span class="signal-abbr">ECG</span><span class="signal-name">Electrocardiography</span><p>Cardiac electrical activity for heart rate, HRV, and arrhythmia detection. Detected through up to 19 fabric layers (polyester) and in-vehicle through a car seat — without skin contact.</p></div>
+      <div class="signal-card"><span class="signal-abbr">EEG</span><span class="signal-name">Electroencephalography</span><p>Brain electrical activity including alpha waves (8–12 Hz) visible during drowsy/relaxed states. Key indicator for driver alertness monitoring; detected through hair without conductive gel.</p></div>
+      <div class="signal-card"><span class="signal-abbr">EMG</span><span class="signal-name">Electromyography</span><p>Muscle electrical activity for motion characterization and rehabilitation monitoring, acquired without traditional wet gel — enabling both upper limb and eye-blink EMG detection.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Technical Approach</div>
+    <h2>From In-Vehicle Monitoring to Wearable Integration</h2>
+    <p><strong class="em">In-vehicle driver monitoring system.</strong> &nbsp;The foundational system demonstrated fully non-contact, nonintrusive ECG, EEG, and eye-blink detection at a distance — requiring no physical contact with the driver's skin. Validated on a high-fidelity driving simulator, the system extracted HRV and alpha-wave drowsiness indicators in real time, establishing the core capacitive front-end architecture.</p>
+    <div class="divider"></div>
+    <p><strong class="em">Motion artifact investigation.</strong> &nbsp;A systematic study characterized how triboelectric charge accumulation at the electrode-skin interface degrades signal quality in non-contact wearable devices. Theoretical modeling and experimental validation provided the design guidelines — ultra-high input impedance front-end, analog DRL-style feedback loop — that inform the NCMB-Button system design.</p>
+    <div class="divider"></div>
+    <p><strong class="em">Design and evaluation of non-contact wireless system.</strong> &nbsp;Extends the driver monitoring architecture to a wearable wireless form factor. Detects biopotential through fabric as thick as three-layer jeans, with performance comparable to wet electrodes. Evaluates motion artifacts across different textile materials and motion types — providing design guidelines for wearable deployment.</p>
+    <div class="divider"></div>
+    <p><strong class="em">NCMB-Button: multi-modal wearable system.</strong> &nbsp;A compact (39 × 32 × 17 mm, 24 g) 3D-printed wearable module with ultra-high input impedance analog front-end, dual power supply management, and 150 mAh Li-ion battery. The feedback loop drives a driven-right-leg (DRL) style signal injection into the body to suppress common-mode noise and motion artifacts. Validated through 19 polyester layers — well beyond dry-contact electrode capability.</p>
+  </section>
+
+  <section>
+    <div class="sec-label">Publications</div>
+    <div class="pub-list">
+
+      <div class="pub">
+        <div class="pub-venue">Smart Health · Vol. 11 · January 2019</div>
+        <div class="pub-title">A Wearable Button-Like System for Long-Term Multiple Biopotential Monitoring Using Non-Contact Electrodes</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Ye Sun</div>
+        <div class="pub-abs">Full journal paper describing the NCMB-Button: a button-form-factor wearable wireless non-contact biopotential system (39×32×17 mm, 24 g). ECG detected through 2.60 mm fabric with rapid recovery from motion artifacts via the analog feedback architecture. EMG signals detected from upper limb and eye-blinking. EEG alpha waves visible during drowsy conditions. Selected as one of six papers for journal publication from IEEE/ACM CHASE 2017.</div>
+        <div class="pub-links"><a href="https://doi.org/10.1016/j.smhl.2018.09.001" target="_blank" rel="noopener" class="pub-link">DOI</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">IEEE/ACM CHASE · August 2017</div>
+        <div class="pub-title">NCMB-Button: A Wearable Non-Contact System for Long-Term Multiple Biopotential Monitoring</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Ye Sun</div>
+        <div class="pub-abs">Conference paper introducing the NCMB-Button. Demonstrates ECG and EMG detection through up to 19 polyester layers, with fast recovery from motion artifacts. EEG alpha waves detected during drowsiness. Packaged into a 39×32×17 mm 3D-printed box weighing 24 g, powered by a 150 mAh Li-ion battery with dual power-supply management circuitry. Selected for journal publication in Elsevier Smart Health.</div>
+        <div class="pub-links"><a href="https://doi.org/10.1109/CHASE.2017.118" target="_blank" rel="noopener" class="pub-link">DOI</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">IEEE BHI · February 2017</div>
+        <div class="pub-title">Design and Evaluation of a Non-Contact Wireless Biopotential Monitoring System with Motion Artifacts</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Ye Sun</div>
+        <div class="pub-abs">Reports the design and validation of a wireless non-contact biopotential monitoring system capable of detecting signals through fabric as thick as three-layer jeans, with performance comparable to wet electrodes. Evaluates motion artifacts of non-contact electrodes under different textile materials and motion types, providing key design guidelines for wearable non-contact biopotential detection.</div>
+        <div class="pub-links"><a href="https://ieeexplore.ieee.org/document/7897207/" target="_blank" rel="noopener" class="pub-link">IEEE Xplore</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">IEEE EMBC · August 2016</div>
+        <div class="pub-title">Investigation of Motion Artifacts for Biopotential Measurement in Wearable Devices</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Hui Huang, Ye Sun</div>
+        <div class="pub-abs">Theoretical and experimental study of motion artifacts in non-contact biopotential measurement. Models triboelectric charge accumulation at the electrode-clothing-skin interface and its effect on ECG/EEG signal fidelity. Identifies design strategies — including ultra-high input impedance analog front-ends and feedback suppression circuits — for artifact mitigation in dry and non-contact electrode configurations.</div>
+        <div class="pub-links"><a href="https://www.researchgate.net/publication/303876379" target="_blank" rel="noopener" class="pub-link">ResearchGate</a></div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="nav-row">
+    <a href="../self-powered-motion-sensing/index.html" class="nav-link">← Self-Powered Sensing</a>
+    <a href="../ecg-signal-processing/index.html" class="nav-link">Next: ECG Processing →</a>
+  </div>
+</div>
+<footer><div class="container"><p><a href="../../index.html">← Back to homepage</a> &nbsp;·&nbsp; <a href="../index.html">All Projects</a> &nbsp;·&nbsp; <a href="https://scholar.google.com/citations?user=rO-TRKMAAAAJ&hl=en" target="_blank" rel="noopener">Google Scholar</a></p></div></footer>
+</body>
+</html>

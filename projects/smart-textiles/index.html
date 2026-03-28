@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Textiles &amp; Wearable Sensing — Xian (Shawn) Li</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#f8f7f4;--bg-card:#ffffff;--border:#e0ddd6;--border-soft:#ede9e0;--text:#1a1814;--text-muted:#7a756a;--text-light:#b0a998;--accent:#2b4a8c;--accent-soft:#e8edf6;--tag-bg:#f0ede6;--tag-text:#5a5448;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);--shadow-sm:0 1px 2px rgba(0,0,0,.05);--radius:6px}
+    @media(prefers-color-scheme:dark){:root{--bg:#111110;--bg-card:#1a1917;--border:#2c2a27;--border-soft:#252320;--text:#e8e5df;--text-muted:#8a8680;--text-light:#5a5650;--accent:#7ba3e0;--accent-soft:#1a2236;--tag-bg:#232220;--tag-text:#a0998e;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-sm:0 1px 2px rgba(0,0,0,.2)}}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{font-size:16px;scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;line-height:1.6;min-height:100vh}
+    .container{max-width:800px;margin:0 auto;padding:0 24px}.topbar{border-bottom:1px solid var(--border);padding:14px 0;position:sticky;top:0;background:var(--bg);z-index:100;backdrop-filter:blur(8px)}.topbar-inner{display:flex;align-items:center;justify-content:space-between}a.home{font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:.85rem;color:var(--text-muted);text-decoration:none;letter-spacing:.02em;transition:color .15s}a.home:hover{color:var(--text)}.crumb{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-light);letter-spacing:.03em}
+    .hero{padding:56px 0 40px;border-bottom:1px solid var(--border-soft)}.proj-num{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:12px;display:flex;align-items:center;gap:8px}.proj-num::before{content:'';display:block;width:18px;height:1px;background:var(--text-light)}
+    h1{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:clamp(1.55rem,3.5vw,2rem);line-height:1.28;letter-spacing:-.01em;color:var(--text);margin-bottom:16px}.hero-desc{font-size:.93rem;color:var(--text-muted);line-height:1.72;max-width:640px;margin-bottom:22px}.tags{display:flex;flex-wrap:wrap;gap:7px}.tag{font-family:'DM Mono',monospace;font-size:.70rem;letter-spacing:.02em;color:var(--tag-text);background:var(--tag-bg);border:1px solid var(--border);padding:3px 10px;border-radius:3px}
+    section{padding:38px 0;border-bottom:1px solid var(--border-soft)}section:last-child{border-bottom:none;padding-bottom:80px}.sec-label{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:14px}
+    h2{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.18rem;letter-spacing:-.005em;color:var(--text);margin-bottom:13px}p{font-size:.92rem;color:var(--text-muted);line-height:1.72}p+p{margin-top:11px}strong.em{color:var(--text);font-weight:500}
+    .callout{background:var(--accent-soft);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:16px 20px;margin:18px 0}.callout p{font-size:.86rem;line-height:1.65}
+    .thread-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.thread-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:15px 16px;box-shadow:var(--shadow-sm)}.thread-card h3{font-family:'Instrument Sans',sans-serif;font-size:.86rem;font-weight:600;color:var(--text);margin-bottom:5px}.thread-card p{font-size:.80rem;line-height:1.58}
+    .divider{height:1px;background:var(--border-soft);margin:18px 0}
+    .pub-list{display:flex;flex-direction:column;gap:14px}.pub{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm)}.pub-venue{font-family:'DM Mono',monospace;font-size:.67rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}.pub-title{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.03rem;color:var(--text);line-height:1.35;margin-bottom:5px}.pub-authors{font-size:.79rem;color:var(--text-light);margin-bottom:9px}.pub-authors strong{color:var(--text-muted);font-weight:500}.pub-abs{font-size:.82rem;color:var(--text-muted);line-height:1.65;margin-bottom:11px}.pub-links{display:flex;gap:7px;flex-wrap:wrap}.pub-link{font-family:'DM Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--tag-bg);border:1px solid var(--border);padding:3px 9px;border-radius:3px;text-decoration:none;transition:all .15s}.pub-link:hover{color:var(--accent);border-color:var(--accent)}
+    .nav-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:28px 0}.nav-link{font-size:.82rem;color:var(--text-muted);text-decoration:none;font-family:'DM Mono',monospace;letter-spacing:.02em}.nav-link:hover{color:var(--accent)}
+    footer{border-top:1px solid var(--border);padding:22px 0;text-align:center}footer p{font-size:.78rem;color:var(--text-light)}footer a{color:var(--text-muted);text-decoration:none}footer a:hover{color:var(--accent)}
+    @media(max-width:600px){.thread-grid{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+<nav class="topbar"><div class="container topbar-inner"><a href="../../index.html" class="home">Xian (Shawn) Li</a><span class="crumb">research / smart-textiles</span></div></nav>
+<div class="container">
+  <header class="hero">
+    <div class="proj-num">Project 05 · 2 publications</div>
+    <h1>Smart Textiles &amp; Wearable Sensing</h1>
+    <p class="hero-desc">Programmable embroidered pressure sensors and e-textile integration — advancing textile-based platforms for health monitoring, human–machine interaction, and assistive robotics.</p>
+    <div class="tags"><span class="tag">E-Textile</span><span class="tag">Embroidery Pressure Sensor</span><span class="tag">Flexible Electronics</span><span class="tag">IEEE/ACM CHASE</span></div>
+  </header>
+
+  <section>
+    <div class="sec-label">Overview</div>
+    <h2>Textiles as a Sensing Platform</h2>
+    <p>E-textiles and smart fabrics occupy a unique position in wearable technology: they are inherently conformal to the human body, washable, mechanically robust under repeated deformation, and socially unobtrusive. This project developed textile-integrated sensing capabilities across multiple physical modalities — pressure and triboelectric charge — with a focus on manufacturing simplicity (programmable embroidery) that enables practical deployment in health monitoring and human–robot interaction.</p>
+    <p>This work bridges the gap between laboratory demonstrations and manufacturable, reproducible textile sensors. The programmable embroidery approach in particular introduces a pathway to digitally controlled, large-area pressure sensing arrays with customizable spatial resolution — directly applicable to prosthetics, rehabilitation garments, and soft robotic interfaces.</p>
+    <div class="callout"><p><strong>Thread connecting all five projects:</strong> E-textile and foam were the triboelectric materials throughout this research program. The smart textiles work closes the loop — advancing from using textiles as passive energy harvesters (WearETE) to developing textiles as active, programmable sensing elements. The programmable embroidery pressure sensor represents the most recent extension of this trajectory toward assistive robotics applications.</p></div>
+  </section>
+
+  <section>
+    <div class="sec-label">Research Threads</div>
+    <h2>Two Interconnected Sensing Modalities</h2>
+    <div class="thread-grid">
+      <div class="thread-card"><h3>Pressure Sensing</h3><p>Programmable embroidery enables digitally controlled pressure sensor fabrication with tunable spatial resolution — suitable for soft robotic grippers, rehabilitation garments, and prosthetic interfaces.</p></div>
+      <div class="thread-card"><h3>Triboelectric Integration</h3><p>Foam and e-textile as active triboelectric materials underpin the energy harvesting and motion sensing work throughout this research program, connecting smart textile fabrication to the broader system level.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Publications</div>
+    <div class="pub-list">
+
+      <div class="pub">
+        <div class="pub-venue">IEEE/ACM CHASE · June 2024</div>
+        <div class="pub-title">Development of Programmable Embroidery Pressure Sensors</div>
+        <div class="pub-authors">F. Rehman, <strong>Xian Li</strong>, Ye Sun</div>
+        <div class="pub-abs">Introduces a programmable embroidery-based approach to fabricating textile pressure sensors with digitally controlled spatial resolution and coverage. Demonstrates the feasibility of manufacturing-controlled sensor arrays using standard embroidery equipment, enabling customizable pressure mapping for applications in assistive robotics, prosthetics, and wearable health monitoring. Bridges smart textile manufacturing with human-centered robotics.</div>
+        <div class="pub-links"><a href="https://doi.org/10.1109/CHASE60773.2024.00049" target="_blank" rel="noopener" class="pub-link">DOI</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">Sensors · Vol. 17, No. 11 · November 2017</div>
+        <div class="pub-title">WearETE: A Scalable Wearable E-Textile Triboelectric Energy Harvesting System for Human Motion Scavenging</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Ye Sun</div>
+        <div class="pub-abs">Also listed under <a href="../triboelectric-energy-harvesting/index.html" style="color:var(--accent)">Project 01 — Triboelectric Energy Harvesting</a>. This work establishes foam and e-textile as the foundational material pair for the research group's triboelectric platform, and demonstrates that low-cost textile materials and easy assembly can achieve viable triboelectric energy harvesting performance — laying the groundwork for the programmable pressure sensor and broader smart textile sensing work.</div>
+        <div class="pub-links"><a href="https://doi.org/10.3390/s17112649" target="_blank" rel="noopener" class="pub-link">DOI</a></div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="nav-row">
+    <a href="../ecg-signal-processing/index.html" class="nav-link">← ECG Processing</a>
+    <a href="../index.html" class="nav-link">All Projects →</a>
+  </div>
+</div>
+<footer><div class="container"><p><a href="../../index.html">← Back to homepage</a> &nbsp;·&nbsp; <a href="../index.html">All Projects</a> &nbsp;·&nbsp; <a href="https://scholar.google.com/citations?user=rO-TRKMAAAAJ&hl=en" target="_blank" rel="noopener">Google Scholar</a></p></div></footer>
+</body>
+</html>

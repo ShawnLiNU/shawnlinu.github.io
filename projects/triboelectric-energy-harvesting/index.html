@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Triboelectric Energy Harvesting — Xian (Shawn) Li</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#f8f7f4;--bg-card:#ffffff;--border:#e0ddd6;--border-soft:#ede9e0;--text:#1a1814;--text-muted:#7a756a;--text-light:#b0a998;--accent:#2b4a8c;--accent-soft:#e8edf6;--tag-bg:#f0ede6;--tag-text:#5a5448;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);--shadow-sm:0 1px 2px rgba(0,0,0,.05);--radius:6px}
+    @media(prefers-color-scheme:dark){:root{--bg:#111110;--bg-card:#1a1917;--border:#2c2a27;--border-soft:#252320;--text:#e8e5df;--text-muted:#8a8680;--text-light:#5a5650;--accent:#7ba3e0;--accent-soft:#1a2236;--tag-bg:#232220;--tag-text:#a0998e;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-sm:0 1px 2px rgba(0,0,0,.2)}}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{font-size:16px;scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;line-height:1.6;min-height:100vh}
+    .container{max-width:800px;margin:0 auto;padding:0 24px}
+    .topbar{border-bottom:1px solid var(--border);padding:14px 0;position:sticky;top:0;background:var(--bg);z-index:100;backdrop-filter:blur(8px)}
+    .topbar-inner{display:flex;align-items:center;justify-content:space-between}
+    a.home{font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:.85rem;color:var(--text-muted);text-decoration:none;letter-spacing:.02em;transition:color .15s}a.home:hover{color:var(--text)}
+    .crumb{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-light);letter-spacing:.03em}
+    .hero{padding:56px 0 40px;border-bottom:1px solid var(--border-soft)}
+    .proj-num{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .proj-num::before{content:'';display:block;width:18px;height:1px;background:var(--text-light)}
+    h1{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:clamp(1.55rem,3.5vw,2rem);line-height:1.28;letter-spacing:-.01em;color:var(--text);margin-bottom:16px}
+    .hero-desc{font-size:.93rem;color:var(--text-muted);line-height:1.72;max-width:640px;margin-bottom:22px}
+    .tags{display:flex;flex-wrap:wrap;gap:7px}
+    .tag{font-family:'DM Mono',monospace;font-size:.70rem;letter-spacing:.02em;color:var(--tag-text);background:var(--tag-bg);border:1px solid var(--border);padding:3px 10px;border-radius:3px}
+    section{padding:38px 0;border-bottom:1px solid var(--border-soft)}section:last-child{border-bottom:none;padding-bottom:80px}
+    .sec-label{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:14px}
+    h2{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.18rem;letter-spacing:-.005em;color:var(--text);margin-bottom:13px}
+    p{font-size:.92rem;color:var(--text-muted);line-height:1.72}p+p{margin-top:11px}
+    strong.em{color:var(--text);font-weight:500}
+    .callout{background:var(--accent-soft);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:16px 20px;margin:18px 0}
+    .callout p{font-size:.86rem;line-height:1.65}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+    .stat{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;text-align:center;box-shadow:var(--shadow-sm)}
+    .stat-val{font-family:'EB Garamond',Georgia,serif;font-size:1.50rem;font-weight:500;color:var(--accent);display:block;line-height:1.1;margin-bottom:4px}
+    .stat-lbl{font-size:.70rem;color:var(--text-light);font-family:'DM Mono',monospace;letter-spacing:.04em}
+    .divider{height:1px;background:var(--border-soft);margin:18px 0}
+    .pub-list{display:flex;flex-direction:column;gap:14px}
+    .pub{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm)}
+    .pub-venue{font-family:'DM Mono',monospace;font-size:.67rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}
+    .pub-title{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.03rem;color:var(--text);line-height:1.35;margin-bottom:5px}
+    .pub-authors{font-size:.79rem;color:var(--text-light);margin-bottom:9px}
+    .pub-authors strong{color:var(--text-muted);font-weight:500}
+    .pub-abs{font-size:.82rem;color:var(--text-muted);line-height:1.65;margin-bottom:11px}
+    .pub-links{display:flex;gap:7px;flex-wrap:wrap}
+    .pub-link{font-family:'DM Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--tag-bg);border:1px solid var(--border);padding:3px 9px;border-radius:3px;text-decoration:none;transition:all .15s}
+    .pub-link:hover{color:var(--accent);border-color:var(--accent)}
+    .nav-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:28px 0}
+    .nav-link{font-size:.82rem;color:var(--text-muted);text-decoration:none;font-family:'DM Mono',monospace;letter-spacing:.02em}.nav-link:hover{color:var(--accent)}
+    footer{border-top:1px solid var(--border);padding:22px 0;text-align:center}
+    footer p{font-size:.78rem;color:var(--text-light)}footer a{color:var(--text-muted);text-decoration:none}footer a:hover{color:var(--accent)}
+    @media(max-width:560px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:span 2}}
+  </style>
+</head>
+<body>
+<nav class="topbar"><div class="container topbar-inner"><a href="../../index.html" class="home">Xian (Shawn) Li</a><span class="crumb">research / energy-harvesting</span></div></nav>
+<div class="container">
+  <header class="hero">
+    <div class="proj-num">Project 01 · 3 publications</div>
+    <h1>Triboelectric Energy Harvesting</h1>
+    <p class="hero-desc">Designing low-cost, wearable triboelectric energy harvesters (TEHs) from e-textile and foam, and developing high-efficiency SSHI power management circuits to convert human motion into usable electrical energy for wearable electronics.</p>
+    <div class="tags"><span class="tag">TENG / TEH</span><span class="tag">SSHI Rectifier</span><span class="tag">E-Textile</span><span class="tag">Power Management</span><span class="tag">LC Resonance</span><span class="tag">Human Motion Scavenging</span></div>
+  </header>
+
+  <section>
+    <div class="sec-label">Overview</div>
+    <h2>Turning Human Motion into Power</h2>
+    <p>Triboelectric energy harvesters generate electricity through contact-and-separation of dissimilar materials, converting ambient mechanical energy directly to charge. This research explored how everyday, low-cost materials — foam and e-textile — could serve as effective triboelectric pairs for flexible, scalable wearable harvesters, manufacturable without nanoscale processes.</p>
+    <p>A central challenge was bridging the gap between raw AC triboelectric output and usable DC power. Standard full-wave bridge rectifiers waste significant energy due to source-capacitance charging losses at the low frequencies (1–10 Hz) of human motion. This project adapted the SSHI (synchronized switching harvesting on inductor) rectifier strategy — previously applied only to piezoelectric harvesters — to the unique constraints of TEH devices, whose source capacitance varies dramatically with plate gap distance.</p>
+    <div class="callout"><p><strong>Key insight:</strong> By co-designing the TEH with a stabilizing multilayer pairing capacitor, the source capacitance variation is bounded to ≤ 30%, enabling the LC resonance loop to reliably flip the harvester voltage at each zero-crossing of source current. This eliminates the dominant energy-loss mechanism of bridge rectifiers and recovers the negative half-cycle that bridge rectifiers often miss entirely in contact-separation mode TEHs.</p></div>
+    <div class="stats">
+      <div class="stat"><span class="stat-val">+243%</span><span class="stat-lbl">Power gain vs bridge</span></div>
+      <div class="stat"><span class="stat-val">70 V+</span><span class="stat-lbl">Peak TEH output</span></div>
+      <div class="stat"><span class="stat-val">4.8 mW</span><span class="stat-lbl">Max harvested power</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Technical Approach</div>
+    <h2>Three Interlocking Contributions</h2>
+    <p><strong class="em">1 · Low-cost wearable TEH design.</strong> &nbsp;Foam and e-textile as the active triboelectric pair — flexible, wearable, off-the-shelf. A multilayer sandwich pairing capacitor (copper / PE / copper, ~12.5 µm dielectric) is integrated into the harvester structure, stabilizing total source capacitance across the full contact–separation range (100 µm–10 mm gap). A shoe-sole variant (TriboWalk) incorporates four removable tribo-elements per sole to capture gait timing and ground contact force.</p>
+    <div class="divider"></div>
+    <p><strong class="em">2 · New dynamic impact-force model.</strong> &nbsp;Existing V–Q–x models for TENGs assumed static contact forces. In practice, the fast contact-and-separation cycle creates a dynamic impact force that dominates charge generation and causes frequency shifts in the voltage waveform. A new theoretical model incorporating Fe = F(1 + √(1 + ẋ²/gδₛₜ)) was developed and validated at 6 Hz input frequency.</p>
+    <div class="divider"></div>
+    <p><strong class="em">3 · Parallel SSHI interface (p-SSHI).</strong> &nbsp;A symmetric n-MOSFET switching pair in parallel with the TEH, timed to τ = π√(LC_T) ≈ 222 µs, flips the harvester voltage at each current zero-crossing via LC resonance. Validated across 60 experimental trials; consistently outperforms bridge rectifier by up to 3.43×.</p>
+  </section>
+
+  <section>
+    <div class="sec-label">Publications</div>
+    <div class="pub-list">
+
+      <div class="pub">
+        <div class="pub-venue">IEEE Transactions on Power Electronics · Vol. 35, No. 4 · April 2020</div>
+        <div class="pub-title">An SSHI Rectifier for Triboelectric Energy Harvesting</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Ye Sun</div>
+        <div class="pub-abs">First SSHI-based rectifier for triboelectric harvesting. Proposes a multilayer TEH with pairing capacitance co-designed for SSHI compatibility, a new dynamic impact-force model, and a p-SSHI interface achieving +242.83% power over a bridge rectifier, validated across 60 experimental trials at 6 Hz.</div>
+        <div class="pub-links"><a href="https://doi.org/10.1109/TPEL.2019.2934676" target="_blank" rel="noopener" class="pub-link">DOI</a><a href="../triboelectric-energy-harvesting/index.html" class="pub-link">Project Page</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">Sensors · Vol. 17, No. 11 · November 2017</div>
+        <div class="pub-title">WearETE: A Scalable Wearable E-Textile Triboelectric Energy Harvesting System for Human Motion Scavenging</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Ye Sun</div>
+        <div class="pub-abs">Designs and validates a scalable wearable TEH system using foam and e-textile. Demonstrates >70 V output capable of powering 52+ LEDs from a 9×9 cm² area. Peak power 4.8 mW at 4 Hz hand clapping; average power efficiency up to 24.94%; max area power density ~46.6 µW/cm². Walking harvests 7.52 µW. Establishes that low-cost materials and easy assembly achieve viable triboelectric performance.</div>
+        <div class="pub-links"><a href="https://doi.org/10.3390/s17112649" target="_blank" rel="noopener" class="pub-link">DOI</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">IEEE EMBC · August 2016</div>
+        <div class="pub-title">TriboWalk: Triboelectric Dual Functional Wireless System for Gait Monitoring and Energy Harvesting</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Hui Huang, Ye Sun</div>
+        <div class="pub-abs">A shoe-sole triboelectric wireless system that simultaneously harvests energy (>20 V output) and captures gait timing parameters and ground contact force patterns from four tribo-elements per sole. A visualization tool is developed for gait data analysis. Demonstrates dual-function operation for remote rehabilitation monitoring during normal and fast walking at very low cost.</div>
+        <div class="pub-links"><a href="https://ieeexplore.ieee.org/document/7591800/" target="_blank" rel="noopener" class="pub-link">IEEE Xplore</a></div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="nav-row">
+    <a href="../index.html" class="nav-link">← All Projects</a>
+    <a href="../self-powered-motion-sensing/index.html" class="nav-link">Next: Self-Powered Sensing →</a>
+  </div>
+</div>
+<footer><div class="container"><p><a href="../../index.html">← Back to homepage</a> &nbsp;·&nbsp; <a href="../index.html">All Projects</a> &nbsp;·&nbsp; <a href="https://scholar.google.com/citations?user=rO-TRKMAAAAJ&hl=en" target="_blank" rel="noopener">Google Scholar</a></p></div></footer>
+</body>
+</html>

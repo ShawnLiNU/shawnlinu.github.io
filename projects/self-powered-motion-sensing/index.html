@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Self-Powered Motion Sensing — Xian (Shawn) Li</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#f8f7f4;--bg-card:#ffffff;--border:#e0ddd6;--border-soft:#ede9e0;--text:#1a1814;--text-muted:#7a756a;--text-light:#b0a998;--accent:#2b4a8c;--accent-soft:#e8edf6;--tag-bg:#f0ede6;--tag-text:#5a5448;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);--shadow-sm:0 1px 2px rgba(0,0,0,.05);--radius:6px}
+    @media(prefers-color-scheme:dark){:root{--bg:#111110;--bg-card:#1a1917;--border:#2c2a27;--border-soft:#252320;--text:#e8e5df;--text-muted:#8a8680;--text-light:#5a5650;--accent:#7ba3e0;--accent-soft:#1a2236;--tag-bg:#232220;--tag-text:#a0998e;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-sm:0 1px 2px rgba(0,0,0,.2)}}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{font-size:16px;scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;line-height:1.6;min-height:100vh}
+    .container{max-width:800px;margin:0 auto;padding:0 24px}.topbar{border-bottom:1px solid var(--border);padding:14px 0;position:sticky;top:0;background:var(--bg);z-index:100;backdrop-filter:blur(8px)}.topbar-inner{display:flex;align-items:center;justify-content:space-between}a.home{font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:.85rem;color:var(--text-muted);text-decoration:none;letter-spacing:.02em;transition:color .15s}a.home:hover{color:var(--text)}.crumb{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-light);letter-spacing:.03em}
+    .hero{padding:56px 0 40px;border-bottom:1px solid var(--border-soft)}.proj-num{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:12px;display:flex;align-items:center;gap:8px}.proj-num::before{content:'';display:block;width:18px;height:1px;background:var(--text-light)}
+    h1{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:clamp(1.55rem,3.5vw,2rem);line-height:1.28;letter-spacing:-.01em;color:var(--text);margin-bottom:16px}.hero-desc{font-size:.93rem;color:var(--text-muted);line-height:1.72;max-width:640px;margin-bottom:22px}.tags{display:flex;flex-wrap:wrap;gap:7px}.tag{font-family:'DM Mono',monospace;font-size:.70rem;letter-spacing:.02em;color:var(--tag-text);background:var(--tag-bg);border:1px solid var(--border);padding:3px 10px;border-radius:3px}
+    section{padding:38px 0;border-bottom:1px solid var(--border-soft)}section:last-child{border-bottom:none;padding-bottom:80px}.sec-label{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:14px}
+    h2{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.18rem;letter-spacing:-.005em;color:var(--text);margin-bottom:13px}p{font-size:.92rem;color:var(--text-muted);line-height:1.72}p+p{margin-top:11px}strong.em{color:var(--text);font-weight:500}
+    .callout{background:var(--accent-soft);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:16px 20px;margin:18px 0}.callout p{font-size:.86rem;line-height:1.65}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.stat{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;text-align:center;box-shadow:var(--shadow-sm)}.stat-val{font-family:'EB Garamond',Georgia,serif;font-size:1.50rem;font-weight:500;color:var(--accent);display:block;line-height:1.1;margin-bottom:4px}.stat-lbl{font-size:.70rem;color:var(--text-light);font-family:'DM Mono',monospace;letter-spacing:.04em}
+    .app-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.app-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow-sm)}.app-card h3{font-family:'Instrument Sans',sans-serif;font-size:.86rem;font-weight:600;color:var(--text);margin-bottom:5px}.app-card p{font-size:.81rem;line-height:1.58}
+    .pub-list{display:flex;flex-direction:column;gap:14px}.pub{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm)}.pub-venue{font-family:'DM Mono',monospace;font-size:.67rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}.pub-title{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.03rem;color:var(--text);line-height:1.35;margin-bottom:5px}.pub-authors{font-size:.79rem;color:var(--text-light);margin-bottom:9px}.pub-authors strong{color:var(--text-muted);font-weight:500}.pub-abs{font-size:.82rem;color:var(--text-muted);line-height:1.65;margin-bottom:11px}.pub-links{display:flex;gap:7px;flex-wrap:wrap}.pub-link{font-family:'DM Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--tag-bg);border:1px solid var(--border);padding:3px 9px;border-radius:3px;text-decoration:none;transition:all .15s}.pub-link:hover{color:var(--accent);border-color:var(--accent)}
+    .nav-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:28px 0}.nav-link{font-size:.82rem;color:var(--text-muted);text-decoration:none;font-family:'DM Mono',monospace;letter-spacing:.02em}.nav-link:hover{color:var(--accent)}
+    footer{border-top:1px solid var(--border);padding:22px 0;text-align:center}footer p{font-size:.78rem;color:var(--text-light)}footer a{color:var(--text-muted);text-decoration:none}footer a:hover{color:var(--accent)}
+    @media(max-width:560px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:span 2}.app-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<nav class="topbar"><div class="container topbar-inner"><a href="../../index.html" class="home">Xian (Shawn) Li</a><span class="crumb">research / self-powered-sensing</span></div></nav>
+<div class="container">
+  <header class="hero">
+    <div class="proj-num">Project 02 · 3 publications</div>
+    <h1>Self-Powered Triboelectric Motion Sensing</h1>
+    <p class="hero-desc">Batteryless wearable systems that exploit the triboelectric mechanism simultaneously for sensing and energy harvesting — enabling human activity recognition, gait analysis, and rehabilitation monitoring without any external power supply.</p>
+    <div class="tags"><span class="tag">Self-Powered Sensing</span><span class="tag">Activity Recognition</span><span class="tag">Gait Analysis</span><span class="tag">Wearable IoT</span><span class="tag">Rehabilitation</span><span class="tag">kNN / Machine Learning</span></div>
+  </header>
+
+  <section>
+    <div class="sec-label">Overview</div>
+    <h2>One Device, Two Functions: Sensing and Harvesting</h2>
+    <p>Conventional wearable sensors — accelerometers, pressure sensors, EMG electrodes — require a battery or continuous power source. The triboelectric mechanism offers an elegant alternative: the same charge generation that produces harvestable energy also encodes a signal proportional to the motion that caused it. This enables batteryless wearable IoT nodes where a single triboelectric element serves as both sensor and power source.</p>
+    <p>The high output voltage (>20 V peak-to-peak) at low human-motion frequencies (1–10 Hz) makes triboelectric devices especially suited for this application — the signal is measurable without amplification in many cases, reducing system complexity further.</p>
+    <div class="callout"><p><strong>Dual-function principle:</strong> The triboelectric structure generates a self-powered motion signal from physical activities and simultaneously harvests energy, providing sustainable power for wireless data transmission in the wearable IoT node — advancing maintenance-free, autonomous health monitoring systems with zero battery replacements.</p></div>
+    <div class="stats">
+      <div class="stat"><span class="stat-val">&gt;80%</span><span class="stat-lbl">Activity recognition accuracy</span></div>
+      <div class="stat"><span class="stat-val">20 V+</span><span class="stat-lbl">Peak signal output</span></div>
+      <div class="stat"><span class="stat-val">5</span><span class="stat-lbl">Classified activities</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Application Areas</div>
+    <h2>Sensing Across Health Contexts</h2>
+    <p>The self-powered sensing paradigm was validated across two complementary deployment scenarios:</p>
+    <div class="app-grid">
+      <div class="app-card"><h3>Human Activity Recognition</h3><p>Body-worn triboelectric sensors classify five daily activities — sitting/standing, walking, stair climbing up/down, and running — using kNN clustering on signal features, with no external power supply or signal conditioning circuits.</p></div>
+      <div class="app-card"><h3>Gait Monitoring &amp; Rehabilitation</h3><p>Four triboelectric elements embedded in shoe soles capture ground contact force (GCF) patterns and gait timing parameters, enabling clinical-grade gait analysis for rehabilitation patients during daily life.</p></div>
+      <div class="app-card"><h3>Concurrent Energy Harvesting</h3><p>The same tribo-elements output both a sensing signal and harvestable charge. TriboWalk generates >20 V during walking, enabling the sensor node to be partially or fully self-powered during operation.</p></div>
+      <div class="app-card"><h3>Wireless Transmission</h3><p>Motion data is collected by a 10-bit ADC and transmitted wirelessly. The system architecture exploits the self-powered capability to minimize total node power consumption and extend deployment lifetime.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Publications</div>
+    <div class="pub-list">
+
+      <div class="pub">
+        <div class="pub-venue">IEEE Internet of Things Journal · Vol. 5, No. 6 · December 2018</div>
+        <div class="pub-title">TriboMotion: A Self-Powered Triboelectric Motion Sensor in Wearable Internet of Things for Human Activity Recognition and Energy Harvesting</div>
+        <div class="pub-authors">Hui Huang, <strong>Xian Li</strong>, Si Liu, Shuai Hu, Ye Sun</div>
+        <div class="pub-abs">Develops a self-powered motion sensor system for wearable IoT that eliminates signal conditioning circuits by exploiting the triboelectric physical model directly. Classifies five daily activities with >80% recognition accuracy for walking and sitting/standing, while simultaneously harvesting energy from the same motion signal. Establishes the foundations for next-generation self-powered wearable IoT.</div>
+        <div class="pub-links"><a href="https://ieeexplore.ieee.org/document/8333725" target="_blank" rel="noopener" class="pub-link">IEEE Xplore</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">IEEE EMBC · August 2016</div>
+        <div class="pub-title">TriboWalk: Triboelectric Dual Functional Wireless System for Gait Monitoring and Energy Harvesting</div>
+        <div class="pub-authors"><strong>Xian Li</strong>, Hui Huang, Ye Sun</div>
+        <div class="pub-abs">Reports the design and validation of TriboWalk, a shoe-sole triboelectric wireless system for gait monitoring and energy harvesting. Four removable tribo-elements per sole capture ground contact force patterns and gait timing parameters. Generates >20 V during walking for concurrent energy harvesting. Validated at normal and fast walking speeds; includes a visualization tool for gait data analysis.</div>
+        <div class="pub-links"><a href="https://ieeexplore.ieee.org/document/7591800/" target="_blank" rel="noopener" class="pub-link">IEEE Xplore</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">IEEE EMBC · August 2016</div>
+        <div class="pub-title">A Triboelectric Motion Sensor in Wearable Body Sensor Network for Human Activity Recognition</div>
+        <div class="pub-authors">Hui Huang, <strong>Xian Li</strong>, Ye Sun</div>
+        <div class="pub-abs">Early work establishing the triboelectric motion sensing paradigm. Designs a wearable triboelectric sensor node that collects motion signals from physical activities without any power supply, exploiting the high (~20 V) peak-to-peak output at low frequencies. Uses kNN clustering to recognize five common activities, achieving >80% success rate for walking and sitting/standing. Demonstrates dual function as an energy harvester.</div>
+        <div class="pub-links"><a href="https://www.researchgate.net/publication/303876425" target="_blank" rel="noopener" class="pub-link">ResearchGate</a></div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="nav-row">
+    <a href="../triboelectric-energy-harvesting/index.html" class="nav-link">← Energy Harvesting</a>
+    <a href="../noncontact-biopotential-sensing/index.html" class="nav-link">Next: Non-Contact Sensing →</a>
+  </div>
+</div>
+<footer><div class="container"><p><a href="../../index.html">← Back to homepage</a> &nbsp;·&nbsp; <a href="../index.html">All Projects</a> &nbsp;·&nbsp; <a href="https://scholar.google.com/citations?user=rO-TRKMAAAAJ&hl=en" target="_blank" rel="noopener">Google Scholar</a></p></div></footer>
+</body>
+</html>

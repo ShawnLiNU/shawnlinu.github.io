@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aging, Smart Health &amp; CPS — Xian (Shawn) Li</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Mono:wght@300;400;500&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{--bg:#f8f7f4;--bg-card:#ffffff;--border:#e0ddd6;--border-soft:#ede9e0;--text:#1a1814;--text-muted:#7a756a;--text-light:#b0a998;--accent:#2b4a8c;--accent-soft:#e8edf6;--tag-bg:#f0ede6;--tag-text:#5a5448;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);--shadow-sm:0 1px 2px rgba(0,0,0,.05);--radius:6px}
+    @media(prefers-color-scheme:dark){:root{--bg:#111110;--bg-card:#1a1917;--border:#2c2a27;--border-soft:#252320;--text:#e8e5df;--text-muted:#8a8680;--text-light:#5a5650;--accent:#7ba3e0;--accent-soft:#1a2236;--tag-bg:#232220;--tag-text:#a0998e;--shadow:0 1px 3px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);--shadow-sm:0 1px 2px rgba(0,0,0,.2)}}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{font-size:16px;scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font-family:'Instrument Sans',sans-serif;line-height:1.6;min-height:100vh}
+    .container{max-width:800px;margin:0 auto;padding:0 24px}.topbar{border-bottom:1px solid var(--border);padding:14px 0;position:sticky;top:0;background:var(--bg);z-index:100;backdrop-filter:blur(8px)}.topbar-inner{display:flex;align-items:center;justify-content:space-between}a.home{font-family:'Instrument Sans',sans-serif;font-weight:500;font-size:.85rem;color:var(--text-muted);text-decoration:none;letter-spacing:.02em;transition:color .15s}a.home:hover{color:var(--text)}.crumb{font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text-light);letter-spacing:.03em}
+    .hero{padding:56px 0 40px;border-bottom:1px solid var(--border-soft)}.proj-num{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:12px;display:flex;align-items:center;gap:8px}.proj-num::before{content:'';display:block;width:18px;height:1px;background:var(--text-light)}
+    h1{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:clamp(1.55rem,3.5vw,2rem);line-height:1.28;letter-spacing:-.01em;color:var(--text);margin-bottom:16px}.hero-desc{font-size:.93rem;color:var(--text-muted);line-height:1.72;max-width:640px;margin-bottom:22px}.tags{display:flex;flex-wrap:wrap;gap:7px}.tag{font-family:'DM Mono',monospace;font-size:.70rem;letter-spacing:.02em;color:var(--tag-text);background:var(--tag-bg);border:1px solid var(--border);padding:3px 10px;border-radius:3px}
+    section{padding:38px 0;border-bottom:1px solid var(--border-soft)}section:last-child{border-bottom:none;padding-bottom:80px}.sec-label{font-family:'DM Mono',monospace;font-size:.68rem;letter-spacing:.10em;text-transform:uppercase;color:var(--text-light);margin-bottom:14px}
+    h2{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.18rem;letter-spacing:-.005em;color:var(--text);margin-bottom:13px}p{font-size:.92rem;color:var(--text-muted);line-height:1.72}p+p{margin-top:11px}strong.em{color:var(--text);font-weight:500}
+    .callout{background:var(--accent-soft);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:16px 20px;margin:18px 0}.callout p{font-size:.86rem;line-height:1.65}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}.stat{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 14px;text-align:center;box-shadow:var(--shadow-sm)}.stat-val{font-family:'EB Garamond',Georgia,serif;font-size:1.50rem;font-weight:500;color:var(--accent);display:block;line-height:1.1;margin-bottom:4px}.stat-lbl{font-size:.70rem;color:var(--text-light);font-family:'DM Mono',monospace;letter-spacing:.04em}
+    .divider{height:1px;background:var(--border-soft);margin:18px 0}
+    .app-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.app-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow-sm)}.app-card h3{font-family:'Instrument Sans',sans-serif;font-size:.86rem;font-weight:600;color:var(--text);margin-bottom:5px}.app-card p{font-size:.81rem;line-height:1.58}
+    .pub-list{display:flex;flex-direction:column;gap:14px}.pub{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm)}.pub-venue{font-family:'DM Mono',monospace;font-size:.67rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:5px}.pub-title{font-family:'EB Garamond',Georgia,serif;font-weight:500;font-size:1.03rem;color:var(--text);line-height:1.35;margin-bottom:5px}.pub-authors{font-size:.79rem;color:var(--text-light);margin-bottom:9px}.pub-authors strong{color:var(--text-muted);font-weight:500}.pub-abs{font-size:.82rem;color:var(--text-muted);line-height:1.65;margin-bottom:11px}.pub-links{display:flex;gap:7px;flex-wrap:wrap}.pub-link{font-family:'DM Mono',monospace;font-size:.67rem;color:var(--text-muted);background:var(--tag-bg);border:1px solid var(--border);padding:3px 9px;border-radius:3px;text-decoration:none;transition:all .15s}.pub-link:hover{color:var(--accent);border-color:var(--accent)}
+    .nav-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:28px 0}.nav-link{font-size:.82rem;color:var(--text-muted);text-decoration:none;font-family:'DM Mono',monospace;letter-spacing:.02em}.nav-link:hover{color:var(--accent)}
+    footer{border-top:1px solid var(--border);padding:22px 0;text-align:center}footer p{font-size:.78rem;color:var(--text-light)}footer a{color:var(--text-muted);text-decoration:none}footer a:hover{color:var(--accent)}
+    @media(max-width:560px){.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:span 2}.app-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<nav class="topbar"><div class="container topbar-inner"><a href="../../index.html" class="home">Xian (Shawn) Li</a><span class="crumb">research / aging-smart-health</span></div></nav>
+<div class="container">
+  <header class="hero">
+    <div class="proj-num">Project 06 · 4 publications</div>
+    <h1>Aging, Smart Health &amp; Cyber-Physical Systems</h1>
+    <p class="hero-desc">Sensor-based systems for detecting social isolation and loneliness in elderly communities, fall risk evaluation from electronic health records, and multimodal gait and sleep sensing — developed during postdoctoral research at the University of Pennsylvania in collaboration with clinical and engineering teams.</p>
+    <div class="tags"><span class="tag">Gerontechnology</span><span class="tag">Social Isolation</span><span class="tag">Fall Risk</span><span class="tag">EHR Data</span><span class="tag">Ambient Sensing</span><span class="tag">Clinician-in-the-Loop</span><span class="tag">ACM/IEEE CHASE</span><span class="tag">ICCPS</span></div>
+  </header>
+
+  <section>
+    <div class="sec-label">Overview</div>
+    <h2>Technology for Healthy Aging</h2>
+    <p>Social isolation and loneliness among elderly adults carry health risks rivaling those of smoking and obesity, yet they remain difficult to detect and intervene upon at scale. This research thread, conducted at the University of Pennsylvania in collaboration with clinicians, nursing informaticists, and international teams, developed cyber-physical systems for passive, unobtrusive monitoring of older adults — enabling early detection of social isolation, prediction of fall risk from clinical data, and correlation of mobility signals with health outcomes.</p>
+    <p>A common theme is the clinician-in-the-loop design philosophy: sensor systems and data-driven models are built to support clinical decision-making rather than replace it, enabling scalable, actionable health interventions in community-dwelling and inpatient settings.</p>
+    <div class="callout"><p><strong>iCareLoop system:</strong> Proposes a closed-loop architecture where passive sensing of daily activity patterns feeds a machine learning pipeline, and outputs trigger clinician-mediated interventions — forming a complete loop from detection through actuation for gerontological social isolation and loneliness.</p></div>
+    <div class="stats">
+      <div class="stat"><span class="stat-val">22</span><span class="stat-lbl">Elderly participants (US &amp; Japan)</span></div>
+      <div class="stat"><span class="stat-val">MIMIC-III</span><span class="stat-lbl">EHR database used (FRED)</span></div>
+      <div class="stat"><span class="stat-val">4</span><span class="stat-lbl">Publications</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Research Threads</div>
+    <h2>Three Interconnected Aging-Health Problems</h2>
+    <div class="app-grid">
+      <div class="app-card"><h3>Social Isolation &amp; Loneliness Detection</h3><p>Passive ambient sensing of daily activity patterns (motion, sleep, social interaction proxies) in elderly homes, combined with machine learning, to predict loneliness scores and trigger clinician-mediated interventions.</p></div>
+      <div class="app-card"><h3>Fall Risk Evaluation from EHR</h3><p>Open-source database (FRED) derived from MIMIC-III integrating Morse Fall Scale records, physician notes, and medication data — enabling data-driven fall risk prediction and prevention research.</p></div>
+      <div class="app-card"><h3>Gait &amp; Sleep Sensing Correlation</h3><p>Pilot study exploring correlations between gait parameters measured by wearable sensors and bed movement signals from smart bed systems — toward unobtrusive, continuous mobility monitoring for older adults.</p></div>
+      <div class="app-card"><h3>International Collaboration</h3><p>Cross-cultural deployment of sensing systems in US and Japan communities, studying loneliness indicators across different social contexts through a US–Japan research partnership.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-label">Publications</div>
+    <div class="pub-list">
+
+      <div class="pub">
+        <div class="pub-venue">ACM/IEEE ICCPS · CPS-IoT Week 2023</div>
+        <div class="pub-title">iCareLoop: Closed-Loop Sensing and Intervention for Gerontological Social Isolation and Loneliness</div>
+        <div class="pub-authors">X. Ji, A. Yuh, H. Choi, A. Watson, C. Kendell, <strong>X. Li</strong>, J. Weimer, H. Nagahara, T. Higashino, T. Mizumoto, V. Erdélyi, G. Demiris, O. Sokolsky, I. Lee</div>
+        <div class="pub-abs">Proposes iCareLoop, a closed-loop decision support system with clinician-in-the-loop actuation to mitigate gerontological social isolation and loneliness. Passive sensors deployed in elderly residences capture daily activity data; machine learning models predict social isolation and loneliness levels; targeted interventions are triggered through clinical workflows. Addresses mental health disruptions significantly worsened by the COVID-19 pandemic.</div>
+        <div class="pub-links"><a href="https://doi.org/10.1145/3576841.3589632" target="_blank" rel="noopener" class="pub-link">DOI</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">IEEE/ACM CHASE · 2023</div>
+        <div class="pub-title">Short: Integrated Sensing Platform for Detecting Social Isolation and Loneliness in the Elderly Community</div>
+        <div class="pub-authors">X. Ji, <strong>X. Li</strong>, A. Yuh, C. Kendell, A. Watson, J. Weimer, H. Nagahara, T. Higashino, T. Mizumoto, V. Erdélyi, G. Demiris, O. Sokolsky, I. Lee</div>
+        <div class="pub-abs">Presents an integrated sensing platform deployed in the residences of elderly community-dwellers to passively detect social isolation and loneliness. The platform captures daily living activity patterns through a suite of ambient sensors and applies machine learning to correlate sensor features with validated loneliness scales — demonstrating the feasibility of technology-based detection as a scalable alternative to clinic-based assessment.</div>
+        <div class="pub-links"><a href="https://doi.org/10.1145/3580252.3586983" target="_blank" rel="noopener" class="pub-link">DOI</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">IEEE/ACM CHASE · 2021</div>
+        <div class="pub-title">FRED: Fall Risk Evaluation Database Based on Electronic Health Record Data</div>
+        <div class="pub-authors">P. Lu, <strong>X. Li</strong>, S. Jang, A. Lee, S. Pugh, A. Watson, R. I. Bjarnadóttir, R. Lucero, G. Demiris, A. Nenkova, J. Weimer, I. Lee</div>
+        <div class="pub-abs">Introduces FRED, an open-source four-part database for fall risk evaluation derived from MIMIC-III EHR data. Part 1: demographic data and admission IDs. Part 2: Morse Fall Scale intervals and fall risk labels (high/low/increasing/decreasing). Part 3: corresponding physician notes. Part 4: administered medication records. Available on PhysioNet to enable data-driven fall prediction and prevention research across interdisciplinary aging studies.</div>
+        <div class="pub-links"><a href="https://ieeexplore.ieee.org/document/9697949/" target="_blank" rel="noopener" class="pub-link">IEEE Xplore</a><a href="https://jamesweimer.net/pdf/2021-CHASE-FRED.pdf" target="_blank" rel="noopener" class="pub-link">PDF</a></div>
+      </div>
+
+      <div class="pub">
+        <div class="pub-venue">MidAtlantic Bioinformatics Conference · 2021</div>
+        <div class="pub-title">Pilot Study to Explore Correlation Between Gait and Bed Movements</div>
+        <div class="pub-authors"><strong>X. Li</strong>, J. Weimer, G. Demiris, O. Sokolsky, I. Lee</div>
+        <div class="pub-abs">A pilot study investigating the correlation between gait parameters measured by wearable inertial sensors and bed movement signals captured by a smart bed monitoring system in older adults. Explores whether unobtrusive overnight bed sensor data can serve as a proxy for mobility and gait health — enabling continuous longitudinal tracking without requiring active cooperation from participants or wearable compliance during the day.</div>
+        <div class="pub-links"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="nav-row">
+    <a href="../smart-textiles/index.html" class="nav-link">← Smart Textiles</a>
+    <a href="../index.html" class="nav-link">All Projects →</a>
+  </div>
+</div>
+<footer><div class="container"><p><a href="../../index.html">← Back to homepage</a> &nbsp;·&nbsp; <a href="../index.html">All Projects</a> &nbsp;·&nbsp; <a href="https://scholar.google.com/citations?user=rO-TRKMAAAAJ&hl=en" target="_blank" rel="noopener">Google Scholar</a></p></div></footer>
+</body>
+</html>
