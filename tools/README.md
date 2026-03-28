@@ -49,6 +49,35 @@ Forward kinematics calculator for serial manipulators using Denavit-Hartenberg p
 
 ---
 
+### PID Controller Tuner
+`pid_tuner.html`
+
+Real-time PID tuning tool for EECE 5580 — Classical Control Systems.
+
+- Enter any plant transfer function as polynomial coefficients; supports first-order, second-order, integrator, unstable, and balancing robot (inverted pendulum) presets
+- Tune **Kp**, **Ki**, **Kd** via sliders or direct keyboard input with per-gain reset buttons
+- **Step Response** — live plot with rise time, settling time, overshoot, and steady-state error
+- **Bode Plot** — open-loop magnitude and phase with phase margin and gain margin readout
+- **Nyquist Diagram** — full complex-plane plot with critical point marker
+- Stability badge (Stable / Marginal / Unstable) updates in real time; built-in tuning guide
+
+---
+
+### Serial Data Logger Viewer
+`serial_logger.html`
+
+Multi-channel CSV viewer for Arduino, ESP32, and any serial data logger.
+
+- Upload a `.csv` file or paste raw data — auto-detects delimiter, header rows, unit rows, and multi-section side-by-side layouts (e.g. Digilent WaveForms exports)
+- Plots up to 8 color-coded channels simultaneously with per-channel toggle
+- **Mouse interactions** — scroll to zoom centred on cursor, click-drag to pan
+- **Crosshair tooltip** — hover over the chart to see exact time and per-channel values
+- Threshold line and **peak detection** with configurable minimum distance
+- Channel statistics: Min, Max, Mean, RMS per channel
+- Demo datasets: IMU, Encoder, ECG-like signal
+
+---
+
 ## File Structure
 
 ```
@@ -57,7 +86,9 @@ tools/
 ├── README.md                     ← this file
 ├── apple_health_viewer.html
 ├── kalman_filter_visualizer.html
-└── robot_kinematics.html
+├── robot_kinematics.html
+├── pid_tuner.html
+└── serial_logger.html
 ```
 
 ## Adding a New Tool

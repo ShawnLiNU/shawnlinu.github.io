@@ -373,8 +373,52 @@ footer a:hover { color: var(--accent); }
       </div>
     </a>
 
+    <!-- ── TOOL 4: PID Controller Tuner ── -->
+    <a class="tool-card" href="pid_tuner.html" data-color="amber" style="animation-delay:0.15s">
+      <div class="card-top">
+        <div class="card-icon">&#9881;</div>
+        <div class="card-badges">
+          <span class="badge badge-amber">EECE 5580</span>
+          <span class="badge badge-green">Step Response</span>
+          <span class="badge badge-blue">Bode Plot</span>
+        </div>
+      </div>
+      <div class="card-name">PID Controller Tuner</div>
+      <div class="card-desc">
+        Set a plant transfer function, tune P/I/D gains with sliders or direct input, and watch
+        the step response, Bode plot, and Nyquist diagram update in real time. Computes rise time,
+        settling time, overshoot, phase margin, and gain margin. Presets include a balancing robot
+        (inverted pendulum) model for EECE 5580.
+      </div>
+      <div class="card-link">
+        Open tool <span class="arrow">&#8594;</span>
+      </div>
+    </a>
+
+    <!-- ── TOOL 5: Serial Data Logger Viewer ── -->
+    <a class="tool-card" href="serial_logger.html" data-color="green" style="animation-delay:0.20s">
+      <div class="card-top">
+        <div class="card-icon">&#128200;</div>
+        <div class="card-badges">
+          <span class="badge badge-green">Arduino</span>
+          <span class="badge badge-blue">ESP32</span>
+          <span class="badge badge-muted">Any CSV</span>
+        </div>
+      </div>
+      <div class="card-name">Serial Data Logger Viewer</div>
+      <div class="card-desc">
+        Upload or paste CSV data from Arduino, ESP32, or any serial logger. Auto-detects headers,
+        delimiters, multi-section layouts, and unit rows. Plot multiple channels simultaneously,
+        set thresholds for peak detection, zoom and pan with mouse or buttons, and read exact
+        values via a live crosshair tooltip.
+      </div>
+      <div class="card-link">
+        Open tool <span class="arrow">&#8594;</span>
+      </div>
+    </a>
+
     <!-- ── TOOL N TEMPLATE: copy and fill in ──
-    <a class="tool-card" href="your_tool.html" data-color="blue" style="animation-delay:0.15s">
+    <a class="tool-card" href="your_tool.html" data-color="blue" style="animation-delay:0.25s">
       <div class="card-top">
         <div class="card-icon">&#128300;</div>
         <div class="card-badges">
@@ -403,7 +447,7 @@ footer a:hover { color: var(--accent); }
       <span class="cs-icon">&#128736;</span>
       <div>
         <div style="color:var(--text);font-size:0.8rem;margin-bottom:3px">More tools coming</div>
-        EMG Signal Analyzer, PID Controller Tuner, IMU Data Visualizer &mdash; add cards above as you build them.
+        EMG Signal Analyzer, IMU Data Visualizer &mdash; add cards above as you build them.
       </div>
     </div>
 
