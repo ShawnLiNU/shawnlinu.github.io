@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EECE 5550 · Mobile Robotics · Northeastern University</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:   #CC0000;
+      --black: #111111;
+      --gray:  #555555;
+      --lgray: #999999;
+      --rule:  #e2e2e2;
+      --bg:    #ffffff;
+      --off:   #f6f6f6;
+      --font:  Arial, Helvetica, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--black);
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar { height: 5px; background: var(--red); }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--rule);
+      padding: 0 2rem;
+    }
+    .nav-inner {
+      max-width: 960px; margin: 0 auto;
+      display: flex; align-items: center;
+      justify-content: space-between; height: 50px;
+    }
+    .nav-brand {
+      font-size: 0.82rem; font-weight: 700;
+      color: var(--black); text-decoration: none;
+    }
+    .nav-brand span { color: var(--red); }
+    .nav-links { display: flex; gap: 1.6rem; list-style: none; }
+    .nav-links a {
+      font-size: 0.72rem; font-weight: 700; color: var(--gray);
+      text-decoration: none; letter-spacing: 0.08em;
+      text-transform: uppercase; transition: color 0.18s;
+    }
+    .nav-links a:hover { color: var(--red); }
+    .hamburger {
+      display: none; flex-direction: column; gap: 4px;
+      cursor: pointer; padding: 6px; background: none; border: none;
+    }
+    .hamburger span { display: block; width: 20px; height: 2px; background: var(--black); }
+    @media (max-width: 660px) {
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none; flex-direction: column; gap: 0;
+        position: absolute; top: 50px; left: 0; right: 0;
+        background: #fff; border-bottom: 1px solid var(--rule);
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 0.65rem 2rem; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 960px; margin: 0 auto;
+      padding: 4.5rem 2rem 3.5rem; text-align: center;
+    }
+    .hero-dept {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--lgray); margin-bottom: 1.4rem;
+    }
+    .hero-number {
+      font-size: clamp(3.8rem, 11vw, 6rem);
+      font-weight: 700; line-height: 1; color: var(--black); margin-bottom: 0.3rem;
+    }
+    .hero-title {
+      font-size: clamp(1.2rem, 3.2vw, 1.65rem);
+      font-weight: 400; color: var(--gray); margin-bottom: 1rem;
+    }
+    .hero-meta { font-size: 0.8rem; color: var(--lgray); letter-spacing: 0.05em; }
+    .hero-rule { width: 48px; height: 2px; background: var(--red); margin: 1.6rem auto; }
+    .hero-hook {
+      font-size: 1.1rem; font-weight: 700; color: var(--black);
+      max-width: 560px; margin: 0 auto; line-height: 1.45;
+    }
+    .hero-sub {
+      font-size: 0.88rem; color: var(--gray);
+      max-width: 600px; margin: 0.9rem auto 0; line-height: 1.65;
+    }
+
+    /* ── PLATFORM BADGE ── */
+    .platform-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      margin-top: 1.4rem; padding: 0.35rem 0.9rem;
+      border: 1px solid var(--rule); border-radius: 2px;
+      background: var(--off); font-size: 0.73rem; color: var(--gray);
+    }
+    .platform-badge strong { color: var(--black); font-weight: 700; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+
+    /* ── SECTION WRAPPER ── */
+    .section {
+      max-width: 960px; margin: 0 auto;
+      padding: 3rem 2rem; border-top: 1px solid var(--rule);
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .section.visible { opacity: 1; transform: none; }
+    .section-label {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--lgray); margin-bottom: 1.5rem;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .section { opacity: 1; transform: none; transition: none; }
+    }
+
+    /* ── ABOUT GRID ── */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem 3rem; }
+    @media (max-width: 620px) { .about-grid { grid-template-columns: 1fr; } }
+    .about-block h3 {
+      font-size: 0.82rem; font-weight: 700; color: var(--black);
+      margin-bottom: 0.4rem;
+    }
+    .about-block p { font-size: 0.86rem; color: var(--gray); line-height: 1.65; }
+
+    /* ── THREE COLUMNS ── */
+    .columns { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.8rem; }
+    @media (max-width: 640px) { .columns { grid-template-columns: 1fr; } }
+    .col-head {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding-bottom: 0.6rem; margin-bottom: 0.7rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .col-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .col-head h3 { font-size: 0.88rem; font-weight: 700; color: var(--black); }
+    .col ul { list-style: none; }
+    .col ul li {
+      font-size: 0.83rem; color: var(--gray);
+      padding: 0.2rem 0; display: flex; align-items: baseline; gap: 0.42rem;
+    }
+    .col ul li::before { content: '·'; color: var(--red); font-weight: 700; flex-shrink: 0; }
+
+    /* ── ROADMAP ── */
+    .roadmap { display: grid; grid-template-columns: repeat(5,1fr); gap: 0.42rem; }
+    @media (max-width: 680px) { .roadmap { grid-template-columns: 1fr 1fr; } }
+    .phase {
+      background: var(--off); border: 1px solid var(--rule);
+      padding: 0.8rem 0.7rem; border-radius: 2px;
+    }
+    .phase.hl { background: var(--red); border-color: var(--red); }
+    .phase-wk { font-size: 0.64rem; color: var(--lgray); margin-bottom: 0.22rem; }
+    .phase.hl .phase-wk { color: rgba(255,255,255,0.55); }
+    .phase-title { font-size: 0.83rem; font-weight: 700; color: var(--black); margin-bottom: 0.15rem; }
+    .phase.hl .phase-title { color: #fff; }
+    .phase-sub { font-size: 0.71rem; color: var(--lgray); line-height: 1.4; }
+    .phase.hl .phase-sub { color: rgba(255,255,255,0.65); }
+
+    /* ── DO LIST ── */
+    .do-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2.5rem; }
+    @media (max-width: 540px) { .do-grid { grid-template-columns: 1fr; } }
+    .do-item {
+      font-size: 0.85rem; color: var(--gray);
+      padding: 0.32rem 0; border-bottom: 1px solid var(--rule);
+      display: flex; gap: 0.5rem; align-items: baseline;
+    }
+    .do-item::before { content: '→'; color: var(--red); font-size: 0.74rem; flex-shrink: 0; }
+
+    /* ── PLATFORM ARCHITECTURE ── */
+    .arch-wrap {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem;
+      margin-bottom: 1.6rem;
+    }
+    @media (max-width: 620px) { .arch-wrap { grid-template-columns: 1fr; } }
+    .arch-node {
+      border: 1px solid var(--rule); background: var(--off);
+      padding: 0.9rem 1rem; border-radius: 2px; position: relative;
+    }
+    .arch-node.primary { border-top: 3px solid var(--red); }
+    .arch-node.secondary { border-top: 3px solid var(--black); }
+    .arch-label {
+      font-size: 0.64rem; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--lgray); margin-bottom: 0.3rem;
+    }
+    .arch-node h3 { font-size: 0.88rem; font-weight: 700; color: var(--black); margin-bottom: 0.35rem; }
+    .arch-node ul { list-style: none; }
+    .arch-node ul li {
+      font-size: 0.79rem; color: var(--gray);
+      padding: 0.15rem 0; display: flex; gap: 0.4rem; align-items: baseline;
+    }
+    .arch-node ul li::before { content: '·'; color: var(--red); font-weight: 700; flex-shrink: 0; }
+    .arch-link {
+      border: 1px solid var(--rule); background: #fff;
+      padding: 0.6rem 1rem; text-align: center; grid-column: 1 / -1;
+      font-size: 0.79rem; color: var(--gray);
+    }
+    .arch-link strong { color: var(--black); }
+
+    /* ── HW PLATFORM ── */
+    .hw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
+    @media (max-width: 620px) { .hw-grid { grid-template-columns: 1fr; gap: 2rem 0; } }
+    .hw-col h3 {
+      font-size: 0.83rem; font-weight: 700; color: var(--black);
+      margin-bottom: 0.6rem; padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .hw-item { margin-bottom: 0.9rem; }
+    .hw-title { font-size: 0.81rem; font-weight: 700; color: var(--black); }
+    .hw-body { font-size: 0.81rem; color: var(--gray); line-height: 1.6; }
+    .hw-body code {
+      font-family: 'Courier New', monospace; font-size: 0.78rem;
+      background: var(--off); padding: 0.05rem 0.28rem; border-radius: 2px;
+    }
+
+    /* ── THEORY ── */
+    .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
+    @media (max-width: 580px) { .theory-grid { grid-template-columns: 1fr; } }
+    .theory-item { padding: 0.55rem 0; border-bottom: 1px solid var(--rule); }
+    .theory-title { font-size: 0.83rem; font-weight: 700; color: var(--black); }
+    .theory-desc { font-size: 0.79rem; color: var(--gray); margin-top: 0.15rem; line-height: 1.55; }
+    .theory-desc code {
+      font-family: 'Courier New', monospace; font-size: 0.78rem;
+      background: var(--off); padding: 0.05rem 0.28rem; border-radius: 2px;
+    }
+
+    /* ── COMPETITION ── */
+    .comp-box {
+      display: flex; border: 1px solid var(--rule);
+      background: var(--off); border-radius: 2px; overflow: hidden;
+    }
+    .comp-accent { width: 4px; background: var(--red); flex-shrink: 0; }
+    .comp-body { padding: 1.5rem 1.7rem; flex: 1; }
+    .comp-body h3 { font-size: 0.98rem; font-weight: 700; color: var(--black); margin-bottom: 0.55rem; }
+    .comp-body > p { font-size: 0.85rem; color: var(--gray); margin-bottom: 0.45rem; line-height: 1.6; }
+    .comp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2.5rem; margin-top: 1.1rem; }
+    @media (max-width: 560px) { .comp-cols { grid-template-columns: 1fr; } }
+    .comp-col h4 {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--lgray);
+      margin-bottom: 0.45rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--rule);
+    }
+    .comp-col ul { list-style: none; }
+    .comp-col ul li {
+      font-size: 0.82rem; color: var(--gray); padding: 0.2rem 0;
+      display: flex; gap: 0.42rem; align-items: baseline;
+    }
+    .comp-col ul li::before { content: '·'; color: var(--red); font-weight: 700; }
+    .comp-tags { display: flex; flex-wrap: wrap; gap: 0.32rem; margin-top: 1.1rem; }
+    .tag {
+      font-size: 0.71rem; font-weight: 700; color: var(--red);
+      background: rgba(204,0,0,0.07); padding: 0.17rem 0.52rem;
+      border-radius: 2px; letter-spacing: 0.02em;
+    }
+
+    /* ── SCORE TABLE ── */
+    .score-table { width: 100%; border-collapse: collapse; margin-top: 1.2rem; font-size: 0.81rem; }
+    .score-table th {
+      text-align: left; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--lgray);
+      padding: 0.4rem 0; border-bottom: 1px solid var(--rule);
+    }
+    .score-table td { padding: 0.28rem 0; color: var(--gray); border-bottom: 1px solid var(--rule); vertical-align: top; }
+    .score-table td:first-child { color: var(--black); font-weight: 700; width: 64%; padding-right: 1rem; }
+    .score-table td:last-child { color: var(--red); font-weight: 700; text-align: right; }
+    .score-table tr:last-child td { border-bottom: none; font-size: 0.84rem; }
+
+    /* ── WHY ── */
+    .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem; }
+    @media (max-width: 580px) { .why-grid { grid-template-columns: 1fr; } }
+    .why-item {
+      padding: 0.95rem 1rem; border: 1px solid var(--rule);
+      border-left: 3px solid var(--red); background: var(--off);
+    }
+    .why-item h3 { font-size: 0.84rem; font-weight: 700; color: var(--black); margin-bottom: 0.28rem; }
+    .why-item p { font-size: 0.79rem; color: var(--gray); line-height: 1.55; }
+
+    /* ── RESOURCES ── */
+    .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem; }
+    @media (max-width: 580px) { .res-grid { grid-template-columns: 1fr; } }
+    .res-card {
+      padding: 1rem 1.1rem; border: 1px solid var(--rule);
+      border-top: 3px solid var(--red); background: var(--off);
+    }
+    .res-card h3 { font-size: 0.84rem; font-weight: 700; color: var(--black); margin-bottom: 0.28rem; }
+    .res-card p { font-size: 0.79rem; color: var(--gray); line-height: 1.55; margin-bottom: 0.55rem; }
+    .res-card a {
+      display: inline-block; font-size: 0.75rem; font-weight: 700; color: var(--red);
+      text-decoration: none; letter-spacing: 0.04em;
+      border: 1px solid rgba(204,0,0,0.3); padding: 0.18rem 0.55rem; border-radius: 2px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .res-card a:hover { background: var(--red); color: #fff; }
+
+    /* ── INFO TABLE ── */
+    .info-table { width: 100%; border-collapse: collapse; }
+    .info-table tr { border-bottom: 1px solid var(--rule); }
+    .info-table tr:last-child { border-bottom: none; }
+    .info-table td { padding: 0.55rem 0; font-size: 0.84rem; vertical-align: top; }
+    .info-table td:first-child {
+      font-weight: 700; color: var(--black); width: 155px; padding-right: 1.5rem;
+    }
+    .info-table td:last-child { color: var(--gray); }
+
+    /* ── FOOTER ── */
+    footer { background: var(--black); text-align: center; padding: 1.3rem 2rem; margin-top: 2rem; }
+    footer p { font-size: 0.73rem; color: #666; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+
+<div class="topbar"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#"><span>EECE 5550</span> &nbsp;·&nbsp; Mobile Robotics</a>
+    <button class="hamburger" aria-label="Menu" onclick="document.getElementById('nl').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="nl">
+      <li><a href="#about">Overview</a></li>
+      <li><a href="#topics">Topics</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#platform">Platform</a></li>
+      <li><a href="#theory">Curriculum</a></li>
+      <li><a href="#competition">Competition</a></li>
+      <li><a href="#why">Why</a></li>
+      <li><a href="#resources">Resources</a></li>
+      <li><a href="#info">Info</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <p class="hero-dept">Northeastern University &nbsp;·&nbsp; Electrical &amp; Computer Engineering &nbsp;·&nbsp; Seattle</p>
+  <h1 class="hero-number">EECE 5550</h1>
+  <p class="hero-title">Mobile Robotics</p>
+  <p class="hero-meta">4 Credit Hours &nbsp;·&nbsp; Graduate &amp; Senior Undergraduate</p>
+  <div class="hero-rule"></div>
+  <p class="hero-hook">Build a robot that maps its environment, knows where it is, and completes a mission — autonomously.</p>
+  <p class="hero-sub">A hands-on graduate course in mobile robotics covering probabilistic localization, SLAM, autonomous navigation with Nav2, and real-time AI perception on edge hardware. Every algorithm taught in lecture runs on a physical TurtleBot 4 robot that you modify, configure, and program yourself.</p>
+  <div class="platform-badge">
+    <span class="dot"></span>
+    <span>TurtleBot 4 &nbsp;·&nbsp; <strong>Raspberry Pi 5</strong> &nbsp;·&nbsp; <strong>Hailo AI HAT+</strong> &nbsp;·&nbsp; ROS2 Humble &nbsp;·&nbsp; SLAM Toolbox &nbsp;·&nbsp; Nav2</span>
+  </div>
+</header>
+
+<!-- OVERVIEW -->
+<section class="section" id="about">
+  <p class="section-label">Course Overview</p>
+  <div class="about-grid">
+    <div class="about-block">
+      <h3>What This Course Covers</h3>
+      <p>The four core problems of mobile robotics — sensing, localization, mapping, and navigation — studied through both theory and implementation. Topics progress from sensor models and probabilistic estimation through SLAM and the Nav2 autonomous navigation stack, ending with real-time object detection using a neural processing unit mounted on the robot.</p>
+    </div>
+    <div class="about-block">
+      <h3>The Distributed Hardware Platform</h3>
+      <p>A stock TurtleBot 4 is not enough. Students upgrade the robot in Week 1 by mounting a Raspberry Pi 5 with an AI HAT+ accelerator, connecting it via Ethernet, and configuring a two-machine ROS2 distributed system. The TurtleBot 4 handles only sensing; the Pi 5 runs SLAM, Nav2, and YOLO — simultaneously, on-robot, without a laptop.</p>
+    </div>
+    <div class="about-block">
+      <h3>Algorithms on Real Hardware</h3>
+      <p>Every algorithm — EKF sensor fusion, SLAM Toolbox graph optimization, Nav2 behavior trees, Hailo YOLO inference — runs on the physical robot, not just in simulation. Students directly observe how theory translates to robot behavior: how odometry drift motivates SLAM, how particle filters localize a lost robot, and why edge AI hardware matters for battery-powered systems.</p>
+    </div>
+    <div class="about-block">
+      <h3>Autonomous Mission Competition</h3>
+      <p>The semester ends with a live competition. A pre-set course is revealed 72 hours before competition day. Teams navigate five checkpoints using ArUco markers, detect a target object by color, avoid obstacles including a live person, and dock autonomously — all without touching the keyboard once the run begins. Fastest successful run wins.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TOPICS -->
+<section class="section" id="topics">
+  <p class="section-label">Course Topics</p>
+  <div class="columns">
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v2m0 16v2M2 12h2m16 0h2"/>
+          <path d="M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M4.93 19.07l1.41-1.41m11.32-11.32 1.41-1.41"/>
+        </svg>
+        <h3>Robotics Theory</h3>
+      </div>
+      <ul>
+        <li>Differential-drive kinematics</li>
+        <li>Sensor models — LiDAR, IMU, encoders</li>
+        <li>Bayes filter &amp; log-odds mapping</li>
+        <li>Extended Kalman Filter (EKF)</li>
+        <li>Monte Carlo / particle filter</li>
+        <li>Occupancy grid mapping</li>
+        <li>SLAM — graph optimization, loop closure</li>
+        <li>Path planning — A*, Dijkstra, RRT</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <path d="M8 21h8m-4-4v4"/>
+          <path d="M6 8h2m4 0h2m-8 4h2m4 0h2"/>
+        </svg>
+        <h3>Distributed Systems &amp; ROS2</h3>
+      </div>
+      <ul>
+        <li>Multi-machine ROS2 with CycloneDDS</li>
+        <li>TF2 coordinate frame transforms</li>
+        <li>Publisher / subscriber / action patterns</li>
+        <li>SLAM Toolbox on a remote computer</li>
+        <li>Nav2 behavior trees &amp; planners</li>
+        <li>Nav2 Simple Commander Python API</li>
+        <li>ROS2 bags, parameters, launch files</li>
+        <li>AMCL particle-filter localization</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <h3>Edge AI &amp; Perception</h3>
+      </div>
+      <ul>
+        <li>NPU vs CPU vs GPU for inference</li>
+        <li>YOLO architecture &amp; model deployment</li>
+        <li>Hailo-8L inference pipeline (HailoRT)</li>
+        <li>PyTorch → ONNX → HEF conversion</li>
+        <li>ROS2 object detection publishing</li>
+        <li>ArUco marker detection &amp; pose estimation</li>
+        <li>HSV color-space object tracking</li>
+        <li>Perception-driven navigation decisions</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="section" id="roadmap">
+  <p class="section-label">Semester Roadmap</p>
+  <div class="roadmap">
+    <div class="phase">
+      <p class="phase-wk">Wk 1–2</p>
+      <p class="phase-title">Platform Build</p>
+      <p class="phase-sub">Pi 5 + AI HAT · Ethernet · CycloneDDS · multi-machine ROS2</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 3–5</p>
+      <p class="phase-title">Sensing</p>
+      <p class="phase-sub">LiDAR · IMU · OAK-D · TF2 · ROS2 node writing</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 6–9</p>
+      <p class="phase-title">Locate &amp; Map</p>
+      <p class="phase-sub">EKF · particle filter · SLAM Toolbox · map quality</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 10–12</p>
+      <p class="phase-title">Navigate</p>
+      <p class="phase-sub">Nav2 · behavior trees · waypoints · auto-docking</p>
+    </div>
+    <div class="phase hl">
+      <p class="phase-wk">Wk 13–15</p>
+      <p class="phase-title">AI + Mission</p>
+      <p class="phase-sub">YOLO on Hailo · perception loop · competition</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU WILL DO -->
+<section class="section" id="dolist">
+  <p class="section-label">What You Will Do</p>
+  <div class="do-grid">
+    <div class="do-item">Mount a Raspberry Pi 5 + Hailo AI HAT+ on a TurtleBot 4 and configure a distributed ROS2 system over Ethernet</div>
+    <div class="do-item">Implement an Extended Kalman Filter fusing wheel odometry and IMU data using the <code style="font-family:monospace;font-size:0.82em;background:#f6f6f6;padding:0 4px">robot_localization</code> package</div>
+    <div class="do-item">Drive a TurtleBot 4 through a lab space to build a SLAM map, then tune SLAM Toolbox parameters for map quality</div>
+    <div class="do-item">Navigate autonomously to four waypoints using Nav2, then write a custom behavior tree that adds pause and patrol behaviors</div>
+    <div class="do-item">Run YOLOv8n on the Hailo-8L NPU at 30+ FPS while SLAM and Nav2 run concurrently — measure the latency budget of the full stack</div>
+    <div class="do-item">Implement a safety behavior: robot stops for any detected person in its path and resumes when the path is clear</div>
+    <div class="do-item">Detect ArUco markers and colored objects with OpenCV to confirm checkpoints and locate a target item by color</div>
+    <div class="do-item">Compete in the autonomous mission challenge — no keyboard input once the run begins</div>
+  </div>
+</section>
+
+<!-- HARDWARE PLATFORM -->
+<section class="section" id="platform">
+  <p class="section-label">Hardware Platform</p>
+
+  <div class="arch-wrap">
+    <div class="arch-node primary">
+      <p class="arch-label">Intelligence Node</p>
+      <h3>Raspberry Pi 5 (8 GB) + AI HAT+</h3>
+      <ul>
+        <li>Runs SLAM Toolbox, Nav2, YOLO inference</li>
+        <li>Hailo-8L NPU — 13 TOPS at under 5 W</li>
+        <li>YOLOv8n at 30–80 FPS, CPU load: ~0%</li>
+        <li>Connected via PCIe Gen 3 × 1 M.2 interface</li>
+        <li>Powered by dedicated USB-C PD power bank</li>
+      </ul>
+    </div>
+    <div class="arch-node secondary">
+      <p class="arch-label">Sensing Node</p>
+      <h3>TurtleBot 4 (iRobot Create 3 + RPi 4)</h3>
+      <ul>
+        <li>RPLIDAR A1 — 2D, 360°, 12 m, 10 Hz</li>
+        <li>OAK-D camera — RGB 1080p + stereo depth</li>
+        <li>Create 3 IMU + wheel encoders at 62 Hz</li>
+        <li>Built-in 26 Wh battery + external power bank</li>
+        <li>Publishes raw sensor data only — no compute</li>
+      </ul>
+    </div>
+    <div class="arch-link">
+      <strong>Direct Gigabit Ethernet link</strong> &nbsp;·&nbsp; CycloneDDS locked to <code style="font-family:monospace;font-size:0.78em;background:#fff;padding:0 4px;border:1px solid #e2e2e2">eth0</code> &nbsp;·&nbsp; Same <code style="font-family:monospace;font-size:0.78em;background:#fff;padding:0 4px;border:1px solid #e2e2e2">ROS_DOMAIN_ID</code> on both machines &nbsp;·&nbsp; Static IPs <code style="font-family:monospace;font-size:0.78em;background:#fff;padding:0 4px;border:1px solid #e2e2e2">192.168.11.1</code> and <code style="font-family:monospace;font-size:0.78em;background:#fff;padding:0 4px;border:1px solid #e2e2e2">192.168.11.2</code>
+    </div>
+  </div>
+
+  <div class="hw-grid">
+    <div class="hw-col">
+      <h3>Why Two Computers?</h3>
+      <div class="hw-item">
+        <p class="hw-title">Compute Capacity</p>
+        <p class="hw-body">The TurtleBot 4's onboard Raspberry Pi 4 runs out of CPU when SLAM, Nav2, and detection run simultaneously — messages are dropped and navigation fails. The Pi 5 has 2× the CPU performance and the AI HAT+ offloads inference entirely to the NPU.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Distributed Architecture as a Learning Goal</p>
+        <p class="hw-body">Real robot systems are always distributed — a vehicle LiDAR unit, an edge server, and a motion controller are separate computers. Configuring multi-machine ROS2 with CycloneDDS, understanding DDS discovery, and managing network bandwidth are skills that transfer directly to industry.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Edge AI Without Compromise</p>
+        <p class="hw-body">Running YOLO on the Hailo-8L NPU consumes near-zero CPU, leaving the Pi 5's four cores fully available for SLAM and Nav2. Students learn the performance argument for dedicated AI hardware — not just in theory, but by measuring <code>htop</code> during full-stack operation.</p>
+      </div>
+    </div>
+    <div class="hw-col">
+      <h3>Software Stack</h3>
+      <div class="hw-item">
+        <p class="hw-title">ROS2 Humble on Ubuntu 24.04</p>
+        <p class="hw-body">Both machines run ROS2 Humble. All packages are installed via <code>apt</code> — no source compilation required for standard labs. The TurtleBot 4's Pi 4 runs Ubuntu 22.04 with the stock image; the Pi 5 runs Ubuntu 24.04 for Hailo driver compatibility.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">SLAM Toolbox + Nav2</p>
+        <p class="hw-body">SLAM Toolbox performs synchronous online mapping, producing a 5 cm resolution occupancy grid. Nav2 provides global path planning (NavFn/Dijkstra), local control (DWB), AMCL localization, and a Python Simple Commander API for programmatic navigation.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">HailoRT + hailo-rpi5-examples</p>
+        <p class="hw-body">Hailo's official package for Raspberry Pi 5 installs via <code>apt install hailo-all</code>. Pre-compiled <code>.hef</code> model files for YOLOv8n, YOLOv8s, and YOLOv8m are downloaded in a one-time setup step. A ROS2 wrapper node publishes <code>vision_msgs/Detection2DArray</code>.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Python Throughout</p>
+        <p class="hw-body">All student-written code is Python: ROS2 nodes (<code>rclpy</code>), particle filter implementation (<code>numpy</code>), A* and path planning (<code>heapq</code>), color detection (<code>opencv-python</code>), and A* homework (<code>matplotlib</code> for visualization).</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CURRICULUM -->
+<section class="section" id="theory">
+  <p class="section-label">Core Curriculum</p>
+  <div class="theory-grid">
+    <div class="theory-item">
+      <p class="theory-title">Sensor Modeling</p>
+      <p class="theory-desc">Derive the noise model and measurement equation for 2D LiDAR, IMU gyroscope/accelerometer, and wheel encoders. Understand why no single sensor is sufficient and why sensor fusion is necessary for reliable state estimation.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Probabilistic State Estimation</p>
+      <p class="theory-desc">Build the Bayes filter prediction-update cycle from first principles. Implement a 1D Bayes filter and a 2D particle filter in Python. Derive the EKF linearization using Jacobians and configure <code>robot_localization</code> to fuse odometry and IMU on the physical robot.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Occupancy Grid Mapping</p>
+      <p class="theory-desc">Represent 2D environments as probability maps using the log-odds update rule. Understand how LiDAR raycasting marks free and occupied cells. Evaluate map quality using coverage statistics on a real map built in the lab.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Simultaneous Localization and Mapping</p>
+      <p class="theory-desc">Formulate the joint SLAM posterior and explain why it is hard. Study graph-based SLAM — how pose nodes, odometry edges, and loop closure constraints form the optimization problem that SLAM Toolbox solves. Tune SLAM parameters to build a high-quality map of a real lab space.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Path Planning &amp; Navigation</p>
+      <p class="theory-desc">Implement Dijkstra's algorithm and A* from scratch on a grid. Study costmap inflation and the role of the global vs local planner. Configure Nav2 — planners, behavior trees, controller tolerances, and AMCL parameters — on a real robot navigating to multiple waypoints.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Edge AI Inference</p>
+      <p class="theory-desc">Compare NPU, CPU, and GPU compute architectures. Study the YOLO single-pass detection architecture. Trace the PyTorch → ONNX → HEF compilation pipeline. Measure inference throughput (FPS) and power draw on the Hailo-8L during full-stack operation alongside SLAM and Nav2.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COMPETITION -->
+<section class="section" id="competition">
+  <p class="section-label">End-of-Semester Competition</p>
+  <div class="comp-box">
+    <div class="comp-accent"></div>
+    <div class="comp-body">
+      <h3>🏆 Autonomous Mission Challenge</h3>
+      <p>The course map is revealed 72 hours before competition day. Teams have that window to tune localization, verify their Nav2 configuration, and test their detection stack. When the run begins, the team member steps back from the keyboard — the robot must complete the entire mission on its own.</p>
+      <p>The robot must navigate five checkpoints in order (confirmed by ArUco marker IDs), detect and report the location of a color-coded target object, avoid dynamic obstacles including a live person standing in its path, and dock autonomously at the end. Every element of the course maps to a specific lab — nothing in the competition is a surprise.</p>
+
+      <table class="score-table">
+        <thead>
+          <tr><th>Checkpoint / Event</th><th>Points</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Checkpoint 1 reached (stop within 0.3 m, ArUco confirmed)</td><td>10</td></tr>
+          <tr><td>Checkpoint 2 reached</td><td>10</td></tr>
+          <tr><td>Checkpoint 3 reached (narrower corridor)</td><td>15</td></tr>
+          <tr><td>Checkpoint 4 reached</td><td>15</td></tr>
+          <tr><td>Checkpoint 5 reached</td><td>20</td></tr>
+          <tr><td>Target object detected &amp; coordinates reported</td><td>15</td></tr>
+          <tr><td>Successful autonomous dock</td><td>10</td></tr>
+          <tr><td>No collisions (5 pts deducted per collision)</td><td>5</td></tr>
+          <tr><td style="font-weight:700;color:#111">Maximum score</td><td>100</td></tr>
+        </tbody>
+      </table>
+
+      <div class="comp-cols">
+        <div class="comp-col">
+          <h4>Technical Requirements</h4>
+          <ul>
+            <li>Full stack runs on Pi 5 — no laptop control</li>
+            <li>Navigation via Nav2 + saved map</li>
+            <li>Person detection triggers safety stop</li>
+            <li>ArUco confirmation at each checkpoint</li>
+            <li>Color-based target object detection</li>
+            <li>Autonomous dock at run completion</li>
+          </ul>
+        </div>
+        <div class="comp-col">
+          <h4>Team Deliverables</h4>
+          <ul>
+            <li>8 lab reports throughout semester</li>
+            <li>2 homework problem sets</li>
+            <li>System architecture diagram</li>
+            <li>State machine diagram &amp; code</li>
+            <li>Competition run video (both attempts)</li>
+            <li>Final technical report &amp; post-mortem</li>
+          </ul>
+        </div>
+      </div>
+      <div class="comp-tags">
+        <span class="tag">Fastest Successful Run</span>
+        <span class="tag">Best System Architecture</span>
+        <span class="tag">Best Recovery Behavior</span>
+        <span class="tag">Most Creative Solution</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY TAKE THIS COURSE -->
+<section class="section" id="why">
+  <p class="section-label">Why Take This Course</p>
+  <div class="why-grid">
+    <div class="why-item">
+      <h3>Direct Industry Relevance</h3>
+      <p>ROS2, Nav2, SLAM Toolbox, and Python-based robotics programming are the exact tools used at Boston Dynamics, iRobot, Amazon Robotics, Fetch Robotics, and nearly every autonomous vehicle company. Students who complete this course can contribute to a production robotics software stack on day one of an internship.</p>
+    </div>
+    <div class="why-item">
+      <h3>Real Hardware, Real Problems</h3>
+      <p>You will encounter every real-world robotics challenge: network latency dropping messages, DDS discovery on a congested network, SLAM drift from wheel slip, Nav2 getting stuck in a narrow corridor. Debugging these problems on physical hardware is irreplaceable preparation for a career in robotics.</p>
+    </div>
+    <div class="why-item">
+      <h3>Edge AI as a First-Class Skill</h3>
+      <p>Running YOLO on a dedicated NPU while SLAM and Nav2 run concurrently is a system-integration challenge most robotics engineers don't encounter until mid-career. This course gives you early exposure to the hardware-software co-design thinking required to deploy AI on resource-constrained mobile platforms.</p>
+    </div>
+    <div class="why-item">
+      <h3>A Portfolio Project That Shows</h3>
+      <p>A video of your robot completing an autonomous mission — navigating a real environment, stopping for a person, detecting an object, and docking — is something you can share with any employer. It demonstrates probabilistic reasoning, system integration, and embedded AI in one clip. Most graduate students don't have anything like it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RESOURCES -->
+<section class="section" id="resources">
+  <p class="section-label">Course Materials &amp; Repository</p>
+  <div class="res-grid">
+    <div class="res-card">
+      <h3>📖 Course Wiki</h3>
+      <p>31 pages covering all prerequisites, lessons, labs, homework, and the competition specification. Every lab page includes numbered procedures, complete runnable Python code, expected output, and a troubleshooting table. Updated throughout the semester.</p>
+      <a href="https://github.com/ShawnLiNU/EECE5550-Mobile-Robotics/wiki" target="_blank" rel="noopener">Open Wiki ↗</a>
+    </div>
+    <div class="res-card">
+      <h3>💻 GitHub Repository</h3>
+      <p>All course code lives here: ROS2 Python nodes, SLAM Toolbox configs, Nav2 parameter files, behavior tree XMLs, the YOLO Hailo ROS2 node, and the competition state machine scaffold. Clone the repo in Week 1.</p>
+      <a href="https://github.com/ShawnLiNU/EECE5550-Mobile-Robotics" target="_blank" rel="noopener">Open Repository ↗</a>
+    </div>
+    <div class="res-card">
+      <h3>🤖 Platform Setup Guides</h3>
+      <p>Three prerequisite pages walk through ROS2 Humble on Ubuntu 24.04, TurtleBot 4 stock bring-up and verification, and Hailo AI HAT+ driver installation. Complete these before the first lab session in Week 1.</p>
+      <a href="https://github.com/ShawnLiNU/EECE5550-Mobile-Robotics/wiki/Prereq-1-Software-Setup" target="_blank" rel="noopener">Setup Guides ↗</a>
+    </div>
+    <div class="res-card">
+      <h3>🔧 Hardware Modification</h3>
+      <p>Lab 0 is a 90-minute guided build session: mount the Pi 5 + AI HAT+ on the TurtleBot 4 top shelf, configure static IPs and CycloneDDS, wire the power banks, and verify cross-machine ROS2 topic visibility — 16-item checklist included.</p>
+      <a href="https://github.com/ShawnLiNU/EECE5550-Mobile-Robotics/wiki/Lab-0-Hardware-Modification" target="_blank" rel="noopener">Lab 0 Guide ↗</a>
+    </div>
+  </div>
+</section>
+
+<!-- COURSE INFO -->
+<section class="section" id="info">
+  <p class="section-label">Course Information</p>
+  <table class="info-table">
+    <tr><td>Course Number</td><td>EECE 5550</td></tr>
+    <tr><td>Title</td><td>Mobile Robotics</td></tr>
+    <tr><td>Credits</td><td>4 credit hours</td></tr>
+    <tr><td>Level</td><td>Graduate &amp; Senior Undergraduate</td></tr>
+    <tr><td>Campus</td><td>Northeastern University &nbsp;·&nbsp; Seattle</td></tr>
+    <tr><td>Prerequisites</td><td>EECE 2520 or equivalent &nbsp;·&nbsp; Python programming experience &nbsp;·&nbsp; or Graduate Admission</td></tr>
+    <tr><td>Hardware</td><td>TurtleBot 4 (provided) &nbsp;·&nbsp; Raspberry Pi 5 8 GB (provided) &nbsp;·&nbsp; Raspberry Pi AI HAT+ Hailo-8L (provided)</td></tr>
+    <tr><td>Tools</td><td>ROS2 Humble &nbsp;·&nbsp; Python 3.10+ &nbsp;·&nbsp; SLAM Toolbox &nbsp;·&nbsp; Nav2 &nbsp;·&nbsp; robot_localization &nbsp;·&nbsp; HailoRT &nbsp;·&nbsp; OpenCV &nbsp;·&nbsp; Ubuntu 24.04</td></tr>
+    <tr><td>Grading</td><td>Lab reports 30% &nbsp;·&nbsp; Homework 15% &nbsp;·&nbsp; Midterm exam 20% &nbsp;·&nbsp; Final project 35%</td></tr>
+  </table>
+</section>
+
+<footer>
+  <p>College of Engineering &nbsp;·&nbsp; Electrical &amp; Computer Engineering &nbsp;·&nbsp; Northeastern University &nbsp;·&nbsp; northeastern.edu</p>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(
+    es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+
+  // Hamburger close on outside click
+  document.addEventListener('click', e => {
+    const nav = document.getElementById('nl');
+    if (!nav.contains(e.target) && !e.target.closest('.hamburger')) {
+      nav.classList.remove('open');
+    }
+  });
+</script>
+</body>
+</html>
