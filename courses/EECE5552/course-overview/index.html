@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EECE 5552 · Assistive Robotics · Northeastern University</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:   #CC0000;
+      --black: #111111;
+      --gray:  #555555;
+      --lgray: #999999;
+      --rule:  #e2e2e2;
+      --bg:    #ffffff;
+      --off:   #f6f6f6;
+      --font:  Arial, Helvetica, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--black);
+      font-size: 15px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar { height: 5px; background: var(--red); }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--rule);
+      padding: 0 2rem;
+    }
+    .nav-inner {
+      max-width: 960px; margin: 0 auto;
+      display: flex; align-items: center;
+      justify-content: space-between; height: 50px;
+    }
+    .nav-brand {
+      font-size: 0.82rem; font-weight: 700;
+      color: var(--black); text-decoration: none;
+    }
+    .nav-brand span { color: var(--red); }
+    .nav-links { display: flex; gap: 1.6rem; list-style: none; }
+    .nav-links a {
+      font-size: 0.72rem; font-weight: 700; color: var(--gray);
+      text-decoration: none; letter-spacing: 0.08em;
+      text-transform: uppercase; transition: color 0.18s;
+    }
+    .nav-links a:hover { color: var(--red); }
+    .hamburger {
+      display: none; flex-direction: column; gap: 4px;
+      cursor: pointer; padding: 6px; background: none; border: none;
+    }
+    .hamburger span { display: block; width: 20px; height: 2px; background: var(--black); }
+    @media (max-width: 660px) {
+      .hamburger { display: flex; }
+      .nav-links {
+        display: none; flex-direction: column; gap: 0;
+        position: absolute; top: 50px; left: 0; right: 0;
+        background: #fff; border-bottom: 1px solid var(--rule);
+      }
+      .nav-links.open { display: flex; }
+      .nav-links a { padding: 0.65rem 2rem; }
+    }
+
+    /* ── HERO ── */
+    .hero {
+      max-width: 960px; margin: 0 auto;
+      padding: 4.5rem 2rem 3.5rem; text-align: center;
+    }
+    .hero-dept {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--lgray); margin-bottom: 1.4rem;
+    }
+    .hero-number {
+      font-size: clamp(3.8rem, 11vw, 6rem);
+      font-weight: 700; line-height: 1; color: var(--black); margin-bottom: 0.3rem;
+    }
+    .hero-title {
+      font-size: clamp(1.2rem, 3.2vw, 1.65rem);
+      font-weight: 400; color: var(--gray); margin-bottom: 1rem;
+    }
+    .hero-meta { font-size: 0.8rem; color: var(--lgray); letter-spacing: 0.05em; }
+    .hero-rule { width: 48px; height: 2px; background: var(--red); margin: 1.6rem auto; }
+    .hero-hook {
+      font-size: 1.1rem; font-weight: 700; color: var(--black);
+      max-width: 520px; margin: 0 auto; line-height: 1.45;
+    }
+    .hero-sub {
+      font-size: 0.88rem; color: var(--gray);
+      max-width: 580px; margin: 0.9rem auto 0; line-height: 1.65;
+    }
+
+    /* ── SECTION WRAPPER ── */
+    .section {
+      max-width: 960px; margin: 0 auto;
+      padding: 3rem 2rem; border-top: 1px solid var(--rule);
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .section.visible { opacity: 1; transform: none; }
+    .section-label {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--lgray); margin-bottom: 1.5rem;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .section { opacity: 1; transform: none; transition: none; }
+    }
+
+    /* ── ABOUT GRID ── */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem 3rem; }
+    @media (max-width: 620px) { .about-grid { grid-template-columns: 1fr; } }
+    .about-block h3 {
+      font-size: 0.82rem; font-weight: 700; color: var(--black);
+      margin-bottom: 0.4rem;
+    }
+    .about-block p { font-size: 0.86rem; color: var(--gray); line-height: 1.65; }
+
+    /* ── THREE COLUMNS ── */
+    .columns { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.8rem; }
+    @media (max-width: 640px) { .columns { grid-template-columns: 1fr; } }
+    .col-head {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding-bottom: 0.6rem; margin-bottom: 0.7rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .col-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .col-head h3 { font-size: 0.88rem; font-weight: 700; color: var(--black); }
+    .col ul { list-style: none; }
+    .col ul li {
+      font-size: 0.83rem; color: var(--gray);
+      padding: 0.2rem 0; display: flex; align-items: baseline; gap: 0.42rem;
+    }
+    .col ul li::before { content: '·'; color: var(--red); font-weight: 700; flex-shrink: 0; }
+
+    /* ── ROADMAP ── */
+    .roadmap { display: grid; grid-template-columns: repeat(5,1fr); gap: 0.42rem; }
+    @media (max-width: 680px) { .roadmap { grid-template-columns: 1fr 1fr; } }
+    .phase {
+      background: var(--off); border: 1px solid var(--rule);
+      padding: 0.8rem 0.7rem; border-radius: 2px;
+    }
+    .phase.hl { background: var(--red); border-color: var(--red); }
+    .phase-wk { font-size: 0.64rem; color: var(--lgray); margin-bottom: 0.22rem; }
+    .phase.hl .phase-wk { color: rgba(255,255,255,0.55); }
+    .phase-title { font-size: 0.83rem; font-weight: 700; color: var(--black); margin-bottom: 0.15rem; }
+    .phase.hl .phase-title { color: #fff; }
+    .phase-sub { font-size: 0.71rem; color: var(--lgray); line-height: 1.4; }
+    .phase.hl .phase-sub { color: rgba(255,255,255,0.65); }
+
+    /* ── DO LIST ── */
+    .do-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2.5rem; }
+    @media (max-width: 540px) { .do-grid { grid-template-columns: 1fr; } }
+    .do-item {
+      font-size: 0.85rem; color: var(--gray);
+      padding: 0.32rem 0; border-bottom: 1px solid var(--rule);
+      display: flex; gap: 0.5rem; align-items: baseline;
+    }
+    .do-item::before { content: '→'; color: var(--red); font-size: 0.74rem; flex-shrink: 0; }
+
+    /* ── HW PLATFORM ── */
+    .hw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
+    @media (max-width: 620px) { .hw-grid { grid-template-columns: 1fr; gap: 2rem 0; } }
+    .hw-col h3 {
+      font-size: 0.83rem; font-weight: 700; color: var(--black);
+      margin-bottom: 0.6rem; padding-bottom: 0.45rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    .hw-item { margin-bottom: 0.9rem; }
+    .hw-title { font-size: 0.81rem; font-weight: 700; color: var(--black); }
+    .hw-body { font-size: 0.81rem; color: var(--gray); line-height: 1.6; }
+
+    /* ── THEORY ── */
+    .theory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 3rem; }
+    @media (max-width: 580px) { .theory-grid { grid-template-columns: 1fr; } }
+    .theory-item { padding: 0.55rem 0; border-bottom: 1px solid var(--rule); }
+    .theory-title { font-size: 0.83rem; font-weight: 700; color: var(--black); }
+    .theory-desc { font-size: 0.79rem; color: var(--gray); margin-top: 0.15rem; line-height: 1.55; }
+    .theory-desc code {
+      font-family: 'Courier New', monospace; font-size: 0.78rem;
+      background: var(--off); padding: 0.05rem 0.28rem; border-radius: 2px;
+    }
+
+    /* ── COMPETITION ── */
+    .comp-box {
+      display: flex; border: 1px solid var(--rule);
+      background: var(--off); border-radius: 2px; overflow: hidden;
+    }
+    .comp-accent { width: 4px; background: var(--red); flex-shrink: 0; }
+    .comp-body { padding: 1.5rem 1.7rem; flex: 1; }
+    .comp-body h3 { font-size: 0.98rem; font-weight: 700; color: var(--black); margin-bottom: 0.55rem; }
+    .comp-body > p { font-size: 0.85rem; color: var(--gray); margin-bottom: 0.45rem; line-height: 1.6; }
+    .comp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 2.5rem; margin-top: 1.1rem; }
+    @media (max-width: 560px) { .comp-cols { grid-template-columns: 1fr; } }
+    .comp-col h4 {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--lgray);
+      margin-bottom: 0.45rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--rule);
+    }
+    .comp-col ul { list-style: none; }
+    .comp-col ul li {
+      font-size: 0.82rem; color: var(--gray); padding: 0.2rem 0;
+      display: flex; gap: 0.42rem; align-items: baseline;
+    }
+    .comp-col ul li::before { content: '·'; color: var(--red); font-weight: 700; }
+    .comp-tags { display: flex; flex-wrap: wrap; gap: 0.32rem; margin-top: 1.1rem; }
+    .tag {
+      font-size: 0.71rem; font-weight: 700; color: var(--red);
+      background: rgba(204,0,0,0.07); padding: 0.17rem 0.52rem;
+      border-radius: 2px; letter-spacing: 0.02em;
+    }
+
+    /* ── WHY ── */
+    .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem; }
+    @media (max-width: 580px) { .why-grid { grid-template-columns: 1fr; } }
+    .why-item {
+      padding: 0.95rem 1rem; border: 1px solid var(--rule);
+      border-left: 3px solid var(--red); background: var(--off);
+    }
+    .why-item h3 { font-size: 0.84rem; font-weight: 700; color: var(--black); margin-bottom: 0.28rem; }
+    .why-item p { font-size: 0.79rem; color: var(--gray); line-height: 1.55; }
+
+    /* ── RESOURCES ── */
+    .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 2rem; }
+    @media (max-width: 580px) { .res-grid { grid-template-columns: 1fr; } }
+    .res-card {
+      padding: 1rem 1.1rem; border: 1px solid var(--rule);
+      border-top: 3px solid var(--red); background: var(--off);
+    }
+    .res-card h3 { font-size: 0.84rem; font-weight: 700; color: var(--black); margin-bottom: 0.28rem; }
+    .res-card p { font-size: 0.79rem; color: var(--gray); line-height: 1.55; margin-bottom: 0.55rem; }
+    .res-card a {
+      display: inline-block; font-size: 0.75rem; font-weight: 700; color: var(--red);
+      text-decoration: none; letter-spacing: 0.04em;
+      border: 1px solid rgba(204,0,0,0.3); padding: 0.18rem 0.55rem; border-radius: 2px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .res-card a:hover { background: var(--red); color: #fff; }
+
+    /* ── INFO TABLE ── */
+    .info-table { width: 100%; border-collapse: collapse; }
+    .info-table tr { border-bottom: 1px solid var(--rule); }
+    .info-table tr:last-child { border-bottom: none; }
+    .info-table td { padding: 0.55rem 0; font-size: 0.84rem; vertical-align: top; }
+    .info-table td:first-child {
+      font-weight: 700; color: var(--black); width: 155px; padding-right: 1.5rem;
+    }
+    .info-table td:last-child { color: var(--gray); }
+
+    /* ── FOOTER ── */
+    footer { background: var(--black); text-align: center; padding: 1.3rem 2rem; margin-top: 2rem; }
+    footer p { font-size: 0.73rem; color: #666; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+
+<div class="topbar"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#"><span>EECE 5552</span> &nbsp;·&nbsp; Assistive Robotics</a>
+    <button class="hamburger" aria-label="Menu" onclick="document.getElementById('nl').classList.toggle('open')">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links" id="nl">
+      <li><a href="#about">Overview</a></li>
+      <li><a href="#topics">Topics</a></li>
+      <li><a href="#roadmap">Roadmap</a></li>
+      <li><a href="#hardware">Hardware</a></li>
+      <li><a href="#theory">Curriculum</a></li>
+      <li><a href="#project">Project</a></li>
+      <li><a href="#why">Why</a></li>
+      <li><a href="#resources">Resources</a></li>
+      <li><a href="#info">Info</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <p class="hero-dept">Northeastern University &nbsp;·&nbsp; Electrical &amp; Computer Engineering &nbsp;·&nbsp; Seattle</p>
+  <h1 class="hero-number">EECE 5552</h1>
+  <p class="hero-title">Assistive Robotics</p>
+  <p class="hero-meta">4 Credit Hours &nbsp;·&nbsp; Graduate &amp; Senior Undergraduate</p>
+  <div class="hero-rule"></div>
+  <p class="hero-hook">Build an exoskeleton. Simulate human muscles. Teleoperate a robot arm. Evaluate what helps people.</p>
+  <p class="hero-sub">A hands-on graduate course that bridges human needs and robotic capabilities — from exoskeleton fabrication and musculoskeletal simulation in OpenSim to multi-modal teleoperation of a UR12e collaborative robot, evaluated with formal human factors metrics.</p>
+</header>
+
+<!-- OVERVIEW -->
+<section class="section" id="about">
+  <p class="section-label">Course Overview</p>
+  <div class="about-grid">
+    <div class="about-block">
+      <h3>What This Course Covers</h3>
+      <p>The three pillars of assistive robotics — manipulation, wearable exoskeletons, and human-robot teleoperation — studied through both theory and hands-on implementation. You move from ROS2 fundamentals and robot kinematics to exoskeleton fabrication, musculoskeletal simulation, and multi-modal control of a collaborative robot arm.</p>
+    </div>
+    <div class="about-block">
+      <h3>The Exoskeleton Project</h3>
+      <p>The centerpiece of the course is a three-session lab where you 3D-print structural parts, sew a textile arm interface, wire sensors and a servo motor to an Arduino, then simulate the exoskeleton’s biomechanical effects in OpenSim. Static Optimization predicts how muscles respond to different assistance levels — informing real motor specifications.</p>
+    </div>
+    <div class="about-block">
+      <h3>Simulation-Guided Design</h3>
+      <p>OpenSim’s arm26_EduExo musculoskeletal model lets you compare muscle activations with and without exoskeleton assistance before touching hardware. You sweep assist torque levels, identify the optimal motor specification for a clinical version, and validate predictions against EMG sensor data.</p>
+    </div>
+    <div class="about-block">
+      <h3>Assistive Manipulation Challenge</h3>
+      <p>The semester ends with a team project where you design a multi-modal teleoperation interface for an Activity of Daily Living task on the physical UR12e. Evaluated on task performance, NASA-TLX workload, and SUS usability — not just whether the robot moves, but whether the interface actually helps.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TOPICS -->
+<section class="section" id="topics">
+  <p class="section-label">Course Topics</p>
+  <div class="columns">
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <h3>Exoskeletons &amp; Biomechanics</h3>
+      </div>
+      <ul>
+        <li>Rigid vs. soft exoskeleton design</li>
+        <li>Joint alignment &amp; degrees of freedom</li>
+        <li>Actuators: servo, SEA, cable-driven</li>
+        <li>EMG signals &amp; muscle modeling</li>
+        <li>Hill-type muscle-tendon model</li>
+        <li>OpenSim inverse dynamics</li>
+        <li>Static Optimization &amp; CMC</li>
+        <li>Simulation-guided motor selection</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+          <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+        </svg>
+        <h3>Robot Manipulation</h3>
+      </div>
+      <ul>
+        <li>ROS2 Jazzy nodes &amp; topics</li>
+        <li>Forward &amp; inverse kinematics</li>
+        <li>DH parameters for UR12e</li>
+        <li>MoveIt2 motion planning</li>
+        <li>URScript &amp; RTDE control</li>
+        <li>PolyScope teach pendant</li>
+        <li>Collision-aware trajectories</li>
+        <li>Robotiq Hand-E gripper</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="col-head">
+        <svg class="col-icon" viewBox="0 0 24 24" fill="none" stroke="#CC0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <h3>Teleoperation &amp; Evaluation</h3>
+      </div>
+      <ul>
+        <li>MediaPipe body &amp; hand tracking</li>
+        <li>Camera-to-robot frame alignment</li>
+        <li>Workspace scaling &amp; filtering</li>
+        <li>Master-slave architectures</li>
+        <li>Latency &amp; stability analysis</li>
+        <li>Fitts’ law &amp; NASA-TLX</li>
+        <li>Accessibility design principles</li>
+        <li>3D printing &amp; fabrication</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section class="section" id="roadmap">
+  <p class="section-label">Semester Roadmap</p>
+  <div class="roadmap">
+    <div class="phase">
+      <p class="phase-wk">Wk 1–3</p>
+      <p class="phase-title">Foundations</p>
+      <p class="phase-sub">ROS2 · kinematics · MoveIt2 · Lab 1</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 4–6</p>
+      <p class="phase-title">Manipulation</p>
+      <p class="phase-sub">UR12e control · PolyScope · sim → real · Lab 2</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 7–11</p>
+      <p class="phase-title">Exo + OpenSim</p>
+      <p class="phase-sub">Build EduExo · EMG · Static Opt · Lab 3</p>
+    </div>
+    <div class="phase">
+      <p class="phase-wk">Wk 11–13</p>
+      <p class="phase-title">Teleoperation</p>
+      <p class="phase-sub">MediaPipe · mapping · gripper · Lab 4</p>
+    </div>
+    <div class="phase hl">
+      <p class="phase-wk">Wk 14–15</p>
+      <p class="phase-title">Challenge</p>
+      <p class="phase-sub">Multi-modal interfaces · ADL demo · Lab 5</p>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT YOU WILL DO -->
+<section class="section" id="dolist">
+  <p class="section-label">What You Will Do</p>
+  <div class="do-grid">
+    <div class="do-item">3D-print exoskeleton parts and sew a custom textile arm interface</div>
+    <div class="do-item">Wire angle sensors, a force sensor, and a servo motor to an Arduino</div>
+    <div class="do-item">Simulate muscle activations in OpenSim with and without exoskeleton assistance</div>
+    <div class="do-item">Specify motor requirements for a clinical exoskeleton from simulation data</div>
+    <div class="do-item">Program a UR12e collaborative robot via PolyScope, URScript, and MoveIt2</div>
+    <div class="do-item">Build a markerless teleoperation pipeline using MediaPipe body tracking</div>
+    <div class="do-item">Control a Robotiq Hand-E gripper with hand gestures detected by a webcam</div>
+    <div class="do-item">Evaluate four teleoperation interfaces with NASA-TLX, SUS, and Fitts’ law</div>
+  </div>
+</section>
+
+<!-- HARDWARE PLATFORM -->
+<section class="section" id="hardware">
+  <p class="section-label">Hardware &amp; Software Platform</p>
+  <div class="hw-grid">
+    <div class="hw-col">
+      <h3>Robot Platforms</h3>
+      <div class="hw-item">
+        <p class="hw-title">UR12e + Robotiq Hand-E</p>
+        <p class="hw-body">6-DOF collaborative robot arm with 1300 mm reach and 12 kg payload. Adaptive parallel gripper with 50 mm stroke and 130 N grip force. Controlled via PolyScope, URScript, RTDE, and ROS2 Jazzy with MoveIt2.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">EduExo (AUXIVO)</p>
+        <p class="hw-body">1-DOF elbow exoskeleton kit — 3D-printed structure, sewn textile interface, MG996R servo motor, rotary angle sensor, and FSR. Also modeled in OpenSim as <code>arm26_EduExo.osim</code> with a CoordinateActuator at the elbow joint.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">PincherX 100</p>
+        <p class="hw-body">5-DOF desktop robot arm by Trossen Robotics. Serves as a leader arm for teleoperation in Lab 5 — move it by hand, and the UR12e mirrors your motions via delta-from-home joint mapping.</p>
+      </div>
+    </div>
+    <div class="hw-col">
+      <h3>Sensing &amp; Software</h3>
+      <div class="hw-item">
+        <p class="hw-title">Arduino Mega + Sensors</p>
+        <p class="hw-body">Reads the EduExo angle sensor and FSR at 100 Hz, drives the servo motor, and streams data to the PC over serial. Optional MyoWare 2.0 surface EMG sensor for biceps activation measurement.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">OpenSim 4.5</p>
+        <p class="hw-body">Musculoskeletal simulation software. Inverse Dynamics computes required joint torques; Static Optimization decomposes torques into individual muscle forces. Used to predict the biomechanical effect of the EduExo.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">MediaPipe + Webcam</p>
+        <p class="hw-body">Google’s real-time pose estimation detects 33 skeletal landmarks from a single RGB camera. Joint angles computed from landmarks drive the UR12e teleoperation pipeline at 15–30 FPS with One Euro filtering.</p>
+      </div>
+      <div class="hw-item">
+        <p class="hw-title">Full Python Stack</p>
+        <p class="hw-body">Python 3.10+ with NumPy, SciPy, OpenCV, MediaPipe, pySerial, python-rtde, and the OpenSim Python API. ROS2 Jazzy with MoveIt2 for robot control. Arduino IDE 2.x for EduExo firmware development.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ASSISTIVE ROBOTICS CURRICULUM -->
+<section class="section" id="theory">
+  <p class="section-label">Assistive Robotics Curriculum</p>
+  <div class="theory-grid">
+    <div class="theory-item">
+      <p class="theory-title">Assistive Robot Taxonomy</p>
+      <p class="theory-desc">Classification by function — manipulation aids, exoskeletons, prosthetics, mobility aids, social robots. The ICF disability framework. ISO 13482 safety standards for personal care robots.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Robot Kinematics</p>
+      <p class="theory-desc">DH convention, forward and inverse kinematics for the UR12e. Singularity analysis. Workspace boundaries. Computed analytically and verified with <code>robotics-toolbox-python</code>.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Exoskeleton Design</p>
+      <p class="theory-desc">Rigid vs. soft architectures. Joint alignment with human anatomy. Actuator selection — servo, SEA, cable-driven. Backdrivability, mechanical advantage, comfort, and don/doff time as design criteria.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">EMG &amp; Muscle Modeling</p>
+      <p class="theory-desc">Motor unit physiology, surface EMG signal processing (band-pass → rectify → RMS → MVC normalize). The Hill muscle model — activation × force-length × force-velocity. MyoWare 2.0 sensor integration.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">OpenSim Simulation</p>
+      <p class="theory-desc">Musculoskeletal modeling with <code>arm26_EduExo.osim</code>. Inverse Dynamics for joint torque computation. Static Optimization for muscle force decomposition. Simulation-guided motor specification.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Teleoperation Theory</p>
+      <p class="theory-desc">Master-slave architectures, unilateral vs. bilateral control. Joint-space and Cartesian-space motion mapping. Workspace scaling, deadband, and latency management. Stability under delay.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Computer Vision for HRI</p>
+      <p class="theory-desc">MediaPipe Pose — BlazePose architecture, 33 landmarks, joint angle computation from 3D vectors. Camera-to-robot frame alignment. One Euro Filter for real-time smoothing. Confidence gating.</p>
+    </div>
+    <div class="theory-item">
+      <p class="theory-title">Interface Evaluation</p>
+      <p class="theory-desc">Fitts’ law throughput for pointing performance. NASA-TLX for subjective workload (6 subscales). System Usability Scale (SUS). Task metrics — completion time, success rate, path efficiency.</p>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECT -->
+<section class="section" id="project">
+  <p class="section-label">Final Project</p>
+  <div class="comp-box">
+    <div class="comp-accent"></div>
+    <div class="comp-body">
+      <h3>Assistive Manipulation Challenge</h3>
+      <p>Teams of 3–4 design a multi-modal assistive interface for an Activity of Daily Living task on the physical UR12e with Robotiq Hand-E. Choose from table setting, shelf retrieval, container manipulation, or block sorting. The interface must use at least two input modalities and incorporate simulation insights from Lab 3.</p>
+      <p>Evaluated on task success rate, completion time, NASA-TLX workload, and SUS usability scores. Live demonstration during the final week followed by an IEEE-format technical report.</p>
+      <div class="comp-cols">
+        <div class="comp-col">
+          <h4>Challenge Tasks</h4>
+          <ul>
+            <li>Pick-and-place with Robotiq Hand-E</li>
+            <li>Multi-modal interface (2+ input channels)</li>
+            <li>Simulation-informed design decisions</li>
+            <li>Formal evaluation with standardized metrics</li>
+          </ul>
+        </div>
+        <div class="comp-col">
+          <h4>Team Deliverables</h4>
+          <ul>
+            <li>Live demo (5-min presentation + Q&amp;A)</li>
+            <li>IEEE-format technical report (8–12 pages)</li>
+            <li>Documented code on GitHub</li>
+            <li>Video recording of all trials</li>
+          </ul>
+        </div>
+      </div>
+      <div class="comp-tags">
+        <span class="tag">Best Performance</span>
+        <span class="tag">Most Accessible</span>
+        <span class="tag">Most Innovative</span>
+        <span class="tag">Best Technical Report</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY TAKE THIS COURSE -->
+<section class="section" id="why">
+  <p class="section-label">Why Take This Course</p>
+  <div class="why-grid">
+    <div class="why-item">
+      <h3>You Build Things That Touch People</h3>
+      <p>Not metaphorically — your exoskeleton physically contacts the human body. Your teleoperation interface lets someone control a robot arm with their movements. This is design with consequence.</p>
+    </div>
+    <div class="why-item">
+      <h3>Simulation Before Fabrication</h3>
+      <p>OpenSim predicts how muscles respond to your exoskeleton before you specify the motor. You derive clinical specifications from biomechanical data — the way real medical devices get designed.</p>
+    </div>
+    <div class="why-item">
+      <h3>Four Hardware Platforms</h3>
+      <p>UR12e for industrial manipulation, EduExo for wearable robotics, PincherX for leader-arm teleoperation, webcam for markerless control. Most graduate courses use one robot — you use four.</p>
+    </div>
+    <div class="why-item">
+      <h3>Evaluation Changes Everything</h3>
+      <p>NASA-TLX and Fitts’ law reveal which interface actually works. Students are consistently surprised by the gap between what feels intuitive and what performs well under formal measurement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- RESOURCES -->
+<section class="section" id="resources">
+  <p class="section-label">Course Materials &amp; Repository</p>
+  <div class="res-grid">
+    <div class="res-card">
+      <h3>📖 Course Wiki</h3>
+      <p>30 pages: 11 lessons, 5 labs, 3 homework sets, project spec, and reference pages. Theory with equations, step-by-step procedures, runnable code, and expected outputs.</p>
+      <a href="https://github.com/ShawnLiNU/EECE5552-Assistive-Robotics/wiki" target="_blank" rel="noopener">Open Wiki ↗</a>
+    </div>
+    <div class="res-card">
+      <h3>💻 GitHub Repository</h3>
+      <p>Lab starter code, OpenSim models (<code>arm26_EduExo.osim</code>), EduExo STL files, Arduino firmware, MediaPipe teleoperation scripts, and Python utilities.</p>
+      <a href="https://github.com/ShawnLiNU/EECE5552-Assistive-Robotics" target="_blank" rel="noopener">Open Repository ↗</a>
+    </div>
+    <div class="res-card">
+      <h3>🦴 OpenSim Models</h3>
+      <p>The <code>arm26_EduExo.osim</code> model includes arm skeleton, 6 Hill-type muscles, EduExo STL geometry, and a CoordinateActuator. Prescribed motion files and tracking tasks included.</p>
+      <a href="https://github.com/ShawnLiNU/EECE5552-Assistive-Robotics/wiki/Reference-OpenSim-Quick-Start" target="_blank" rel="noopener">Quick Start ↗</a>
+    </div>
+    <div class="res-card">
+      <h3>🤖 Hardware Setup</h3>
+      <p>URSim Docker configuration, Arduino IDE, ROS2 Jazzy installation, MediaPipe environment, and OpenSim Python API. One-time setup takes 60–90 minutes.</p>
+      <a href="https://github.com/ShawnLiNU/EECE5552-Assistive-Robotics/wiki/Prereq-1-Software-Setup" target="_blank" rel="noopener">Setup Guide ↗</a>
+    </div>
+  </div>
+</section>
+
+<!-- COURSE INFO -->
+<section class="section" id="info">
+  <p class="section-label">Course Information</p>
+  <table class="info-table">
+    <tr><td>Course Number</td><td>EECE 5552</td></tr>
+    <tr><td>Title</td><td>Assistive Robotics</td></tr>
+    <tr><td>Credits</td><td>4 credit hours</td></tr>
+    <tr><td>Level</td><td>Graduate &amp; Senior Undergraduate</td></tr>
+    <tr><td>Campus</td><td>Northeastern University &nbsp;·&nbsp; Seattle</td></tr>
+    <tr><td>Prerequisites</td><td>Python programming &nbsp;·&nbsp; Basic linear algebra &nbsp;·&nbsp; or Graduate Admission</td></tr>
+    <tr><td>Tools</td><td>Python 3.10+ · ROS2 Jazzy · MoveIt2 · URSim · OpenSim 4.5 · MediaPipe · Arduino IDE 2.x</td></tr>
+    <tr><td>Grading</td><td>Labs 30% · Homework 15% · Midterm 20% · Final Project 35%</td></tr>
+  </table>
+</section>
+
+<footer>
+  <p>College of Engineering &nbsp;·&nbsp; Electrical &amp; Computer Engineering &nbsp;·&nbsp; Northeastern University &nbsp;·&nbsp; northeastern.edu</p>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(
+    es => es.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
