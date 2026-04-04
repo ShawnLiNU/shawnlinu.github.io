@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ECE 5698 / CS 7180 · Robot System Server · Northeastern University</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --red:#CC0000; --black:#111; --gray:#555; --lgray:#999; --rule:#e2e2e2; --bg:#fff; --off:#f6f6f6; --font:Arial,Helvetica,sans-serif; }
+    html { scroll-behavior: smooth; }
+    body { font-family:var(--font); background:var(--bg); color:var(--black); font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+    .topbar { height:5px; background:var(--red); }
+    nav { position:sticky; top:0; z-index:100; background:rgba(255,255,255,.96); backdrop-filter:blur(6px); border-bottom:1px solid var(--rule); padding:0 2rem; }
+    .nav-inner { max-width:960px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:50px; }
+    .nav-brand { font-size:.82rem; font-weight:700; color:var(--black); text-decoration:none; }
+    .nav-brand span { color:var(--red); }
+    .nav-links { display:flex; gap:1.6rem; list-style:none; }
+    .nav-links a { font-size:.72rem; font-weight:700; color:var(--gray); text-decoration:none; letter-spacing:.08em; text-transform:uppercase; transition:color .18s; }
+    .nav-links a:hover { color:var(--red); }
+    .hamburger { display:none; flex-direction:column; gap:4px; cursor:pointer; padding:6px; background:none; border:none; }
+    .hamburger span { display:block; width:20px; height:2px; background:var(--black); }
+    @media(max-width:660px) { .hamburger{display:flex;} .nav-links{display:none;flex-direction:column;position:absolute;top:50px;right:0;background:var(--bg);border:1px solid var(--rule);border-radius:4px;padding:.8rem 1.4rem;gap:.9rem;} .nav-links.open{display:flex;} }
+
+    .hero { max-width:960px; margin:0 auto; padding:4.5rem 2rem 3.5rem; text-align:center; }
+    .hero-dept { font-size:.7rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--lgray); margin-bottom:1.4rem; }
+    .hero-number { font-size:clamp(2.2rem,7vw,4.2rem); font-weight:700; line-height:1; color:var(--black); margin-bottom:.3rem; }
+    .hero-title { font-size:clamp(1.2rem,3.2vw,1.65rem); font-weight:400; color:var(--gray); margin-bottom:1rem; }
+    .hero-meta { font-size:.8rem; color:var(--lgray); letter-spacing:.05em; }
+    .hero-new { display:inline-block; background:var(--red); color:#fff; font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.25rem .7rem; border-radius:3px; margin-bottom:1.2rem; }
+    .hero-rule { width:48px; height:2px; background:var(--red); margin:1.6rem auto; }
+    .hero-hook { font-size:1.1rem; font-weight:700; color:var(--black); max-width:560px; margin:0 auto; line-height:1.45; }
+    .hero-sub { font-size:.88rem; color:var(--gray); max-width:600px; margin:.9rem auto 0; line-height:1.65; }
+    .platform-badge { display:inline-flex; align-items:center; gap:.5rem; margin-top:1.4rem; padding:.35rem .9rem; border:1px solid var(--rule); border-radius:2px; background:var(--off); font-size:.73rem; color:var(--gray); }
+    .platform-badge strong { color:var(--black); font-weight:700; }
+    .dot { width:6px; height:6px; border-radius:50%; background:var(--red); flex-shrink:0; }
+
+    .section { max-width:960px; margin:0 auto; padding:3.5rem 2rem; opacity:0; transform:translateY(18px); transition:opacity .5s ease,transform .5s ease; }
+    .section.visible { opacity:1; transform:translateY(0); }
+    .section-label { font-size:.68rem; font-weight:700; color:var(--red); letter-spacing:.14em; text-transform:uppercase; margin-bottom:.5rem; }
+    .section-title { font-size:1.35rem; font-weight:700; color:var(--black); margin-bottom:1rem; }
+    .section p { color:var(--gray); margin-bottom:.9rem; }
+    .section + .section { border-top:1px solid var(--rule); }
+
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:2.5rem; margin-top:.5rem; }
+    @media(max-width:660px) { .two-col{grid-template-columns:1fr;gap:1.5rem;} }
+    .two-col h3 { font-size:.9rem; font-weight:700; color:var(--black); margin-bottom:.5rem; }
+    .two-col p { font-size:.88rem; }
+
+    .topic-grid { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1rem; }
+    .topic-pill { background:var(--off); border:1px solid var(--rule); border-radius:4px; padding:.4rem .9rem; font-size:.78rem; color:var(--gray); }
+    .topic-pill.hl { background:var(--red); color:#fff; border-color:var(--red); font-weight:700; }
+
+    .roadmap-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.2rem; margin-top:1.5rem; }
+    @media(max-width:660px) { .roadmap-grid{grid-template-columns:1fr;} }
+    .phase-card { background:var(--off); border-radius:6px; padding:1.2rem 1.1rem; border-top:3px solid var(--rule); }
+    .phase-card.active { border-top-color:var(--red); }
+    .phase-num { font-size:.65rem; font-weight:700; color:var(--red); letter-spacing:.1em; text-transform:uppercase; margin-bottom:.3rem; }
+    .phase-card h3 { font-size:.88rem; font-weight:700; color:var(--black); margin-bottom:.4rem; }
+    .phase-card p { font-size:.82rem; color:var(--gray); margin:0; }
+    .phase-tag { display:inline-block; font-size:.62rem; font-weight:700; color:var(--lgray); background:var(--bg); border:1px solid var(--rule); border-radius:3px; padding:.15rem .45rem; margin-top:.5rem; margin-right:.3rem; }
+
+    .hw-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.2rem; }
+    @media(max-width:660px) { .hw-grid{grid-template-columns:1fr 1fr;} }
+    .hw-card { background:var(--off); border-radius:6px; padding:1rem; text-align:center; border:1px solid var(--rule); }
+    .hw-icon { font-size:1.6rem; margin-bottom:.4rem; }
+    .hw-card h4 { font-size:.82rem; font-weight:700; color:var(--black); margin-bottom:.2rem; }
+    .hw-card p { font-size:.72rem; color:var(--lgray); margin:0; }
+
+    .sw-table { width:100%; border-collapse:collapse; margin-top:1.2rem; font-size:.82rem; }
+    .sw-table th { text-align:left; font-size:.68rem; font-weight:700; color:var(--lgray); letter-spacing:.08em; text-transform:uppercase; padding:.5rem .6rem; border-bottom:2px solid var(--rule); }
+    .sw-table td { padding:.5rem .6rem; border-bottom:1px solid var(--rule); color:var(--gray); }
+    .sw-table td:first-child { font-weight:700; color:var(--black); }
+
+    .comp-box { background:var(--off); border-radius:6px; padding:1.5rem; margin-top:1.5rem; position:relative; overflow:hidden; }
+    .comp-accent { position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--red); }
+    .comp-box h3 { font-size:1rem; font-weight:700; color:var(--black); margin-bottom:.5rem; padding-left:.8rem; }
+    .comp-box p { font-size:.88rem; color:var(--gray); padding-left:.8rem; margin-bottom:.6rem; }
+    .comp-list { list-style:none; padding-left:.8rem; margin-top:.5rem; }
+    .comp-list li { font-size:.82rem; color:var(--gray); padding:.25rem 0 .25rem 1rem; position:relative; }
+    .comp-list li::before { content:'▸'; position:absolute; left:0; color:var(--red); font-weight:700; }
+
+    .arch-box { background:var(--black); color:#fff; border-radius:6px; padding:1.5rem; margin-top:1.5rem; font-family:'Courier New',monospace; font-size:.72rem; line-height:1.55; overflow-x:auto; white-space:pre; }
+
+    .team-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; margin-top:1.2rem; }
+    @media(max-width:660px) { .team-grid{grid-template-columns:1fr 1fr;} }
+    .team-card { background:var(--off); border-radius:6px; padding:1rem; text-align:center; border-top:3px solid var(--red); }
+    .team-prefix { font-size:.68rem; font-weight:700; color:var(--red); letter-spacing:.1em; margin-bottom:.2rem; }
+    .team-card h4 { font-size:.82rem; font-weight:700; color:var(--black); margin-bottom:.3rem; }
+    .team-card p { font-size:.72rem; color:var(--lgray); margin:0; }
+
+    .why-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem; }
+    @media(max-width:660px) { .why-grid{grid-template-columns:1fr;} }
+    .why-item { padding:.6rem 0; }
+    .why-item h4 { font-size:.82rem; font-weight:700; color:var(--black); margin-bottom:.2rem; }
+    .why-item p { font-size:.82rem; color:var(--gray); margin:0; }
+
+    .res-list { list-style:none; margin-top:.8rem; }
+    .res-list li { padding:.4rem 0; font-size:.85rem; color:var(--gray); }
+    .res-list a { color:var(--red); text-decoration:none; font-weight:700; }
+    .res-list a:hover { text-decoration:underline; }
+
+    .info-block { background:var(--off); border-radius:6px; padding:1.3rem 1.5rem; margin-top:1rem; }
+    .info-block span { font-size:.82rem; color:var(--gray); }
+    .info-block span strong { color:var(--black); }
+    .grade-table { width:100%; border-collapse:collapse; font-size:.82rem; margin-top:1rem; }
+    .grade-table td { padding:.4rem .6rem; border-bottom:1px solid var(--rule); color:var(--gray); }
+    .grade-table td:first-child { font-weight:700; color:var(--black); }
+    .grade-table td:last-child { text-align:right; font-weight:700; color:var(--red); }
+
+    footer { text-align:center; padding:1.3rem 2rem; margin-top:2rem; border-top:1px solid var(--rule); }
+    footer p { font-size:.73rem; color:var(--lgray); }
+    footer a { color:var(--red); text-decoration:none; }
+  </style>
+</head>
+<body>
+
+<div class="topbar"></div>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-brand" href="#">ECE 5698 <span>/ CS 7180</span></a>
+    <button class="hamburger" onclick="document.getElementById('nl').classList.toggle('open')"><span></span><span></span><span></span></button>
+    <ul class="nav-links" id="nl">
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#sprints">Sprints</a></li>
+      <li><a href="#teams">Teams</a></li>
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="#resources">Resources</a></li>
+      <li><a href="#info">Info</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-new">New Course · Spring 2027</div>
+  <p class="hero-dept">Northeastern University &nbsp;·&nbsp; ECE &amp; Computer Sciences &nbsp;·&nbsp; Seattle</p>
+  <h1 class="hero-number">ECE 5698 / CS 7180</h1>
+  <p class="hero-title">Robot System Server</p>
+  <p class="hero-meta">4 Credit Hours &nbsp;·&nbsp; Graduate &nbsp;·&nbsp; Cross-listed ECE &amp; CS</p>
+  <div class="hero-rule"></div>
+  <p class="hero-hook">Build a centralized server that manages heterogeneous robot fleets — from simulated tinyRobots to physical TurtleBot 4s.</p>
+  <p class="hero-sub">Sprint-based, team-driven, build-first. Six two-week sprints using the open-source Open-RMF framework, progressing from simulation to real hardware. No course or textbook anywhere teaches this. Until now.</p>
+  <div class="platform-badge">
+    <span class="dot"></span>
+    <span>Open-RMF &nbsp;·&nbsp; <strong>RMF-Web</strong> &nbsp;·&nbsp; <strong>ROS 2 Jazzy</strong> &nbsp;·&nbsp; TurtleBot 4 &nbsp;·&nbsp; Docker &nbsp;·&nbsp; FastAPI &nbsp;·&nbsp; React</span>
+  </div>
+</header>
+
+<!-- OVERVIEW -->
+<section class="section" id="overview">
+  <p class="section-label">Overview</p>
+  <h2 class="section-title">Build something not taught anywhere else</h2>
+  <div class="two-col">
+    <div>
+      <h3>What you will build</h3>
+      <p>A fully functional Robot System Server — codenamed <strong>RobOrg</strong> — with fleet management, task allocation (MRTA), and map services. By semester's end, your server simultaneously coordinates <strong>tinyRobot simulations</strong>, <strong>TurtleBot 4 Gazebo simulations</strong>, and <strong>physical TurtleBot 4 robots</strong> — all on one dashboard.</p>
+    </div>
+    <div>
+      <h3>How the class works</h3>
+      <p>Six two-week <strong>sprints</strong> with integration ceremonies, team demos, and progressive hardware stages. Four teams build in parallel (Fleet, Task, Map, Infrastructure) with bi-weekly Git integration. Short topic briefs replace traditional lectures — you learn by building.</p>
+    </div>
+  </div>
+  <div class="arch-box">                Stage 1 (Sprint 1–2)     Stage 2 (Sprint 3–4)     Stage 3 (Sprint 5)       Stage 4 (Sprint 6)
+                ─────────────────────    ──────────────────────   ──────────────────────   ────────────────────
+                tinyRobot fleet          tinyRobot fleet          tinyRobot fleet          tinyRobot fleet
+                (rmf_demos built-in)     + TB4 Gazebo sim         + TB4 Gazebo sim         + TB4 Gazebo sim
+                                         (Nav2 + free_fleet)     + Physical TB4(s)        + Physical TB4 fleet</div>
+</section>
+
+<!-- TOPICS -->
+<section class="section">
+  <p class="section-label">What You Will Work With</p>
+  <h2 class="section-title">From architecture to deployment</h2>
+  <div class="topic-grid">
+    <span class="topic-pill hl">Fleet Management</span>
+    <span class="topic-pill hl">MRTA Algorithms</span>
+    <span class="topic-pill hl">Heterogeneous Fleets</span>
+    <span class="topic-pill">Open-RMF</span>
+    <span class="topic-pill">RMF-Web Dashboard</span>
+    <span class="topic-pill">Fleet Adapters</span>
+    <span class="topic-pill">Traffic Scheduling</span>
+    <span class="topic-pill">FastAPI + WebSocket</span>
+    <span class="topic-pill">JWT Auth &amp; RBAC</span>
+    <span class="topic-pill">Docker &amp; CI/CD</span>
+    <span class="topic-pill">Nav2 &amp; SLAM</span>
+    <span class="topic-pill">SNMP Monitoring</span>
+    <span class="topic-pill">React MicroApps</span>
+    <span class="topic-pill">Semantic Versioning</span>
+    <span class="topic-pill">Benchmarking</span>
+  </div>
+</section>
+
+<!-- SPRINTS -->
+<section class="section" id="sprints">
+  <p class="section-label">Semester Roadmap</p>
+  <h2 class="section-title">Six sprints — from simulation to real hardware</h2>
+  <div class="roadmap-grid">
+    <div class="phase-card active">
+      <div class="phase-num">Sprint 1–2 · Weeks 2–5</div>
+      <h3>tinyRobot Foundation</h3>
+      <p>Build Open-RMF from source, run the office demo, write first custom modules — fleet manager, task queue, Building 225 map. All tested on tinyRobot sim.</p>
+      <span class="phase-tag">Stage 1</span>
+      <span class="phase-tag">Checkpoint 1</span>
+    </div>
+    <div class="phase-card active">
+      <div class="phase-num">Sprint 3–4 · Weeks 6–9</div>
+      <h3>+ TB4 Sim &amp; Dashboard</h3>
+      <p>Add TurtleBot 4 Gazebo as a second fleet. Build MRTA algorithms, dashboard MicroApps, map editor. Cross-fleet task dispatch working.</p>
+      <span class="phase-tag">Stage 2</span>
+      <span class="phase-tag">MicroApps</span>
+    </div>
+    <div class="phase-card active">
+      <div class="phase-num">Sprint 5–6 · Weeks 10–13</div>
+      <h3>Real Hardware &amp; Polish</h3>
+      <p>Connect physical TurtleBot 4. MRTA benchmarking, SNMP monitoring, fault testing. Integration, documentation, and final demo prep.</p>
+      <span class="phase-tag">Stage 3–4</span>
+      <span class="phase-tag">Checkpoint 2</span>
+    </div>
+  </div>
+</section>
+
+<!-- TEAMS -->
+<section class="section" id="teams">
+  <p class="section-label">Team Structure</p>
+  <h2 class="section-title">Four modules — one integrated system</h2>
+  <div class="team-grid">
+    <div class="team-card">
+      <div class="team-prefix">ROI</div>
+      <h4>Infrastructure</h4>
+      <p>Auth, logging, events, CI/CD, Docker, database</p>
+    </div>
+    <div class="team-card">
+      <div class="team-prefix">ROF</div>
+      <h4>Fleet Mgmt</h4>
+      <p>Status, heartbeats, alerts, fleet adapter integration</p>
+    </div>
+    <div class="team-card">
+      <div class="team-prefix">ROT</div>
+      <h4>Task Mgmt</h4>
+      <p>Job queue, MRTA algorithms, task dispatch, scheduling</p>
+    </div>
+    <div class="team-card">
+      <div class="team-prefix">ROM</div>
+      <h4>Map Server</h4>
+      <p>Revit CAD import, Nav2 grids, coordinate transforms</p>
+    </div>
+  </div>
+  <div class="comp-box">
+    <div class="comp-accent"></div>
+    <h3>Final System Deliverables</h3>
+    <p>The class delivers a production-ready Robot System Server:</p>
+    <ul class="comp-list">
+      <li>Heterogeneous fleet management: tinyRobot + TB4 sim + physical TB4</li>
+      <li>MRTA algorithm suite with benchmarked comparison (Greedy, Hungarian, RMF Auction)</li>
+      <li>Building 225 map with Revit CAD plugin and Nav2 integration</li>
+      <li>RMF-Web dashboard with custom MicroApps (Fleet Health, Task Queue, Map Editor)</li>
+      <li>Full system deployed on NU IT infrastructure</li>
+    </ul>
+  </div>
+</section>
+
+<!-- STACK -->
+<section class="section" id="stack">
+  <p class="section-label">Technology Stack</p>
+  <h2 class="section-title">Industry-grade tools from robot to dashboard</h2>
+  <div class="hw-grid">
+    <div class="hw-card"><div class="hw-icon">🤖</div><h4>TurtleBot 4</h4><p>Create 3 + RPi 4 + RPLIDAR + OAK-D</p></div>
+    <div class="hw-card"><div class="hw-icon">🌐</div><h4>Open-RMF</h4><p>Traffic scheduling, fleet orchestration</p></div>
+    <div class="hw-card"><div class="hw-icon">📊</div><h4>RMF-Web</h4><p>React dashboard + FastAPI + Socket.IO</p></div>
+    <div class="hw-card"><div class="hw-icon">🐍</div><h4>Python</h4><p>FastAPI, fleet adapter, MRTA algorithms</p></div>
+    <div class="hw-card"><div class="hw-icon">🐳</div><h4>Docker</h4><p>Containerized deployment</p></div>
+    <div class="hw-card"><div class="hw-icon">🗄️</div><h4>PostgreSQL</h4><p>Tasks, events, fleet logs</p></div>
+  </div>
+  <table class="sw-table">
+    <tr><th>Layer</th><th>Technology</th></tr>
+    <tr><td>Robot OS</td><td>ROS 2 Jazzy</td></tr>
+    <tr><td>Fleet Framework</td><td>Open-RMF + free_fleet + zenoh</td></tr>
+    <tr><td>Navigation</td><td>Nav2 (AMCL, planners, costmaps)</td></tr>
+    <tr><td>Web Frontend</td><td>React (rmf-dashboard-framework + MicroApps)</td></tr>
+    <tr><td>API Server</td><td>FastAPI + Socket.IO</td></tr>
+    <tr><td>CI/CD</td><td>GitHub Actions</td></tr>
+    <tr><td>Languages</td><td>Python (primary), TypeScript/React, some C#</td></tr>
+  </table>
+</section>
+
+<!-- WHY -->
+<section class="section">
+  <p class="section-label">Why This Course</p>
+  <h2 class="section-title">Six reasons to sign up</h2>
+  <div class="why-grid">
+    <div class="why-item"><h4>Unique in academia</h4><p>No other university course or textbook teaches robot fleet server architecture.</p></div>
+    <div class="why-item"><h4>Build, don't just study</h4><p>Sprint-based development — you ship working code every two weeks.</p></div>
+    <div class="why-item"><h4>Open-source foundation</h4><p>Built on Open-RMF, the same framework used in hospitals and airports worldwide.</p></div>
+    <div class="why-item"><h4>Real hardware</h4><p>Progress from simulation to physical TurtleBot 4 robots in campus buildings.</p></div>
+    <div class="why-item"><h4>Publication potential</h4><p>MRTA comparisons, fleet analytics, and heterogeneous fleet management are publishable.</p></div>
+    <div class="why-item"><h4>Lasting impact</h4><p>Your server stays deployed for future NU robotics courses and research.</p></div>
+  </div>
+</section>
+
+<!-- RESOURCES -->
+<section class="section" id="resources">
+  <p class="section-label">Resources</p>
+  <h2 class="section-title">Wiki, poster, and references</h2>
+  <ul class="res-list">
+    <li><a href="https://github.com/ShawnLiNU/EECE5698_CS7180-Robot-System-Server/wiki">Course Wiki</a> — sprint goals, topic briefs, setup guides, reference materials</li>
+    <li><a href="https://github.com/ShawnLiNU/EECE5698_CS7180-Robot-System-Server">GitHub Repository</a> — course materials and code</li>
+    <li><a href="../EECE5698_CS7180_poster.pdf" target="_blank">Course Poster (PDF)</a></li>
+    <li><a href="https://osrf.github.io/ros2multirobotbook/intro.html">Programming Multiple Robots with ROS 2</a> — essential reference</li>
+    <li><a href="https://openrmf.readthedocs.io/en/latest/">Open-RMF Documentation</a></li>
+    <li><a href="https://github.com/open-rmf/rmf_demos">Open-RMF Demos</a> — simulation worlds</li>
+    <li><a href="https://openrobotics.zulipchat.com/">Open-RMF Community Chat</a></li>
+  </ul>
+</section>
+
+<!-- INFO -->
+<section class="section" id="info">
+  <p class="section-label">Course Info</p>
+  <h2 class="section-title">Details and prerequisites</h2>
+  <div class="info-block">
+    <span><strong>Course:</strong> ECE 5698 / CS 7180 — Special Topics: Robot System Server</span><br>
+    <span><strong>Term:</strong> Spring 2027</span><br>
+    <span><strong>Credits:</strong> 4 (2 hr lecture + 2 hr design/lab per week)</span><br>
+    <span><strong>Cross-listed:</strong> EECE &amp; CS — elective in EECE, CS, or Robotics programs</span><br>
+    <span><strong>Campus:</strong> Northeastern University · Seattle</span><br>
+    <span><strong>Class size:</strong> ~12 students</span><br>
+    <span><strong>Instructors:</strong> Prof. Xian Li (EECE) &amp; Prof. Steve Shafer (CS)</span><br>
+    <span><strong>Prerequisites:</strong> EECE 4630, EECE 5550, EECE 5554, CS 4700, CS 5610, CS 5335, or graduate admission</span>
+  </div>
+  <table class="grade-table" style="margin-top:1.2rem;">
+    <tr><td>Weekly Labs &amp; Code Reviews</td><td>25%</td></tr>
+    <tr><td>Design &amp; Integration Checkpoints</td><td>25%</td></tr>
+    <tr><td>Final System Project (demo + report)</td><td>40%</td></tr>
+    <tr><td>Participation &amp; Peer Evaluation</td><td>10%</td></tr>
+  </table>
+</section>
+
+<footer>
+  <p>College of Engineering &nbsp;·&nbsp; Electrical &amp; Computer Engineering &nbsp;·&nbsp; Khoury College of Computer Sciences &nbsp;·&nbsp; <a href="https://www.northeastern.edu">Northeastern University</a></p>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(
+    es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }),
+    { threshold: 0.08 }
+  );
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+  document.addEventListener('click', e => {
+    const nav = document.getElementById('nl');
+    if(!nav.contains(e.target) && !e.target.closest('.hamburger')) nav.classList.remove('open');
+  });
+</script>
+</body>
+</html>

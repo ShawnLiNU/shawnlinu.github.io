@@ -26,7 +26,6 @@
     font-weight: 300;
   }
 
-  /* ── Red accent bar ── */
   body::before {
     content: '';
     display: block;
@@ -34,7 +33,6 @@
     background: var(--red);
   }
 
-  /* ── Navbar ── */
   nav {
     background: var(--black);
     padding: 0.9rem 2rem;
@@ -80,14 +78,12 @@
   }
   #themeToggle:hover { border-color: rgba(255,255,255,.7); }
 
-  /* ── Main container ── */
   .container {
     max-width: 820px;
     margin: 0 auto;
     padding: 2.5rem 1.5rem 3rem;
   }
 
-  /* ── Page header ── */
   .page-header { margin-bottom: 2.2rem; }
   .page-header h1 {
     font-size: 2rem;
@@ -101,7 +97,6 @@
     max-width: 640px;
   }
 
-  /* ── Section headings ── */
   .section-heading {
     font-size: 1.35rem;
     font-weight: 700;
@@ -113,7 +108,6 @@
   }
   .section-heading:first-of-type { margin-top: 0; }
 
-  /* ── Course cards ── */
   .course-card {
     background: var(--gray-light);
     border: 1px solid var(--gray-border);
@@ -155,6 +149,19 @@
     color: #2e7d32;
     border-color: #66bb6a;
   }
+  .course-new-badge {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 3px;
+    white-space: nowrap;
+    background: var(--red);
+    color: var(--white);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-left: 0.5rem;
+    flex-shrink: 0;
+  }
   .course-desc {
     font-size: 0.93rem;
     color: var(--gray-text);
@@ -174,6 +181,12 @@
     font-size: 0.78rem;
     color: var(--gray-text);
   }
+  .course-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.4rem;
+    align-items: center;
+  }
   .course-link {
     display: inline-flex;
     align-items: center;
@@ -186,8 +199,12 @@
   }
   .course-link:hover { opacity: 0.75; text-decoration: underline; }
   .course-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .course-link-sep {
+    color: var(--gray-border);
+    font-size: 0.8rem;
+    user-select: none;
+  }
 
-  /* ── Coming soon card ── */
   .coming-soon {
     background: var(--gray-light);
     border: 2px dashed var(--gray-border);
@@ -207,7 +224,6 @@
     color: #999;
   }
 
-  /* ── Footer ── */
   footer {
     text-align: center;
     padding: 2rem 1rem;
@@ -232,7 +248,9 @@
   body.dark .course-desc { color: #BDBDBD; }
   body.dark .course-tag { background: #2a2a2a; border-color: #444; color: #BDBDBD; }
   body.dark .course-credits { background: #1b3a1e; color: #81c784; border-color: #388e3c; }
+  body.dark .course-new-badge { background: #E85A5A; }
   body.dark .course-link { color: #E85A5A; }
+  body.dark .course-link-sep { color: #444; }
 
   body.dark .coming-soon { background: #1e1e1e; border-color: #444; }
   body.dark .coming-soon-title { color: #BDBDBD; }
@@ -243,6 +261,7 @@
 
   @media (max-width: 600px) {
     .course-card-top { flex-direction: column; gap: 0.4rem; }
+    .course-links { gap: 0.4rem 0.8rem; }
   }
 </style>
 </head>
@@ -270,13 +289,55 @@
   <!-- Page header -->
   <div class="page-header">
     <h1>Teaching</h1>
-    <p>Graduate courses in robotics, sensing, navigation, and control systems at Northeastern University's Seattle campus.</p>
+    <p>Graduate courses in robotics, sensing, navigation, control systems, and multi-robot fleet management at Northeastern University's Seattle campus.</p>
   </div>
 
   <h2 class="section-heading">Courses</h2>
 
+  <!-- ════════ ECE 5698 / CS 7180 — Robot System Server ════════ -->
+  <div class="course-card">
+    <div class="course-card-top">
+      <div>
+        <div class="course-code">ECE 5698 / CS 7180</div>
+        <div class="course-title">Special Topics: Robot System Server</div>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center; flex-shrink:0;">
+        <span class="course-new-badge">New</span>
+        <span class="course-credits">4 Credits</span>
+      </div>
+    </div>
+    <div class="course-desc">
+      Introduces the architecture, design, and implementation of a centralized Robot System Server for managing heterogeneous fleets of autonomous robots. Students work in sprint-based teams to build fleet management, task allocation (MRTA), and map services on top of the Open-RMF framework, progressing from simulated tinyRobot fleets to TurtleBot 4 Gazebo simulations to physical TurtleBot 4 robots — all coordinated by one server and one dashboard. Co-taught with Prof. Steve Shafer (CS).
+    </div>
+    <div class="course-meta">
+      <span class="course-tag">Open-RMF</span>
+      <span class="course-tag">Fleet Management</span>
+      <span class="course-tag">MRTA Algorithms</span>
+      <span class="course-tag">RMF-Web</span>
+      <span class="course-tag">ROS 2</span>
+      <span class="course-tag">TurtleBot 4</span>
+      <span class="course-tag">Docker</span>
+      <span class="course-tag">FastAPI</span>
+    </div>
+    <div class="course-links">
+      <a class="course-link" href="https://github.com/ShawnLiNU/EECE5698_CS7180-Robot-System-Server/wiki" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Course Wiki
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5698_CS7180/course_overview/index.html">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Course Overview
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5698_CS7180/EECE5698_CS7180_poster.pdf" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Poster
+      </a>
+    </div>
+  </div>
 
-  <!-- EECE 5550 — Mobile Robotics -->
+  <!-- ════════ EECE 5550 — Mobile Robotics ════════ -->
   <div class="course-card">
     <div class="course-card-top">
       <div>
@@ -296,13 +357,25 @@
       <span class="course-tag">Perception</span>
       <span class="course-tag">ROS</span>
     </div>
-    <a class="course-link" href="https://github.com/ShawnLiNU/EECE5550-Mobile-Robotics/wiki" target="_blank">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Course Wiki
-    </a>
+    <div class="course-links">
+      <a class="course-link" href="https://github.com/ShawnLiNU/EECE5550-Mobile-Robotics/wiki" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Course Wiki
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5550/course_overview/index.html">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Course Overview
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5550/EECE5550_poster.pdf" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Poster
+      </a>
+    </div>
   </div>
   
-  <!-- EECE 5552 — Assistive Robotics -->
+  <!-- ════════ EECE 5552 — Assistive Robotics ════════ -->
   <div class="course-card">
     <div class="course-card-top">
       <div>
@@ -322,14 +395,25 @@
       <span class="course-tag">Cyber-Physical Systems</span>
       <span class="course-tag">Smart Health</span>
     </div>
-    <a class="course-link" href="https://github.com/ShawnLiNU/EECE5552-Assistive-Robotics/wiki" target="_blank">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Course Wiki
-    </a>
+    <div class="course-links">
+      <a class="course-link" href="https://github.com/ShawnLiNU/EECE5552-Assistive-Robotics/wiki" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Course Wiki
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5552/course_overview/index.html">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Course Overview
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5552/EECE5552_poster.pdf" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Poster
+      </a>
+    </div>
   </div>
 
-
-  <!-- EECE 5554 — Robotics Sensing and Navigation -->
+  <!-- ════════ EECE 5554 — Robotics Sensing and Navigation ════════ -->
   <div class="course-card">
     <div class="course-card-top">
       <div>
@@ -350,13 +434,25 @@
       <span class="course-tag">ROS</span>
       <span class="course-tag">Computer Vision</span>
     </div>
-    <a class="course-link" href="https://github.com/ShawnLiNU/EECE5554-Robotics-Sensing-And-Navigation/wiki" target="_blank">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Course Wiki
-    </a>
+    <div class="course-links">
+      <a class="course-link" href="https://github.com/ShawnLiNU/EECE5554-Robotics-Sensing-And-Navigation/wiki" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Course Wiki
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5554/course_overview/index.html">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Course Overview
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5554/EECE5554_poster.pdf" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Poster
+      </a>
+    </div>
   </div>
 
-  <!-- EECE 5580 — Classical Control Systems -->
+  <!-- ════════ EECE 5580 — Classical Control Systems ════════ -->
   <div class="course-card">
     <div class="course-card-top">
       <div>
@@ -376,10 +472,22 @@
       <span class="course-tag">Stability</span>
       <span class="course-tag">Compensator Design</span>
     </div>
-    <a class="course-link" href="https://github.com/ShawnLiNU/EECE5580-Classical-Control-Systems/wiki" target="_blank">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Course Wiki
-    </a>
+    <div class="course-links">
+      <a class="course-link" href="https://github.com/ShawnLiNU/EECE5580-Classical-Control-Systems/wiki" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Course Wiki
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5580/course_overview/index.html">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Course Overview
+      </a>
+      <span class="course-link-sep">·</span>
+      <a class="course-link" href="courses/EECE5580/EECE5580_poster.pdf" target="_blank">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Poster
+      </a>
+    </div>
   </div>
 
   <!-- Coming Soon -->
@@ -402,10 +510,16 @@
   toggle.addEventListener('click', () => {
     document.body.classList.toggle('dark');
     const isDark = document.body.classList.contains('dark');
-    moon.style.display = isDark ? 'none'  : 'block';
+    moon.style.display = isDark ? 'none' : 'block';
     sun.style.display  = isDark ? 'block' : 'none';
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
   });
+  // Restore saved theme
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.remove('dark');
+    moon.style.display = 'block';
+    sun.style.display  = 'none';
+  }
 </script>
-
 </body>
 </html>
