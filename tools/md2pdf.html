@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MD → PDF · Pocket Print</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+:root {
+  --bg:#0e0e10;--bg2:#18181c;--bg3:#1e1e24;
+  --border:#2a2a32;--border2:#3a3a44;
+  --text:#e8e6e1;--dim:#8a8a96;--muted:#5a5a66;
+  --red:#c8372d;--red-g:rgba(200,55,45,.15);--red-s:#d4544a;
+  --green:#3a9a6e;
+  --mono:'DM Mono',monospace;--serif:'Instrument Serif',serif;--sans:'IBM Plex Sans',sans-serif;
+  --r:8px;--r2:12px;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+
+/* ─── Header ─── */
+header{padding:14px 24px 10px;border-bottom:1px solid var(--border);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+header h1{font-family:var(--serif);font-size:24px;font-weight:400}
+header h1 span{color:var(--red)}
+header .sub{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase}
+header .detect{font-family:var(--mono);font-size:10px;color:var(--green);margin-left:auto;opacity:0;transition:opacity .5s}
+header .detect.show{opacity:1}
+
+/* ─── App 50/50 ─── */
+.app{display:grid;grid-template-columns:1fr 1fr;height:calc(100vh - 50px);overflow:hidden}
+@media(max-width:960px){.app{grid-template-columns:1fr;height:auto;overflow:visible}.ctrl{max-height:none!important;border-right:none!important;border-bottom:1px solid var(--border)}.prev{min-height:60vh}}
+
+.ctrl{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.prev{background:#121215;overflow-y:auto;padding:16px;display:flex;flex-direction:column;align-items:center}
+
+/* ─── Shared ─── */
+.sec{font-family:var(--mono);font-size:9px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.cg{display:flex;flex-direction:column;gap:3px}
+label{font-size:11px;color:var(--dim)}
+select,input[type=number],input[type=text]{background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:6px 8px;border-radius:var(--r);outline:none;width:100%;transition:border-color .2s}
+select:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 2px var(--red-g)}
+.row{display:flex;gap:8px;align-items:end}.row>*{flex:1}
+.irow{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+
+/* Source */
+.src-block{display:flex;gap:10px;align-items:stretch}
+.fdrop-big{flex:0 0 22%;aspect-ratio:1/1;border:1.5px dashed var(--border);border-radius:var(--r2);padding:6px 4px;text-align:center;cursor:pointer;transition:all .25s;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.fdrop-big:hover,.fdrop-big.drag{border-color:var(--red);background:var(--red-g)}
+.fdrop-big input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.fdrop-big .ic{font-size:16px}
+.fdrop-big .lb{font-family:var(--mono);font-size:9px;color:var(--muted);line-height:1.4}
+.fdrop-big .fn{font-family:var(--mono);font-size:9px;color:var(--green);margin-top:2px;word-break:break-all}
+.src-block textarea{flex:1;min-height:60px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:11px;padding:8px;border-radius:var(--r);outline:none;resize:none;transition:border-color .2s}
+.src-block textarea:focus{border-color:var(--red)}
+
+/* Batch file list */
+.batch-list{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.batch-item{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:4px 8px;font-family:var(--mono);font-size:10px;color:var(--dim)}
+.batch-item .bi-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.batch-item .bi-active{color:var(--green)}
+.batch-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px}
+.batch-item button:hover{color:var(--red-s);background:var(--red-g)}
+
+/* Settings grid */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px}
+@media(max-width:600px){.sgrid{grid-template-columns:1fr}}
+.scol{display:flex;flex-direction:column;gap:10px}
+
+/* Toggle group */
+.tg{display:flex;gap:0;border-radius:var(--r);overflow:hidden;border:1px solid var(--border)}
+.tg button{flex:1;background:var(--bg3);border:none;color:var(--dim);font-family:var(--mono);font-size:10px;padding:7px 4px;cursor:pointer;transition:all .15s;border-right:1px solid var(--border);text-align:center;line-height:1.3}
+.tg button:last-child{border-right:none}
+.tg button:hover{color:var(--text);background:#24242c}
+.tg button.on{background:var(--red-g);color:var(--red-s)}
+.tg button .sl{display:block;font-size:8px;color:var(--muted);margin-top:1px}.tg button.on .sl{color:var(--red-s);opacity:.7}
+
+/* Checkbox row */
+.chk-row{display:flex;flex-wrap:wrap;gap:6px 12px}
+.chk-row label{display:flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;font-size:10px;font-family:var(--mono);color:var(--dim)}
+.chk-row input{accent-color:var(--red)}
+
+/* Collapsible */
+.ch{display:flex;align-items:center;gap:5px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);user-select:none;padding:2px 0}
+.ch:hover{color:var(--dim)}
+.ch .ar{transition:transform .2s;display:inline-block;font-size:7px}
+.ch.open .ar{transform:rotate(90deg)}
+.cb{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.cb.open{max-height:400px}
+.cb-inner{padding-top:6px;display:flex;flex-direction:column;gap:6px}
+
+/* Buttons */
+.btn1{background:var(--red);color:#fff;border:none;font-family:var(--sans);font-size:12px;font-weight:500;padding:9px 18px;border-radius:var(--r);cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn1:hover{background:var(--red-s);transform:translateY(-1px)}.btn1:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn2{background:var(--bg3);color:var(--dim);border:1px solid var(--border);font-family:var(--mono);font-size:10px;padding:5px 10px;border-radius:var(--r);cursor:pointer;transition:all .2s}
+.btn2:hover{border-color:var(--border2);color:var(--text)}
+.btn-sm{font-size:10px;padding:5px 12px}
+
+/* Device dims */
+.dev-dims{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px}
+.dev-dims .pill{background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:1px 8px;font-size:9px;color:var(--dim)}
+
+/* ─── Preview ─── */
+.prev{background:#121215;overflow:auto;padding:0;display:flex;flex-direction:column}
+.pbar{display:flex;align-items:center;gap:8px;padding:10px 16px 8px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg2)}
+#prevContent{flex:1;overflow:auto;min-height:0;background:#222}
+#prevContent iframe{display:block;border:none;background:#222;min-height:100%}
+.pbar .info{font-family:var(--mono);font-size:10px;color:var(--muted);margin-left:auto}
+
+/* Stats */
+.stats{display:flex;gap:10px;font-family:var(--mono);font-size:9px;color:var(--dim);margin-left:8px;flex-wrap:wrap}
+.stats span{white-space:nowrap}
+.stats .num{color:var(--text);font-weight:500}
+
+/* Page cards */
+.pages{display:flex;flex-direction:column;align-items:center;gap:16px}
+.pframe{box-shadow:0 4px 30px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04);border-radius:3px;position:relative;flex-shrink:0;overflow:hidden}
+.page-num{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:7px;color:rgba(150,150,150,.6)}
+
+/* iPhone frame variants */
+.phone-wrap{position:relative;padding:14px 6px 12px;background:#111;border-radius:24px;box-shadow:0 4px 30px rgba(0,0,0,.6),inset 0 0 0 1.5px #333}
+/* Dynamic Island (iPhone 14 Pro+, 15, 16, 17, Air) */
+.phone-wrap .frame-di{width:62px;height:16px;background:#111;border-radius:10px;position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:10;border:1.5px solid #222}
+/* Notch (iPhone 13 mini, 14 base) */
+.phone-wrap .frame-notch{width:80px;height:18px;background:#111;border-radius:0 0 12px 12px;position:absolute;top:0;left:50%;transform:translateX(-50%);z-index:10}
+/* Home bar (modern) */
+.phone-bar{width:40px;height:3px;background:#333;border-radius:2px;margin:6px auto 0;opacity:.5}
+
+/* ─── PDF Merge ─── */
+.merge-drop{border:1.5px dashed var(--border);border-radius:var(--r2);padding:10px;text-align:center;cursor:pointer;transition:all .25s;position:relative;min-height:44px;display:flex;align-items:center;justify-content:center}
+.merge-drop:hover,.merge-drop.drag{border-color:var(--red);background:var(--red-g)}
+.merge-drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.merge-list{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.merge-item{display:flex;align-items:center;gap:4px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:4px 6px;font-family:var(--mono);font-size:10px;color:var(--dim)}
+.merge-item .mi-num{color:var(--muted);min-width:16px}
+.merge-item .mi-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.merge-item button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:1px 3px;border-radius:3px}
+.merge-item button:hover{color:var(--text);background:rgba(255,255,255,.06)}
+
+/* Markdown */
+.md{word-wrap:break-word;overflow-wrap:break-word}
+.md h1{font-size:1.5em;font-weight:700;margin:.6em 0 .3em;border-bottom:1px solid;padding-bottom:.25em}
+.md h2{font-size:1.3em;font-weight:600;margin:.5em 0 .25em}
+.md h3{font-size:1.1em;font-weight:600;margin:.45em 0 .2em}
+.md h4{font-size:1em;font-weight:600;margin:.4em 0 .2em}
+.md p{margin:.4em 0}.md ul,.md ol{padding-left:1.5em;margin:.4em 0}.md li{margin:.12em 0}
+.md blockquote{border-left:3px solid;padding:.3em .8em;margin:.4em 0;border-radius:3px}
+.md code{padding:.12em .35em;border-radius:3px;font-size:.88em;font-family:'SFMono-Regular',Consolas,monospace}
+.md pre{padding:.7em;border-radius:5px;overflow-x:auto;margin:.4em 0;border:1px solid}
+.md pre code{background:none!important;padding:0;font-size:.82em}
+.md table{border-collapse:collapse;width:100%;margin:.4em 0;font-size:.9em}
+.md th,.md td{border:1px solid;padding:.35em .5em;text-align:left}
+.md img{max-width:100%;height:auto}.md hr{border:none;border-top:1px solid;margin:.8em 0}
+.md a{text-decoration:none}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;color:var(--muted);text-align:center}
+.empty .g{font-size:36px;margin-bottom:10px;opacity:.5}
+.empty p{font-family:var(--mono);font-size:11px;line-height:1.8}
+
+.hint{background:rgba(200,55,45,.06);border:1px solid rgba(200,55,45,.15);border-radius:var(--r);padding:5px 10px;font-family:var(--mono);font-size:9px;color:var(--dim);line-height:1.5}
+.hint b{color:var(--red-s);font-weight:500}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>MD <span>→</span> PDF</h1>
+  <span class="sub">Pocket Print · fit any screen</span>
+  <span class="detect" id="detected"></span>
+</header>
+
+<div class="app">
+<!-- ═══════════════════════ CONTROLS ═══════════════════════ -->
+<div class="ctrl">
+
+  <!-- Source -->
+  <div>
+    <div class="sec">Source</div>
+    <div class="src-block">
+      <div class="fdrop-big" id="fdrop">
+        <div class="ic">📄</div>
+        <div class="lb">Drop .md<br>or click</div>
+        <div class="fn" id="fname"></div>
+        <input type="file" id="finput" accept=".md,.markdown,.txt,.text" multiple>
+      </div>
+      <textarea id="mdIn" placeholder="# Or paste Markdown here…"></textarea>
+    </div>
+    <div class="batch-list" id="batchList"></div>
+  </div>
+
+  <!-- 2-col settings -->
+  <div class="sgrid">
+    <!-- Left -->
+    <div class="scol">
+      <div>
+        <div class="sec">Device</div>
+        <select id="deviceSel">
+          <optgroup label="iPhone 17 (2025)">
+            <option value="66.6,144.8" data-screen="6.3″" data-frame="di">iPhone 17 / Pro (6.3″)</option>
+            <option value="72.9,158.4" data-screen="6.9″" data-frame="di">17 Pro Max (6.9″)</option>
+            <option value="69.6,151.1" data-screen="6.5″" data-frame="di">iPhone Air (6.5″)</option>
+            <option value="65.1,141.1" data-screen="6.1″" data-frame="di">iPhone 17e (6.1″)</option>
+          </optgroup>
+          <optgroup label="iPhone 16 (2024)">
+            <option value="65.1,141.1" data-screen="6.1″" data-frame="di">iPhone 16/16e (6.1″)</option>
+            <option value="66.6,144.8" data-screen="6.3″" data-frame="di">16 Pro (6.3″)</option>
+            <option value="71.2,154.4" data-screen="6.7″" data-frame="di">16 Plus (6.7″)</option>
+            <option value="72.9,158.4" data-screen="6.9″" data-frame="di">16 Pro Max (6.9″)</option>
+          </optgroup>
+          <optgroup label="Older">
+            <option value="65.1,141.1" data-frame="di">iPhone 15/Pro (6.1″)</option>
+            <option value="71.2,154.4" data-frame="di">15 Plus/Pro Max (6.7″)</option>
+            <option value="57.6,124.9" data-frame="notch">13 mini (5.4″)</option>
+          </optgroup>
+          <optgroup label="Paper">
+            <option value="148,210" data-frame="none">A5 (148×210)</option>
+            <option value="210,297" data-frame="none">A4 (210×297)</option>
+            <option value="215.9,279.4" data-frame="none" selected>US Letter</option>
+            <option value="custom" data-frame="none">Custom…</option>
+          </optgroup>
+        </select>
+        <div class="dev-dims"><span id="dimLbl">215.9×279.4 mm</span><span class="pill" id="dimScr">8.5×11 in</span></div>
+        <div class="row" id="customRow" style="margin-top:4px;display:none">
+          <div class="cg"><label>W</label><input type="number" id="pageW" min="40" max="300" value="65"></div>
+          <div class="cg"><label>H</label><input type="number" id="pageH" min="60" max="420" value="141"></div>
+        </div>
+      </div>
+      <div>
+        <div class="sec">Preset</div>
+        <div class="tg" id="presetTG">
+          <button data-fs="13" data-lh="1.8" data-mt="10" data-mb="10" data-ml="7" data-mr="7" class="on">Comfort<span class="sl">13pt</span></button>
+          <button data-fs="11" data-lh="1.6" data-mt="8" data-mb="8" data-ml="6" data-mr="6">Default<span class="sl">11pt</span></button>
+          <button data-fs="9" data-lh="1.4" data-mt="5" data-mb="5" data-ml="4" data-mr="4">Dense<span class="sl">9pt</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right -->
+    <div class="scol">
+      <div>
+        <div class="sec">Color</div>
+        <div class="tg" id="colorTG">
+          <button data-mode="light" class="on">Light</button>
+          <button data-mode="sepia">Sepia</button>
+          <button data-mode="dark">Dark</button>
+        </div>
+      </div>
+      <div>
+        <div class="sec">Options</div>
+        <div class="chk-row">
+          <label><input type="checkbox" id="optTOC"> TOC</label>
+          <label><input type="checkbox" id="optPageNum" checked> Page #</label>
+          <label><input type="checkbox" id="optLandscape"> Landscape</label>
+        </div>
+      </div>
+      <div>
+        <div class="ch" id="fHead" onclick="$('fHead').classList.toggle('open');$('fBody').classList.toggle('open')">
+          <span class="ar">▶</span> Fine-Tune
+        </div>
+        <div class="cb" id="fBody">
+          <div class="cb-inner">
+            <div class="irow">
+              <div class="cg" style="flex:2;min-width:90px"><label>Font</label>
+                <select id="fontFam">
+                  <option value="system">System Default</option>
+                  <option value="'Noto Serif SC',Georgia,serif">Noto Serif</option>
+                  <option value="Georgia,'Times New Roman',serif">Georgia</option>
+                  <option value="Palatino,'Book Antiqua',serif">Palatino</option>
+                  <option value="Verdana,sans-serif">Verdana</option>
+                  <option value="'Courier New',monospace">Courier</option>
+                </select>
+              </div>
+              <div class="cg" style="flex:1;min-width:42px"><label>Pt</label><input type="number" id="fontSize" value="13" min="6" max="24" step=".5"></div>
+              <div class="cg" style="flex:1;min-width:42px"><label>LH</label><input type="number" id="lineH" value="1.8" min="1" max="3" step=".1"></div>
+            </div>
+            <div class="irow">
+              <div class="cg"><label>T</label><input type="number" id="mT" value="10" min="0" max="40"></div>
+              <div class="cg"><label>B</label><input type="number" id="mB" value="10" min="0" max="40"></div>
+              <div class="cg"><label>L</label><input type="number" id="mL" value="7" min="0" max="30"></div>
+              <div class="cg"><label>R</label><input type="number" id="mR" value="7" min="0" max="30"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="irow" style="margin-top:auto">
+        <button class="btn1" id="genBtn" onclick="generatePDF()" disabled>⎙ Print to PDF</button>
+        <button class="btn1 btn-sm" id="batchBtn" onclick="batchPrint()" style="display:none;background:var(--bg3);color:var(--dim);border:1px solid var(--border)">⎙ Print All</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PDF Merge -->
+  <div>
+    <div class="ch open" id="mergeHead" onclick="$('mergeHead').classList.toggle('open');$('mergeBody').classList.toggle('open')">
+      <span class="ar">▶</span> PDF Merge Tool
+    </div>
+    <div class="cb open" id="mergeBody">
+      <div class="cb-inner">
+        <div class="merge-drop" id="mergeDrop">
+          <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">📎 Drop PDF files or click</span>
+          <input type="file" id="mergeInput" accept="application/pdf" multiple>
+        </div>
+        <div class="merge-list" id="mergeList"></div>
+        <div class="irow" style="margin-top:6px">
+          <div class="cg" style="flex:1"><label>Filename</label><input type="text" id="mergeName" value="merged" placeholder="merged" style="font-size:10px;padding:5px 8px"></div>
+          <button class="btn1 btn-sm" onclick="mergePDFs()" id="mergeBtn" disabled>Merge & Download</button>
+          <button class="btn2" onclick="clearMerge()" style="font-size:10px">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint">
+    <b>Print to PDF</b> → select <b>"Save as PDF"</b> in dialog. Page size &amp; CJK fonts set automatically. Best in <b>Chrome/Edge</b>.
+  </div>
+</div>
+
+<!-- ═══════════════════════ PREVIEW ═══════════════════════ -->
+<div class="prev" id="prevPanel">
+  <div class="pbar">
+    <button class="btn2" onclick="zOut()">−</button>
+    <span id="zLbl" style="font-family:var(--mono);font-size:10px;color:var(--dim);min-width:36px;text-align:center">100%</span>
+    <button class="btn2" onclick="zIn()">+</button>
+    <button class="btn2" onclick="zFit()">Fit</button>
+    <div class="stats" id="statsBar" style="display:none">
+      <span>📄 <span class="num" id="stPages">0</span> pg</span>
+      <span>📝 <span class="num" id="stChars">0</span> words</span>
+      <span>⏱ <span class="num" id="stTime">0</span> min</span>
+    </div>
+    <span class="info" id="pgInfo"></span>
+  </div>
+  <div id="prevContent">
+    <div class="empty"><div class="g">⬡</div><p>Drop or paste Markdown<br>then print to PDF</p></div>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let md = '', zoom = 1, pgMM = { w: 215.9, h: 279.4 }, colorMode = 'light';
+let batchFiles = []; // [{name, content}]
+let activeBatch = -1; // -1 = textarea mode
+let mergeFiles = []; // File objects for PDF merge
+const mm2px = mm => mm * 96 / 25.4;
+const $ = id => document.getElementById(id);
+
+const THEMES = {
+  light:  {bg:'#fff',fg:'#1a1a1a',codeBg:'#f5f5f5',codeFg:'inherit',codeInline:'#f0f0f0',quoteBg:'#f9f9f9',quoteBd:'#ccc',quoteFg:'#555',tblBd:'#ddd',thBg:'#f5f5f5',h1Bd:'#e0e0e0',hr:'#ddd',link:'#2563eb',preBd:'#e8e8e8'},
+  sepia:  {bg:'#f5f0e8',fg:'#3d3429',codeBg:'#ede7da',codeFg:'#5c4f3d',codeInline:'#ede7da',quoteBg:'#eae4d8',quoteBd:'#c4b99a',quoteFg:'#6d6050',tblBd:'#d4c9b4',thBg:'#eae4d8',h1Bd:'#d4c9b4',hr:'#d4c9b4',link:'#8b5e3c',preBd:'#d4c9b4'},
+  dark:   {bg:'#1a1a1e',fg:'#e0ddd8',codeBg:'#26262c',codeFg:'#d4d0c8',codeInline:'#26262c',quoteBg:'#222228',quoteBd:'#555',quoteFg:'#aaa',tblBd:'#444',thBg:'#26262c',h1Bd:'#444',hr:'#444',link:'#60a5fa',preBd:'#333'},
+};
+
+marked.setOptions({ breaks: true, gfm: true });
+
+// ═══════════════════════════════════════
+// AUTO-DETECT DEVICE
+// ═══════════════════════════════════════
+function detectDevice() {
+  const ua = navigator.userAgent;
+  if (!/iPhone/.test(ua)) return;
+  const w = screen.width, h = screen.height;
+  const devices = [
+    { w:430, h:932, val:'72.9,158.4', name:'iPhone Pro Max' },
+    { w:393, h:852, val:'66.6,144.8', name:'iPhone 17/Pro' },
+    { w:414, h:896, val:'71.2,154.4', name:'iPhone Plus' },
+    { w:390, h:844, val:'65.1,141.1', name:'iPhone 16' },
+    { w:375, h:812, val:'65.1,141.1', name:'iPhone' },
+  ];
+  const match = devices.find(d => d.w === w && d.h === h) || devices.find(d => Math.abs(d.w - w) < 10 && Math.abs(d.h - h) < 20);
+  if (match) {
+    $('deviceSel').value = match.val;
+    $('deviceSel').dispatchEvent(new Event('change'));
+    const det = $('detected');
+    det.textContent = `Detected: ${match.name}`;
+    det.classList.add('show');
+  }
+}
+
+// ═══════════════════════════════════════
+// DEVICE PICKER
+// ═══════════════════════════════════════
+$('deviceSel').addEventListener('change', function() {
+  const v = this.value, opt = this.selectedOptions[0];
+  if (v === 'custom') { $('customRow').style.display = 'flex'; $('dimLbl').textContent = 'Custom'; $('dimScr').textContent = ''; return; }
+  $('customRow').style.display = 'none';
+  const [w, h] = v.split(',').map(Number);
+  pgMM = { w, h };
+  $('dimLbl').textContent = `${w}×${h} mm`;
+  $('dimScr').textContent = opt?.dataset?.screen || '';
+  save(); updatePreview();
+});
+[$('pageW'),$('pageH')].forEach(i => i.addEventListener('input', () => {
+  const w = +$('pageW').value, h = +$('pageH').value;
+  if (w > 0 && h > 0) { pgMM = { w, h }; updatePreview(); save(); }
+}));
+
+// ═══════════════════════════════════════
+// PRESETS & COLOR
+// ═══════════════════════════════════════
+$('presetTG').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('presetTG').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on');
+  $('fontSize').value = b.dataset.fs; $('lineH').value = b.dataset.lh;
+  $('mT').value = b.dataset.mt; $('mB').value = b.dataset.mb;
+  $('mL').value = b.dataset.ml; $('mR').value = b.dataset.mr;
+  save(); updatePreview();
+});
+$('colorTG').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  $('colorTG').querySelectorAll('button').forEach(x => x.classList.remove('on')); b.classList.add('on');
+  colorMode = b.dataset.mode; save(); updatePreview();
+});
+
+// Options checkboxes
+['optTOC','optPageNum','optLandscape'].forEach(id => {
+  $(id).addEventListener('change', () => { save(); updatePreview(); });
+});
+
+// Fine-tune
+['fontSize','lineH','fontFam','mT','mB','mL','mR'].forEach(id => {
+  $(id).addEventListener('input', () => { $('presetTG').querySelectorAll('button').forEach(b=>b.classList.remove('on')); save(); updatePreview(); });
+});
+
+// ═══════════════════════════════════════
+// FILE HANDLING (Batch)
+// ═══════════════════════════════════════
+const fDrop = $('fdrop'), fInput = $('finput');
+fInput.addEventListener('change', e => { if (e.target.files.length) handleFiles(e.target.files); });
+fDrop.addEventListener('dragover', e => { e.preventDefault(); fDrop.classList.add('drag'); });
+fDrop.addEventListener('dragleave', () => fDrop.classList.remove('drag'));
+fDrop.addEventListener('drop', e => { e.preventDefault(); fDrop.classList.remove('drag'); if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files); });
+
+function handleFiles(files) {
+  const mdFiles = Array.from(files).filter(f => /\.(md|markdown|txt|text)$/i.test(f.name));
+  if (mdFiles.length === 0) return;
+  if (mdFiles.length === 1) {
+    // Single file mode
+    const r = new FileReader();
+    r.onload = e => { md = e.target.result; $('mdIn').value = md; $('fname').textContent = mdFiles[0].name; batchFiles = []; activeBatch = -1; renderBatch(); updatePreview(); };
+    r.readAsText(mdFiles[0]);
+  } else {
+    // Batch mode
+    batchFiles = [];
+    let loaded = 0;
+    mdFiles.forEach((f, i) => {
+      const r = new FileReader();
+      r.onload = e => {
+        batchFiles.push({ name: f.name, content: e.target.result });
+        loaded++;
+        if (loaded === mdFiles.length) {
+          batchFiles.sort((a, b) => a.name.localeCompare(b.name));
+          activeBatch = 0;
+          md = batchFiles[0].content;
+          $('mdIn').value = md;
+          $('fname').textContent = `${batchFiles.length} files`;
+          renderBatch();
+          updatePreview();
+        }
+      };
+      r.readAsText(f);
+    });
+  }
+}
+
+function renderBatch() {
+  const el = $('batchList');
+  const btn = $('batchBtn');
+  if (batchFiles.length < 2) { el.innerHTML = ''; btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  el.innerHTML = batchFiles.map((f, i) => `
+    <div class="batch-item">
+      <span class="bi-name ${i === activeBatch ? 'bi-active' : ''}" style="cursor:pointer" onclick="switchBatch(${i})">${f.name}</span>
+      <button onclick="batchFiles.splice(${i},1);if(activeBatch>=batchFiles.length)activeBatch=0;renderBatch();updatePreview()">✕</button>
+    </div>`).join('');
+}
+
+function switchBatch(i) {
+  activeBatch = i;
+  md = batchFiles[i].content;
+  $('mdIn').value = md;
+  renderBatch();
+  updatePreview();
+}
+
+let dbt;
+$('mdIn').addEventListener('input', () => { clearTimeout(dbt); dbt = setTimeout(() => { md = $('mdIn').value; if (activeBatch >= 0 && batchFiles[activeBatch]) batchFiles[activeBatch].content = md; updatePreview(); }, 300); });
+
+// ═══════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════
+function getS() {
+  const ff = $('fontFam').value;
+  return {
+    fs: +$('fontSize').value || 11, lh: +$('lineH').value || 1.6,
+    ff: ff === 'system' ? "'Noto Sans SC',-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif" : ff,
+    mT: +$('mT').value || 8, mB: +$('mB').value || 8, mL: +$('mL').value || 6, mR: +$('mR').value || 6,
+    toc: $('optTOC').checked, pageNum: $('optPageNum').checked,
+    landscape: $('optLandscape').checked,
+  };
+}
+function getPg() { const s = getS(); return s.landscape ? { w: pgMM.h, h: pgMM.w } : { w: pgMM.w, h: pgMM.h }; }
+function getT() { return THEMES[colorMode]; }
+
+// ═══════════════════════════════════════
+// TOC GENERATION
+// ═══════════════════════════════════════
+function generateTOC(mdText) {
+  const headings = [];
+  mdText.split('\n').forEach(line => {
+    const m = line.match(/^(#{1,3})\s+(.+)/);
+    if (m) headings.push({ level: m[1].length, text: m[2].replace(/[*`\[\]]/g, '').replace(/\(.*?\)/g, '') });
+  });
+  if (headings.length === 0) return '';
+  let h = '<div style="margin-bottom:1em"><h2 style="font-size:1.3em;margin-bottom:.5em">目录 · Contents</h2>';
+  headings.forEach(x => {
+    const ml = (x.level - 1) * 1.2;
+    const fs = x.level === 1 ? '1em' : x.level === 2 ? '.92em' : '.85em';
+    const fw = x.level === 1 ? '600' : '400';
+    h += `<div style="margin-left:${ml}em;margin-bottom:.25em;font-size:${fs};font-weight:${fw}">${x.text}</div>`;
+  });
+  h += '</div>';
+  return h;
+}
+
+// ═══════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════
+function updateStats(mdText, numPages) {
+  const text = mdText.replace(/[#*`\[\]()>|_~\-]/g, '').replace(/\n/g, ' ');
+  // Count CJK characters
+  const cjkMatches = text.match(/[\u4e00-\u9fff\u3400-\u4dbf\u3000-\u303f\uff00-\uffef]/g) || [];
+  const cjkCount = cjkMatches.length;
+  // Remove CJK chars, then count English words
+  const englishText = text.replace(/[\u4e00-\u9fff\u3400-\u4dbf\u3000-\u303f\uff00-\uffef]/g, ' ');
+  const englishWords = englishText.split(/\s+/).filter(w => w.length > 0).length;
+  // Total word count (English words + CJK chars as "words")
+  const totalWords = englishWords + cjkCount;
+  // Reading speed: ~250 wpm English, ~500 cpm Chinese
+  const mins = Math.max(1, Math.round(englishWords / 250 + cjkCount / 500));
+  $('stPages').textContent = numPages;
+  $('stChars').textContent = totalWords.toLocaleString();
+  $('stTime').textContent = mins;
+  $('statsBar').style.display = '';
+}
+
+// ═══════════════════════════════════════
+// ZOOM
+// ═══════════════════════════════════════
+function zIn() { zoom = Math.min(zoom + .15, 3); aZ(); updatePreview(); }
+function zOut() { zoom = Math.max(zoom - .15, .2); aZ(); updatePreview(); }
+function zFit() { const p = document.querySelector('.prev'); zoom = Math.min((p.clientWidth - 48) / mm2px(getPg().w), 1.5); aZ(); updatePreview(); }
+function aZ() { $('zLbl').textContent = Math.round(zoom * 100) + '%'; }
+
+// ═══════════════════════════════════════
+// PREVIEW — paginated page cards
+// ═══════════════════════════════════════
+function buildPreviewDoc(mdContent) {
+  const s = getS(), t = getT(), pg = getPg();
+  const tocHTML = s.toc ? generateTOC(mdContent) : '';
+  const bodyHTML = marked.parse(mdContent);
+  const pageNumCSS = s.pageNum ? `
+    body { counter-reset: pg; }
+    .pn-footer { position: fixed; bottom: 3mm; left: 0; right: 0; text-align: center; font-size: 7pt; color: ${colorMode === 'dark' ? 'rgba(255,255,255,.3)' : 'rgba(0,0,0,.3)'}; }
+    .pn-footer::after { counter-increment: pg; content: counter(pg); }
+  ` : '';
+
+  // Exactly the same as the print doc, but:
+  // - No print script
+  // - Dark background behind pages
+  // - Visual page separator lines via repeating gradient every page-height
+  // - body has box-shadow for page card look
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+html{
+  margin:0;padding:20px 0;
+  background:#222;
+  /* Page separator: dark gap between pages */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(${pg.h}mm - 2px),
+    #c8372d calc(${pg.h}mm - 2px),
+    #c8372d ${pg.h}mm,
+    #222 ${pg.h}mm,
+    #222 calc(${pg.h}mm + 20px),
+    transparent calc(${pg.h}mm + 20px)
+  );
+  background-position: top center;
+}
+body{
+  margin:0 auto;
+  width:${pg.w}mm;
+  padding:${s.mT}mm ${s.mR}mm ${s.mB}mm ${s.mL}mm;
+  background:${t.bg};color:${t.fg};
+  font-family:${s.ff};
+  font-size:${s.fs}pt;
+  line-height:${s.lh};
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  -webkit-box-decoration-break:clone;box-decoration-break:clone;
+  word-wrap:break-word;overflow-wrap:break-word;
+  box-shadow:0 4px 24px rgba(0,0,0,.7), 0 0 0 1px rgba(0,0,0,.2);
+  min-height:${pg.h}mm;
+}
+/* Page break rules (same as print) */
+h1,h2,h3,h4,h5,h6{break-after:avoid;page-break-after:avoid}
+pre,blockquote,table,figure,img{break-inside:avoid;page-break-inside:avoid}
+p,li{orphans:3;widows:3}
+/* Typography (identical to print) */
+h1{font-size:1.5em;font-weight:700;margin:.6em 0 .3em;border-bottom:1px solid ${t.h1Bd};padding-bottom:.25em}
+h2{font-size:1.3em;font-weight:600;margin:.5em 0 .25em}
+h3{font-size:1.1em;font-weight:600;margin:.45em 0 .2em}
+h4{font-size:1em;font-weight:600;margin:.4em 0 .2em}
+p{margin:.4em 0}ul,ol{padding-left:1.5em;margin:.4em 0}li{margin:.12em 0}
+blockquote{border-left:3px solid ${t.quoteBd};padding:.3em .8em;margin:.4em 0;color:${t.quoteFg};background:${t.quoteBg};border-radius:3px}
+code{background:${t.codeInline};color:${t.codeFg};padding:.12em .35em;border-radius:3px;font-size:.88em;font-family:'SFMono-Regular',Consolas,monospace}
+pre{background:${t.codeBg};padding:.7em;border-radius:5px;overflow-x:auto;margin:.4em 0;border:1px solid ${t.preBd}}
+pre code{background:none;padding:0;font-size:.82em;color:${t.codeFg}}
+table{border-collapse:collapse;width:100%;margin:.4em 0;font-size:.9em}
+th,td{border:1px solid ${t.tblBd};padding:.35em .5em;text-align:left}
+th{background:${t.thBg};font-weight:600}
+img{max-width:100%;height:auto}
+hr{border:none;border-top:1px solid ${t.hr};margin:.8em 0}
+a{color:${t.link};text-decoration:none}
+${pageNumCSS}
+.toc-section{break-after:page;page-break-after:always}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+</style></head><body>
+${s.pageNum ? '<div class="pn-footer"></div>' : ''}
+${tocHTML ? '<div class="toc-section">' + tocHTML + '</div>' : ''}${bodyHTML}
+</body></html>`;
+}
+
+function updatePreview() {
+  if (!md.trim()) {
+    $('prevContent').innerHTML = '<div class="empty"><div class="g">⬡</div><p>Drop or paste Markdown<br>then print to PDF</p></div>';
+    $('genBtn').disabled = true; $('pgInfo').textContent = ''; $('statsBar').style.display = 'none'; return;
+  }
+  $('genBtn').disabled = false;
+  const pg = getPg();
+  const wPx = mm2px(pg.w), hPx = mm2px(pg.h);
+
+  // Build preview document (same rendering as print)
+  const previewHTML = buildPreviewDoc(md);
+
+  // Create or reuse iframe
+  let iframe = $('prevIframe');
+  if (!iframe) {
+    iframe = document.createElement('iframe');
+    iframe.id = 'prevIframe';
+    iframe.style.cssText = 'border:none;background:#222;display:block;';
+    iframe.sandbox = 'allow-same-origin';
+  }
+
+  // Width = page width at zoom + some padding for shadow
+  iframe.style.width = (wPx * zoom + 40) + 'px';
+  iframe.style.minHeight = '100%';
+
+  $('prevContent').innerHTML = '';
+  $('prevContent').appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write(previewHTML);
+  doc.close();
+
+  // After fonts load, measure and apply zoom
+  const onReady = () => {
+    try {
+      const body = doc.body;
+      const contentH = body.scrollHeight;
+      const numPages = Math.max(1, Math.ceil(contentH / hPx));
+      $('pgInfo').textContent = `${pg.w.toFixed(0)}×${pg.h.toFixed(0)}mm · ~${numPages}pg`;
+      updateStats(md, numPages);
+
+      // Zoom via CSS transform
+      doc.documentElement.style.transformOrigin = 'top left';
+      doc.documentElement.style.transform = `scale(${zoom})`;
+      doc.documentElement.style.width = `${100 / zoom}%`;
+
+      // Fit iframe height to zoomed content
+      iframe.style.height = (contentH * zoom + 40) + 'px';
+    } catch(e) { console.error(e); }
+  };
+
+  // Wait for fonts to load in iframe
+  if (doc.fonts && doc.fonts.ready) {
+    doc.fonts.ready.then(() => setTimeout(onReady, 100));
+  } else {
+    setTimeout(onReady, 500);
+  }
+}
+
+
+// ═══════════════════════════════════════
+// GENERATE PDF
+// ═══════════════════════════════════════
+function buildPrintDoc(mdContent) {
+  const s = getS(), t = getT(), pg = getPg();
+  const tocHTML = s.toc ? generateTOC(mdContent) : '';
+  const bodyHTML = marked.parse(mdContent);
+  const pageNumCSS = s.pageNum ? `
+    body { counter-reset: pg; }
+    .pn-footer { position: fixed; bottom: 3mm; left: 0; right: 0; text-align: center; font-size: 7pt; color: ${colorMode === 'dark' ? 'rgba(255,255,255,.3)' : 'rgba(0,0,0,.3)'}; }
+    .pn-footer::after { counter-increment: pg; content: counter(pg); }
+  ` : '';
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Print</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+@page{size:${pg.w}mm ${pg.h}mm;margin:0}
+*,*::before,*::after{box-sizing:border-box}
+html{margin:0;padding:0;background:${t.bg}}
+body{margin:0;padding:${s.mT}mm ${s.mR}mm ${s.mB}mm ${s.mL}mm;background:${t.bg};color:${t.fg};font-family:${s.ff};font-size:${s.fs}pt;line-height:${s.lh};-webkit-print-color-adjust:exact;print-color-adjust:exact;-webkit-box-decoration-break:clone;box-decoration-break:clone;word-wrap:break-word;overflow-wrap:break-word}
+h1,h2,h3,h4,h5,h6{break-after:avoid;page-break-after:avoid}
+pre,blockquote,table,figure,img{break-inside:avoid;page-break-inside:avoid}
+p,li{orphans:3;widows:3}
+h1{font-size:1.5em;font-weight:700;margin:.6em 0 .3em;border-bottom:1px solid ${t.h1Bd};padding-bottom:.25em}
+h2{font-size:1.3em;font-weight:600;margin:.5em 0 .25em}h3{font-size:1.1em;font-weight:600;margin:.45em 0 .2em}h4{font-size:1em;font-weight:600;margin:.4em 0 .2em}
+p{margin:.4em 0}ul,ol{padding-left:1.5em;margin:.4em 0}li{margin:.12em 0}
+blockquote{border-left:3px solid ${t.quoteBd};padding:.3em .8em;margin:.4em 0;color:${t.quoteFg};background:${t.quoteBg};border-radius:3px}
+code{background:${t.codeInline};color:${t.codeFg};padding:.12em .35em;border-radius:3px;font-size:.88em;font-family:'SFMono-Regular',Consolas,monospace}
+pre{background:${t.codeBg};padding:.7em;border-radius:5px;overflow-x:auto;margin:.4em 0;border:1px solid ${t.preBd}}
+pre code{background:none;padding:0;font-size:.82em;color:${t.codeFg}}
+table{border-collapse:collapse;width:100%;margin:.4em 0;font-size:.9em}th,td{border:1px solid ${t.tblBd};padding:.35em .5em;text-align:left}th{background:${t.thBg};font-weight:600}
+img{max-width:100%;height:auto}hr{border:none;border-top:1px solid ${t.hr};margin:.8em 0}a{color:${t.link};text-decoration:none}
+${pageNumCSS}
+.toc-section{break-after:page;page-break-after:always}
+</style></head><body>
+${s.pageNum ? '<div class="pn-footer"></div>' : ''}
+${tocHTML ? '<div class="toc-section">' + tocHTML + '</div>' : ''}${bodyHTML}
+<`+`script>
+document.fonts.ready.then(function(){setTimeout(function(){window.print()},200)});
+setTimeout(function(){window.print()},5000);
+window.onafterprint=function(){window.close()};
+<`+`/script></body></html>`;
+}
+
+function generatePDF() {
+  if (!md.trim()) return;
+  const doc = buildPrintDoc(md);
+  const w = window.open('', '_blank', 'width=700,height=500');
+  if (!w) { alert('Pop-up blocked! Please allow pop-ups.'); return; }
+  w.document.write(doc); w.document.close();
+}
+
+function batchPrint() {
+  if (batchFiles.length < 2) return;
+  let i = 0;
+  function printNext() {
+    if (i >= batchFiles.length) return;
+    const doc = buildPrintDoc(batchFiles[i].content);
+    const w = window.open('', '_blank', 'width=700,height=500');
+    if (!w) { alert('Pop-up blocked!'); return; }
+    w.document.write(doc); w.document.close();
+    w.onafterprint = () => { w.close(); i++; setTimeout(printNext, 500); };
+    i++;
+  }
+  // Open first immediately, rest sequentially
+  printNext();
+}
+
+// ═══════════════════════════════════════
+// PDF MERGE
+// ═══════════════════════════════════════
+const mergeInput = $('mergeInput'), mergeDrop = $('mergeDrop');
+mergeInput.addEventListener('change', e => { if (e.target.files.length) addMergeFiles(e.target.files); });
+mergeDrop.addEventListener('dragover', e => { e.preventDefault(); mergeDrop.classList.add('drag'); });
+mergeDrop.addEventListener('dragleave', () => mergeDrop.classList.remove('drag'));
+mergeDrop.addEventListener('drop', e => { e.preventDefault(); mergeDrop.classList.remove('drag'); if (e.dataTransfer.files.length) addMergeFiles(e.dataTransfer.files); });
+
+function addMergeFiles(files) {
+  Array.from(files).filter(f => f.type === 'application/pdf').forEach(f => mergeFiles.push(f));
+  renderMerge();
+}
+
+function renderMerge() {
+  $('mergeBtn').disabled = mergeFiles.length < 2;
+  $('mergeList').innerHTML = mergeFiles.map((f, i) => `
+    <div class="merge-item">
+      <span class="mi-num">${i + 1}.</span>
+      <span class="mi-name">${f.name}</span>
+      <button onclick="moveMerge(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button onclick="moveMerge(${i},1)" ${i === mergeFiles.length - 1 ? 'disabled' : ''}>↓</button>
+      <button onclick="mergeFiles.splice(${i},1);renderMerge()">✕</button>
+    </div>`).join('');
+}
+
+function moveMerge(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= mergeFiles.length) return;
+  [mergeFiles[i], mergeFiles[j]] = [mergeFiles[j], mergeFiles[i]];
+  renderMerge();
+}
+
+function clearMerge() { mergeFiles = []; renderMerge(); }
+
+async function mergePDFs() {
+  if (mergeFiles.length < 2) return;
+  $('mergeBtn').disabled = true; $('mergeBtn').textContent = 'Merging…';
+  try {
+    const merged = await PDFLib.PDFDocument.create();
+    for (const f of mergeFiles) {
+      const buf = await f.arrayBuffer();
+      const pdf = await PDFLib.PDFDocument.load(buf);
+      const pages = await merged.copyPages(pdf, pdf.getPageIndices());
+      pages.forEach(p => merged.addPage(p));
+    }
+    const bytes = await merged.save();
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const fname = ($('mergeName').value.trim() || 'merged') + '.pdf';
+    const a = document.createElement('a');
+    a.href = url; a.download = fname; a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) { alert('Merge failed: ' + e.message); }
+  $('mergeBtn').disabled = false; $('mergeBtn').textContent = 'Merge & Download';
+}
+
+// ═══════════════════════════════════════
+// LOCALSTORAGE
+// ═══════════════════════════════════════
+function save() {
+  try { localStorage.setItem('pp5', JSON.stringify({
+    dev: $('deviceSel').value, cm: colorMode, ls: $('optLandscape').checked,
+    toc: $('optTOC').checked, pn: $('optPageNum').checked,
+    fs: $('fontSize').value, lh: $('lineH').value, ff: $('fontFam').value,
+    mT: $('mT').value, mB: $('mB').value, mL: $('mL').value, mR: $('mR').value,
+  })); } catch(e) {}
+}
+function load() {
+  try {
+    const s = JSON.parse(localStorage.getItem('pp5')); if (!s) return;
+    if (s.dev) { $('deviceSel').value = s.dev; $('deviceSel').dispatchEvent(new Event('change')); }
+    if (s.cm) { colorMode = s.cm; $('colorTG').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === colorMode)); }
+    if (s.ls) $('optLandscape').checked = s.ls;
+    if (s.toc) $('optTOC').checked = s.toc;
+    if (s.pn !== undefined) $('optPageNum').checked = s.pn;
+    if (s.fs) $('fontSize').value = s.fs; if (s.lh) $('lineH').value = s.lh;
+    if (s.ff) $('fontFam').value = s.ff;
+    if (s.mT) $('mT').value = s.mT; if (s.mB) $('mB').value = s.mB;
+    if (s.mL) $('mL').value = s.mL; if (s.mR) $('mR').value = s.mR;
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+const sampleMd = `# Pocket Print
+
+Convert Markdown to **phone-sized PDF** using your browser's native print engine.
+
+## How It Works
+
+1. Pick your iPhone model or paper size
+2. Choose a reading preset — Comfort, Default, or Dense
+3. Toggle options: TOC, page numbers, CJK typography
+4. Click **Print to PDF** → select "Save as PDF"
+
+## Features
+
+- **Auto-detect** your iPhone model
+- **Table of Contents** generated from headings
+- **Page numbers** on every page via CSS counter
+- **CJK typography** — paragraph indent, justified text
+- **Batch mode** — drop multiple .md files
+- **PDF merge** — combine PDFs with drag reorder
+- **iPhone frame** preview toggle
+- **Sepia & Dark** mode with edge-to-edge color
+
+### Device Library
+
+| Model | Screen | Page Size |
+|-------|--------|-----------|
+| iPhone 17/Pro | 6.3″ | 67×145 mm |
+| iPhone Air | 6.5″ | 70×151 mm |
+| 17 Pro Max | 6.9″ | 73×158 mm |
+
+## Code Example
+
+\`\`\`python
+def pocket_print(md, device="iPhone 17"):
+    page = get_page_size(device)
+    return print_to_pdf(render(md), page)
+\`\`\`
+
+> "No guts, no glory. No fun, no story."
+
+---
+
+*Generated with MD → PDF · Pocket Print*`;
+
+load();
+detectDevice();
+md = sampleMd; $('mdIn').value = md;
+setTimeout(zFit, 200);
+</script>
+</body>
+</html>
