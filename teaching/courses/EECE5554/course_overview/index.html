@@ -316,8 +316,8 @@
   <div class="info-block">
     <span><strong>Course:</strong> EECE 5554 — Robotics Sensing and Navigation</span><br>
     <span><strong>Credits:</strong> 4</span><br>
-    <span><strong>Campus:</strong> Northeastern University · Seattle</span><br>
-    <span><strong>Instructor:</strong> Dr. Xian Li &nbsp;·&nbsp; <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e59dcb898cd4a58b8a97918d8084969180978bcb808190">[email&#160;protected]</a></span><br>
+    <span><strong>Campus:</strong> Northeastern University · Seattle & Other campuses</span><br>
+    <span><strong>Instructor:</strong> Dr. Xian Li & others </span><br>
     <span><strong>Prerequisites:</strong> Graduate standing or instructor permission</span>
   </div>
   <table class="grade-table" style="margin-top:1.2rem;">
@@ -337,4 +337,7 @@
     es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }),
     { threshold: 0.08 }
   );
-  document.querySelectorAll('.section').forEach(el => obs.o
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
