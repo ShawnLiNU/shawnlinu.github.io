@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LaTeX Renderer — Tools</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600&display=swap" rel="stylesheet">
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['\\(','\\)']],
+        displayMath: [['\\[','\\]']],
+        packages: {'[+]': ['ams','boldsymbol']}
+      },
+      svg: { fontCache: 'none' },
+      startup: { typeset: false }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script"></script>
+  <style>
+    :root {
+      --bg: #0c0c0d; --surface: #161618; --surface2: #1e1e21;
+      --border: #2b2b30; --accent: #f5c030; --accent-dim: rgba(245,192,48,.10);
+      --text: #e2e2e6; --muted: #54545e;
+      --mono: 'Space Mono', monospace; --sans: 'Sora', sans-serif; --r: 3px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); }
+    body { display: flex; flex-direction: column; overflow: hidden; }
+
+    .header {
+      flex-shrink: 0; display: flex; align-items: center; gap: 18px;
+      padding: 13px 26px; border-bottom: 1px solid var(--border); background: var(--surface);
+    }
+    .logo { font-family: var(--mono); font-weight: 700; font-size: 15px; letter-spacing: 2.5px; color: var(--accent); }
+    .logo em { color: var(--text); font-style: normal; }
+    .header-tag { font-family: var(--mono); font-size: 9px; color: var(--muted); border-left: 1px solid var(--border); padding-left: 18px; }
+
+    .layout { flex: 1; display: grid; grid-template-columns: 1fr 340px; min-height: 0; }
+
+    /* ── Left ── */
+    .left { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-height: 0; }
+
+    .sym-bar {
+      flex-shrink: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 14px 0;
+    }
+    .sym-tabs { display: flex; gap: 2px; margin-bottom: 8px; }
+    .sym-tab {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px; padding: 4px 10px;
+      background: transparent; border: 1px solid transparent; color: var(--muted);
+      border-radius: var(--r); cursor: pointer; transition: all .15s;
+    }
+    .sym-tab.active { border-color: var(--border); color: var(--text); background: var(--surface2); }
+    .sym-tab:hover:not(.active) { color: var(--text); }
+
+    .sym-group { display: none; flex-wrap: wrap; gap: 4px; padding-bottom: 10px; }
+    .sym-group.active { display: flex; }
+    .sym-chip {
+      font-family: var(--mono); font-size: 10px; padding: 3px 8px;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r);
+      color: var(--muted); cursor: pointer; transition: all .15s; user-select: none;
+    }
+    .sym-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    .input-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 14px; gap: 10px; }
+
+    .mode-row { display: flex; gap: 6px; align-items: center; }
+    .mode-btn {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px; padding: 5px 13px;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+      border-radius: var(--r); cursor: pointer; transition: all .15s;
+    }
+    .mode-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+    .preset-sel {
+      font-family: var(--mono); font-size: 9px; padding: 5px 10px; background: var(--surface2);
+      border: 1px solid var(--border); color: var(--muted); border-radius: var(--r);
+      cursor: pointer; outline: none; margin-left: auto;
+    }
+    .preset-sel option { background: var(--surface2); }
+
+    #latex-input {
+      flex: 1; resize: none; font-family: var(--mono); font-size: 13px; line-height: 1.7;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r);
+      color: var(--text); padding: 14px; outline: none; min-height: 0;
+      transition: border-color .15s;
+    }
+    #latex-input:focus { border-color: var(--accent); }
+    #latex-input::placeholder { color: var(--muted); }
+
+    .err-msg { font-family: var(--mono); font-size: 10px; color: #f06060; min-height: 16px; }
+
+    /* ── Right ── */
+    .right { display: flex; flex-direction: column; min-height: 0; }
+
+    .preview-wrap {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      overflow: auto; position: relative; min-height: 0; padding: 20px;
+    }
+    .preview-wrap.bg-white { background: #ffffff; }
+    .preview-wrap.bg-dark  { background: #1e1e21; }
+
+    .preview-placeholder {
+      font-family: var(--mono); font-size: 10px; color: var(--muted);
+      text-align: center; letter-spacing: 0.5px; line-height: 2;
+    }
+
+    #preview-output { max-width: 100%; }
+    #preview-output svg { display: block; max-width: 100%; height: auto; }
+    .preview-wrap.bg-white #preview-output svg { color: #111111; }
+    .preview-wrap.bg-dark  #preview-output svg { color: #e2e2e6; }
+
+    .controls { flex-shrink: 0; padding: 14px; border-top: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; gap: 10px; }
+
+    .ctrl-row { display: flex; gap: 6px; align-items: center; }
+    .ctrl-label { font-family: var(--mono); font-size: 9px; color: var(--muted); letter-spacing: 0.5px; min-width: 60px; }
+
+    .ctrl-btn {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.5px; padding: 5px 12px;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
+      border-radius: var(--r); cursor: pointer; transition: all .15s;
+    }
+    .ctrl-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .ctrl-btn:hover:not(.active) { border-color: var(--text); color: var(--text); }
+
+    .export-btn {
+      flex: 1; font-family: var(--mono); font-size: 10px; letter-spacing: 0.5px; padding: 9px;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      border-radius: var(--r); cursor: pointer; transition: all .15s; text-align: center;
+    }
+    .export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .export-btn.primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 700; }
+    .export-btn.primary:hover { background: #ffd84a; }
+    .export-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    .size-note { font-family: var(--mono); font-size: 9px; color: var(--muted); text-align: right; margin-top: 2px; }
+
+    @media (max-width: 680px) {
+      .layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+      body { overflow: auto; }
+      .left { border-right: none; border-bottom: 1px solid var(--border); min-height: 50vh; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">LA<em>TEX</em></div>
+  <div class="header-tag">// equation renderer &middot; export png &middot; svg</div>
+  <a href="index.html" style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--muted);text-decoration:none;letter-spacing:.3px;">&#8592; all tools</a>
+</header>
+
+<div class="layout">
+
+  <!-- ── Left: Input ── -->
+  <div class="left">
+
+    <div class="sym-bar">
+      <div class="sym-tabs">
+        <button class="sym-tab active" data-group="greek">Greek</button>
+        <button class="sym-tab" data-group="ops">Operators</button>
+        <button class="sym-tab" data-group="struct">Structures</button>
+        <button class="sym-tab" data-group="robot">Robotics</button>
+      </div>
+
+      <div class="sym-group active" id="sym-greek">
+        <span class="sym-chip" data-ins="\alpha">α</span>
+        <span class="sym-chip" data-ins="\beta">β</span>
+        <span class="sym-chip" data-ins="\gamma">γ</span>
+        <span class="sym-chip" data-ins="\delta">δ</span>
+        <span class="sym-chip" data-ins="\varepsilon">ε</span>
+        <span class="sym-chip" data-ins="\zeta">ζ</span>
+        <span class="sym-chip" data-ins="\eta">η</span>
+        <span class="sym-chip" data-ins="\theta">θ</span>
+        <span class="sym-chip" data-ins="\lambda">λ</span>
+        <span class="sym-chip" data-ins="\mu">μ</span>
+        <span class="sym-chip" data-ins="\nu">ν</span>
+        <span class="sym-chip" data-ins="\xi">ξ</span>
+        <span class="sym-chip" data-ins="\pi">&pi;</span>
+        <span class="sym-chip" data-ins="\rho">ρ</span>
+        <span class="sym-chip" data-ins="\sigma">σ</span>
+        <span class="sym-chip" data-ins="\tau">τ</span>
+        <span class="sym-chip" data-ins="\phi">&phi;</span>
+        <span class="sym-chip" data-ins="\psi">ψ</span>
+        <span class="sym-chip" data-ins="\omega">ω</span>
+        <span class="sym-chip" data-ins="\Gamma">&Gamma;</span>
+        <span class="sym-chip" data-ins="\Delta">&Delta;</span>
+        <span class="sym-chip" data-ins="\Theta">&Theta;</span>
+        <span class="sym-chip" data-ins="\Lambda">&Lambda;</span>
+        <span class="sym-chip" data-ins="\Sigma">&Sigma;</span>
+        <span class="sym-chip" data-ins="\Phi">&Phi;</span>
+        <span class="sym-chip" data-ins="\Omega">&Omega;</span>
+      </div>
+
+      <div class="sym-group" id="sym-ops">
+        <span class="sym-chip" data-ins="\frac{a}{b}">\frac</span>
+        <span class="sym-chip" data-ins="\sqrt{x}">\sqrt</span>
+        <span class="sym-chip" data-ins="\sum_{i=1}^{n}">\sum</span>
+        <span class="sym-chip" data-ins="\prod_{i=1}^{n}">\prod</span>
+        <span class="sym-chip" data-ins="\int_{a}^{b}">\int</span>
+        <span class="sym-chip" data-ins="\iint">\iint</span>
+        <span class="sym-chip" data-ins="\partial">&part;</span>
+        <span class="sym-chip" data-ins="\nabla">&nabla;</span>
+        <span class="sym-chip" data-ins="\infty">&infin;</span>
+        <span class="sym-chip" data-ins="\lim_{x \to 0}">\lim</span>
+        <span class="sym-chip" data-ins="\times">&times;</span>
+        <span class="sym-chip" data-ins="\cdot">&middot;</span>
+        <span class="sym-chip" data-ins="\pm">&plusmn;</span>
+        <span class="sym-chip" data-ins="\leq">&le;</span>
+        <span class="sym-chip" data-ins="\geq">&ge;</span>
+        <span class="sym-chip" data-ins="\neq">&ne;</span>
+        <span class="sym-chip" data-ins="\approx">&asymp;</span>
+        <span class="sym-chip" data-ins="\rightarrow">&rarr;</span>
+        <span class="sym-chip" data-ins="\Rightarrow">&rArr;</span>
+        <span class="sym-chip" data-ins="\leftrightarrow">&harr;</span>
+        <span class="sym-chip" data-ins="\forall">&forall;</span>
+        <span class="sym-chip" data-ins="\exists">&exist;</span>
+        <span class="sym-chip" data-ins="\in">&isin;</span>
+        <span class="sym-chip" data-ins="\subset">&sub;</span>
+        <span class="sym-chip" data-ins="^{T}">^T</span>
+        <span class="sym-chip" data-ins="^{-1}">^-1</span>
+      </div>
+
+      <div class="sym-group" id="sym-struct">
+        <span class="sym-chip" data-ins="\begin{bmatrix} a & b \\ c & d \end{bmatrix}">bmatrix</span>
+        <span class="sym-chip" data-ins="\begin{pmatrix} a & b \\ c & d \end{pmatrix}">pmatrix</span>
+        <span class="sym-chip" data-ins="\begin{vmatrix} a & b \\ c & d \end{vmatrix}">vmatrix</span>
+        <span class="sym-chip" data-ins="\vec{v}">\vec</span>
+        <span class="sym-chip" data-ins="\hat{e}">\hat</span>
+        <span class="sym-chip" data-ins="\bar{x}">\bar</span>
+        <span class="sym-chip" data-ins="\dot{x}">\dot</span>
+        <span class="sym-chip" data-ins="\ddot{x}">\ddot</span>
+        <span class="sym-chip" data-ins="\tilde{x}">\tilde</span>
+        <span class="sym-chip" data-ins="\mathbf{A}">\mathbf</span>
+        <span class="sym-chip" data-ins="\boldsymbol{\theta}">\boldsymbol</span>
+        <span class="sym-chip" data-ins="\left( \right)">\left\right</span>
+        <span class="sym-chip" data-ins="\underbrace{x}_{y}">\underbrace</span>
+        <span class="sym-chip" data-ins="\overbrace{x}^{y}">\overbrace</span>
+        <span class="sym-chip" data-ins="\text{text}">\text</span>
+        <span class="sym-chip" data-ins="\overset{\circ}{C}">\overset</span>
+        <span class="sym-chip" data-ins="\begin{cases} a & \text{if } x > 0 \\ b & \text{otherwise} \end{cases}">cases</span>
+      </div>
+
+      <div class="sym-group" id="sym-robot">
+        <span class="sym-chip" data-ins="{}^{A}_{B}\mathbf{T} = \begin{bmatrix} {}^{A}_{B}\mathbf{R} & {}^{A}\mathbf{p}_{B} \\ \mathbf{0}^T & 1 \end{bmatrix}">T_homo</span>
+        <span class="sym-chip" data-ins="R_z(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta & 0 \\ \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{bmatrix}">R_z</span>
+        <span class="sym-chip" data-ins="\mathbf{J} = \frac{\partial \mathbf{f}}{\partial \mathbf{q}}">Jacobian</span>
+        <span class="sym-chip" data-ins="\dot{\mathbf{x}} = \mathbf{A}\mathbf{x} + \mathbf{B}\mathbf{u}">State space</span>
+        <span class="sym-chip" data-ins="\hat{\mathbf{x}}_{k|k} = \hat{\mathbf{x}}_{k|k-1} + \mathbf{K}_k(\mathbf{z}_k - \mathbf{H}\hat{\mathbf{x}}_{k|k-1})">Kalman update</span>
+        <span class="sym-chip" data-ins="\mathbf{K}_k = \mathbf{P}_{k|k-1}\mathbf{H}^T(\mathbf{H}\mathbf{P}_{k|k-1}\mathbf{H}^T + \mathbf{R})^{-1}">Kalman gain</span>
+        <span class="sym-chip" data-ins="u(t) = K_p e(t) + K_i \int_0^t e(\tau)d\tau + K_d \frac{de(t)}{dt}">PID</span>
+        <span class="sym-chip" data-ins="G(s) = \frac{K}{s(Ts+1)}">TF</span>
+        <span class="sym-chip" data-ins="\tau = \mathbf{J}^T(\mathbf{q})\mathbf{F}">Joint torque</span>
+        <span class="sym-chip" data-ins="p_e = \begin{bmatrix} x \\ y \\ z \end{bmatrix}, \quad \phi_e = \begin{bmatrix} \psi \\ \vartheta \\ \varphi \end{bmatrix}">EE pose</span>
+      </div>
+    </div>
+
+    <div class="input-wrap">
+      <div class="mode-row">
+        <button class="mode-btn active" id="btn-display">Display</button>
+        <button class="mode-btn" id="btn-inline">Inline</button>
+        <select class="preset-sel" id="preset-sel">
+          <option value="">-- preset --</option>
+          <option value="\frac{-b \pm \sqrt{b^2 - 4ac}}{2a}">Quadratic formula</option>
+          <option value="e^{i\pi} + 1 = 0">Euler identity</option>
+          <option value="\sum_{n=0}^{\infty} \frac{f^{(n)}(a)}{n!}(x-a)^n">Taylor series</option>
+          <option value="\nabla^2 f = \frac{\partial^2 f}{\partial x^2} + \frac{\partial^2 f}{\partial y^2} + \frac{\partial^2 f}{\partial z^2}">Laplacian</option>
+          <option value="R_z(\theta) = \begin{bmatrix} \cos\theta & -\sin\theta & 0 \\ \sin\theta & \cos\theta & 0 \\ 0 & 0 & 1 \end{bmatrix}">Rotation matrix Rz</option>
+          <option value="{}^{0}_{n}\mathbf{T} = \prod_{i=1}^{n} {}^{i-1}_{i}\mathbf{T}(q_i)">FK product of transforms</option>
+          <option value="\hat{\mathbf{x}}_{k|k-1} = \mathbf{A}\hat{\mathbf{x}}_{k-1|k-1} + \mathbf{B}\mathbf{u}_{k-1}">Kalman predict</option>
+          <option value="u(t) = K_p e(t) + K_i \int_0^t e(\tau)d\tau + K_d \dot{e}(t)">PID controller</option>
+          <option value="\mathbf{M}(\mathbf{q})\ddot{\mathbf{q}} + \mathbf{C}(\mathbf{q},\dot{\mathbf{q}})\dot{\mathbf{q}} + \mathbf{g}(\mathbf{q}) = \boldsymbol{\tau}">Euler-Lagrange</option>
+        </select>
+      </div>
+
+      <textarea id="latex-input" placeholder="Enter LaTeX here&#10;e.g.  \frac{1}{2}mv^2 + mgh = E_{\text{total}}&#10;&#10;No $ or \[ \] needed — just the math." spellcheck="false"></textarea>
+      <div class="err-msg" id="err-msg"></div>
+    </div>
+
+  </div>
+
+  <!-- ── Right: Preview + Export ── -->
+  <div class="right">
+
+    <div class="preview-wrap" id="preview-wrap">
+      <div class="preview-placeholder" id="placeholder">
+        TYPE EQUATION ON THE LEFT<br>
+        <span style="opacity:.5;font-size:9px">preview appears here</span>
+      </div>
+      <div id="preview-output" style="display:none"></div>
+    </div>
+
+    <div class="controls">
+
+      <div class="ctrl-row">
+        <span class="ctrl-label">Background</span>
+        <button class="ctrl-btn active" data-bg="">Transparent</button>
+        <button class="ctrl-btn" data-bg="bg-white">White</button>
+        <button class="ctrl-btn" data-bg="bg-dark">Dark</button>
+      </div>
+
+      <div class="ctrl-row">
+        <span class="ctrl-label">PNG scale</span>
+        <button class="ctrl-btn active" data-scale="2">2×</button>
+        <button class="ctrl-btn" data-scale="3">3×</button>
+        <button class="ctrl-btn" data-scale="4">4×</button>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-left:auto" id="size-note"></span>
+      </div>
+
+      <div class="ctrl-row">
+        <button class="export-btn primary" id="btn-png" disabled>&#8595; Download PNG</button>
+        <button class="export-btn" id="btn-svg" disabled>Copy image</button>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const textarea   = document.getElementById('latex-input');
+const errMsg     = document.getElementById('err-msg');
+const previewOut = document.getElementById('preview-output');
+const placeholder= document.getElementById('placeholder');
+const previewWrap= document.getElementById('preview-wrap');
+const btnPng     = document.getElementById('btn-png');
+const btnSvg     = document.getElementById('btn-svg');
+const sizeNote   = document.getElementById('size-note');
+
+let isDisplay  = true;
+let bgClass    = '';
+let pngScale   = 2;
+let currentSVG = null;
+let mjxReady   = false;
+let renderTimer;
+
+// ── MathJax ready ──────────────────────────────
+window.addEventListener('load', () => {
+  MathJax.startup.promise.then(() => {
+    mjxReady = true;
+    triggerRender();
+  });
+});
+
+// ── Symbol tabs ────────────────────────────────
+document.querySelectorAll('.sym-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.sym-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.sym-group').forEach(g => g.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('sym-' + tab.dataset.group).classList.add('active');
+  });
+});
+
+// ── Symbol chips ───────────────────────────────
+document.querySelectorAll('.sym-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    insertAtCursor(textarea, chip.dataset.ins);
+    triggerRender();
+  });
+});
+
+function insertAtCursor(el, text) {
+  const s = el.selectionStart, e = el.selectionEnd;
+  el.value = el.value.substring(0, s) + text + el.value.substring(e);
+  el.selectionStart = el.selectionEnd = s + text.length;
+  el.focus();
+}
+
+// ── Mode buttons ───────────────────────────────
+document.getElementById('btn-display').addEventListener('click', () => {
+  isDisplay = true;
+  document.getElementById('btn-display').classList.add('active');
+  document.getElementById('btn-inline').classList.remove('active');
+  triggerRender();
+});
+document.getElementById('btn-inline').addEventListener('click', () => {
+  isDisplay = false;
+  document.getElementById('btn-inline').classList.add('active');
+  document.getElementById('btn-display').classList.remove('active');
+  triggerRender();
+});
+
+// ── Presets ────────────────────────────────────
+document.getElementById('preset-sel').addEventListener('change', (e) => {
+  if (e.target.value) {
+    textarea.value = e.target.value;
+    triggerRender();
+    e.target.value = '';
+  }
+});
+
+// ── Background ─────────────────────────────────
+document.querySelectorAll('[data-bg]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-bg]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    bgClass = btn.dataset.bg;
+    previewWrap.className = 'preview-wrap' + (bgClass ? ' ' + bgClass : '');
+    updateSizeNote();
+  });
+});
+
+// ── Scale ──────────────────────────────────────
+document.querySelectorAll('[data-scale]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-scale]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    pngScale = parseInt(btn.dataset.scale);
+    updateSizeNote();
+  });
+});
+
+function updateSizeNote() {
+  if (!currentSVG) { sizeNote.textContent = ''; return; }
+  const rect = currentSVG.getBoundingClientRect();
+  if (rect.width && rect.height) {
+    sizeNote.textContent = `${Math.round(rect.width * pngScale)} \xd7 ${Math.round(rect.height * pngScale)} px`;
+  }
+}
+
+// ── Input ──────────────────────────────────────
+textarea.addEventListener('input', () => {
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(triggerRender, 320);
+});
+
+function triggerRender() {
+  if (!mjxReady) return;
+  const raw = textarea.value.trim();
+  if (!raw) {
+    clearPreview();
+    return;
+  }
+  doRender(raw);
+}
+
+async function doRender(latex) {
+  errMsg.textContent = '';
+  try {
+    const wrapped = isDisplay ? `\\[${latex}\\]` : `\\(${latex}\\)`;
+    const node = await MathJax.tex2svgPromise(latex, { display: isDisplay });
+    const svg = node.querySelector('svg');
+    if (!svg) throw new Error('Render failed');
+
+    // Make color explicit for export
+    svg.setAttribute('color', 'currentColor');
+    svg.style.maxWidth = '100%';
+
+    previewOut.innerHTML = '';
+    previewOut.appendChild(svg.cloneNode(true));
+    previewOut.style.display = 'block';
+    placeholder.style.display = 'none';
+    currentSVG = previewOut.querySelector('svg');
+
+    btnPng.disabled = false;
+    btnSvg.disabled = false;
+    setTimeout(updateSizeNote, 50);
+  } catch (e) {
+    errMsg.textContent = 'Parse error: ' + (e.message || 'check your LaTeX syntax');
+    clearPreview();
+  }
+}
+
+function clearPreview() {
+  previewOut.innerHTML = '';
+  previewOut.style.display = 'none';
+  placeholder.style.display = '';
+  currentSVG = null;
+  btnPng.disabled = true;
+  btnSvg.disabled = true;
+  sizeNote.textContent = '';
+}
+
+// ── Export PNG ─────────────────────────────────
+btnPng.addEventListener('click', async () => {
+  if (!currentSVG) return;
+  const svg = currentSVG.cloneNode(true);
+
+  // Resolve text color based on background
+  const textColor = bgClass === 'bg-dark' ? '#e2e2e6' : '#111111';
+  svg.setAttribute('color', textColor);
+
+  // Add background rect if needed
+  if (bgClass === 'bg-white' || bgClass === 'bg-dark') {
+    const vb = svg.viewBox.baseVal;
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('x', vb.x - 20); bg.setAttribute('y', vb.y - 20);
+    bg.setAttribute('width', vb.width + 40); bg.setAttribute('height', vb.height + 40);
+    bg.setAttribute('fill', bgClass === 'bg-white' ? '#ffffff' : '#1e1e21');
+    svg.insertBefore(bg, svg.firstChild);
+  }
+
+  const serializer = new XMLSerializer();
+  const svgStr = serializer.serializeToString(svg);
+  const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+
+  const rect = currentSVG.getBoundingClientRect();
+  const W = Math.ceil(rect.width * pngScale);
+  const H = Math.ceil(rect.height * pngScale);
+
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    if (bgClass === 'bg-white') { ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,W,H); }
+    if (bgClass === 'bg-dark')  { ctx.fillStyle = '#1e1e21'; ctx.fillRect(0,0,W,H); }
+    ctx.drawImage(img, 0, 0, W, H);
+    URL.revokeObjectURL(url);
+    const link = document.createElement('a');
+    link.download = 'equation.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+  img.onerror = () => {
+    URL.revokeObjectURL(url);
+    alert('PNG export failed. Try copying the SVG instead.');
+  };
+  img.src = url;
+});
+
+// ── Copy image ─────────────────────────────────
+btnSvg.addEventListener('click', async () => {
+  if (!currentSVG) return;
+  btnSvg.textContent = 'Copying...';
+  btnSvg.disabled = true;
+
+  try {
+    const svg = currentSVG.cloneNode(true);
+    const textColor = bgClass === 'bg-dark' ? '#e2e2e6' : '#111111';
+    svg.setAttribute('color', textColor);
+
+    if (bgClass === 'bg-white' || bgClass === 'bg-dark') {
+      const vb = svg.viewBox.baseVal;
+      const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bg.setAttribute('x', vb.x - 20); bg.setAttribute('y', vb.y - 20);
+      bg.setAttribute('width', vb.width + 40); bg.setAttribute('height', vb.height + 40);
+      bg.setAttribute('fill', bgClass === 'bg-white' ? '#ffffff' : '#1e1e21');
+      svg.insertBefore(bg, svg.firstChild);
+    }
+
+    const serializer = new XMLSerializer();
+    const svgStr = serializer.serializeToString(svg);
+    const svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const rect = currentSVG.getBoundingClientRect();
+    const W = Math.ceil(rect.width * pngScale);
+    const H = Math.ceil(rect.height * pngScale);
+
+    await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const cvs = document.createElement('canvas');
+        cvs.width = W; cvs.height = H;
+        const c = cvs.getContext('2d');
+        if (bgClass === 'bg-white') { c.fillStyle = '#ffffff'; c.fillRect(0,0,W,H); }
+        if (bgClass === 'bg-dark')  { c.fillStyle = '#1e1e21'; c.fillRect(0,0,W,H); }
+        c.drawImage(img, 0, 0, W, H);
+        URL.revokeObjectURL(url);
+        cvs.toBlob(async (pngBlob) => {
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+            resolve();
+          } catch (e) { reject(e); }
+        }, 'image/png');
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('SVG render failed')); };
+      img.src = url;
+    });
+
+    btnSvg.textContent = 'Copied!';
+    setTimeout(() => { btnSvg.textContent = 'Copy image'; btnSvg.disabled = false; }, 1800);
+  } catch (e) {
+    btnSvg.textContent = 'Copy image';
+    btnSvg.disabled = false;
+    // ClipboardItem may be blocked in non-secure context or Firefox — fall back to download
+    if (e.message && e.message.includes('ClipboardItem')) {
+      alert('Clipboard image write is not supported in this browser (Firefox requires a flag). Use Download PNG instead.');
+    } else {
+      alert('Copy failed: ' + (e.message || 'unknown error'));
+    }
+  }
+});
+</script>
+
+</body>
+</html>

@@ -19,7 +19,8 @@ tools/
 ├── pid_tuner.html
 ├── serial_logger.html
 ├── md2pdf.html
-└── vidgif.html
+├── gif_tools.html
+└── latex_renderer.html
 ```
 
 ---
