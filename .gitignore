@@ -1,0 +1,50 @@
+# ---------- macOS ----------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+__MACOSX/
+.Spotlight-V100
+.Trashes
+.fseventsd
+.TemporaryItems
+.DocumentRevisions-V100
+.VolumeIcon.icns
+Icon?
+
+# ---------- Windows ----------
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ---------- Linux ----------
+*~
+.directory
+.Trash-*
+
+# ---------- Editors and IDEs ----------
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-workspace
+
+# ---------- Office lock and temp files ----------
+~$*
+*.tmp
+*.bak
+
+# ---------- Node / Python leftovers ----------
+node_modules/
+npm-debug.log*
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# ---------- Local secrets and logs ----------
+.env
+.env.*
+*.log

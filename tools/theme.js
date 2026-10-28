@@ -33,6 +33,9 @@
   root.setAttribute('data-theme', read());
   root.style.colorScheme = read();
 
+  /* re-check when returning with the Back button */
+  window.addEventListener('pageshow', function () { apply(read()); });
+
   /* keep other open tabs in sync */
   window.addEventListener('storage', function (e) { if (e.key === KEY) apply(read()); });
 
