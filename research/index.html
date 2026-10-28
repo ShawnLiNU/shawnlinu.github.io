@@ -19,7 +19,8 @@
   :root {
     --black: #000000;
     --white: #FFFFFF;
-    --red: #C8102E;
+    --red: #C8102E;          /* Northeastern Red */
+    --red-on-dark: #E8384F;  /* same red, lifted slightly so small text stays readable on dark backgrounds */
     --gold: #A4804A;
     --gray-light: #F5F5F5;
     --gray-border: #E0E0E0;
@@ -40,12 +41,12 @@
     content: '';
     display: block;
     height: 4px;
-    background: var(--red);
+    background: var(--black);
   }
 
   /* ── Navbar ── */
   nav {
-    background: var(--black);
+    background: var(--red);
     padding: 0.9rem 2rem;
     position: sticky;
     top: 0;
@@ -68,17 +69,18 @@
     align-items: center;
   }
   nav ul a {
-    color: rgba(255,255,255,.75);
+    color: rgba(255,255,255,.88);
     text-decoration: none;
     font-size: 0.92rem;
     font-weight: 400;
     transition: color .2s;
   }
   nav ul a:hover, nav ul a.active { color: var(--white); }
+  nav ul a.active { font-weight: 700; border-bottom: 2px solid var(--white); padding-bottom: 2px; }
 
   #themeToggle {
     background: none;
-    border: 1.5px solid rgba(255,255,255,.3);
+    border: 1.5px solid rgba(255,255,255,.5);
     border-radius: 8px;
     padding: 0.4rem 0.5rem;
     cursor: pointer;
@@ -234,13 +236,13 @@
 
   /* ── Dark mode ── */
   html[data-theme="dark"] body { background: #121212; color: #E0E0E0; }
-  html[data-theme="dark"] body::before { background: #E85A5A; }
-  html[data-theme="dark"] body nav { background: #1a1a1a; }
+  html[data-theme="dark"] body::before { background: var(--black); }
+  html[data-theme="dark"] body nav { background: var(--red); }
   html[data-theme="dark"] body .page-header h1 { color: var(--white); }
   html[data-theme="dark"] body .page-header p { color: #BDBDBD; }
-  html[data-theme="dark"] body .section-heading { color: var(--white); border-bottom-color: #E85A5A; }
+  html[data-theme="dark"] body .section-heading { color: var(--white); border-bottom-color: var(--red); }
 
-  html[data-theme="dark"] body .proj-card { background: #1e1e1e; border-color: #333; border-left-color: #E85A5A; }
+  html[data-theme="dark"] body .proj-card { background: #1e1e1e; border-color: #333; border-left-color: var(--red); }
   html[data-theme="dark"] body .proj-card-title { color: var(--white); }
   html[data-theme="dark"] body .proj-card-desc { color: #BDBDBD; }
   html[data-theme="dark"] body .proj-tag { background: #2a2a2a; border-color: #444; color: #BDBDBD; }
@@ -248,15 +250,15 @@
   html[data-theme="dark"] body .status-dev { background: #3a2e00; color: #ffd54f; border-color: #f9a825; }
 
   html[data-theme="dark"] body .prev-card { background: #1e1e1e; border-color: #333; }
-  html[data-theme="dark"] body .prev-card:hover { border-color: #E85A5A; }
-  html[data-theme="dark"] body .prev-card-label { color: #E85A5A; }
+  html[data-theme="dark"] body .prev-card:hover { border-color: var(--red); }
+  html[data-theme="dark"] body .prev-card-label { color: var(--red-on-dark); }
   html[data-theme="dark"] body .prev-card-title { color: var(--white); }
   html[data-theme="dark"] body .prev-card-desc { color: #BDBDBD; }
   html[data-theme="dark"] body .prev-card-arrow { color: #444; }
-  html[data-theme="dark"] body .prev-card:hover .prev-card-arrow { color: #E85A5A; }
+  html[data-theme="dark"] body .prev-card:hover .prev-card-arrow { color: var(--red-on-dark); }
 
   html[data-theme="dark"] body footer { border-top-color: #333; color: #666; }
-  html[data-theme="dark"] body footer a { color: #E85A5A; }
+  html[data-theme="dark"] body footer a { color: var(--red-on-dark); }
 
   @media (max-width: 600px) {
     .proj-card-top { flex-direction: column; gap: 0.4rem; }

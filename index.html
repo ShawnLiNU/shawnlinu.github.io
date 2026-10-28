@@ -19,7 +19,8 @@
   :root {
     --black: #000000;
     --white: #FFFFFF;
-    --red: #C8102E;
+    --red: #C8102E;          /* Northeastern Red */
+    --red-on-dark: #E8384F;  /* same red, lifted slightly so small text stays readable on dark backgrounds */
     --gold: #A4804A;
     --gray-light: #F5F5F5;
     --gray-border: #E0E0E0;
@@ -37,7 +38,7 @@
 
   /* ── Navbar ── */
   nav {
-    background: var(--black);
+    background: var(--red);
     padding: 0.9rem 2rem;
     position: sticky;
     top: 0;
@@ -61,13 +62,14 @@
     align-items: center;
   }
   nav ul a {
-    color: rgba(255,255,255,.75);
+    color: rgba(255,255,255,.88);
     text-decoration: none;
     font-size: 0.92rem;
     font-weight: 400;
     transition: color .2s;
   }
   nav ul a:hover, nav ul a.active { color: var(--white); }
+  nav ul a.active { font-weight: 700; border-bottom: 2px solid var(--white); padding-bottom: 2px; }
 
   /* ── Main container ── */
   .container {
@@ -204,7 +206,7 @@
     content: '';
     display: block;
     height: 4px;
-    background: var(--red);
+    background: var(--black);
   }
 
   @media (max-width: 600px) {
@@ -217,7 +219,7 @@
   /* ── Theme toggle button ── */
   #themeToggle {
     background: none;
-    border: 1.5px solid rgba(255,255,255,.3);
+    border: 1.5px solid rgba(255,255,255,.5);
     border-radius: 8px;
     padding: 0.4rem 0.5rem;
     cursor: pointer;
@@ -233,15 +235,15 @@
     background: #121212;
     color: #E0E0E0;
   }
-  html[data-theme="dark"] body nav { background: #1a1a1a; }
+  html[data-theme="dark"] body nav { background: var(--red); }
   html[data-theme="dark"] body .hero-text h1 { color: var(--white); }
-  html[data-theme="dark"] body .hero-text .subtitle { color: #E85A5A; }
-  html[data-theme="dark"] body .hero-text .subtitle a { color: #E85A5A; }
+  html[data-theme="dark"] body .hero-text .subtitle { color: var(--red-on-dark); }
+  html[data-theme="dark"] body .hero-text .subtitle a { color: var(--red-on-dark); }
   html[data-theme="dark"] body .bio { color: #BDBDBD; }
-  html[data-theme="dark"] body .bio a { color: #E85A5A; }
+  html[data-theme="dark"] body .bio a { color: var(--red-on-dark); }
   html[data-theme="dark"] body .contact-line { color: #BDBDBD; }
-  html[data-theme="dark"] body .contact-line a { color: #E85A5A; }
-  html[data-theme="dark"] body .section h2 { color: var(--white); border-bottom-color: #E85A5A; }
+  html[data-theme="dark"] body .contact-line a { color: var(--red-on-dark); }
+  html[data-theme="dark"] body .section h2 { color: var(--white); border-bottom-color: var(--red); }
   html[data-theme="dark"] body .tag {
     background: #1E1E1E;
     border-color: #333;
@@ -257,10 +259,10 @@
   html[data-theme="dark"] body .edu-icon { color: var(--gold); }
   html[data-theme="dark"] body .hero-photo { border-color: #333; background: #1E1E1E; }
   html[data-theme="dark"] body .socials a { color: #E0E0E0; }
-  html[data-theme="dark"] body .socials a:hover { color: #E85A5A; }
+  html[data-theme="dark"] body .socials a:hover { color: var(--red-on-dark); }
   html[data-theme="dark"] body footer { border-top-color: #333; color: #666; }
-  html[data-theme="dark"] body footer a { color: #E85A5A; }
-  html[data-theme="dark"] body::before { background: #E85A5A; }
+  html[data-theme="dark"] body footer a { color: var(--red-on-dark); }
+  html[data-theme="dark"] body::before { background: var(--black); }
   /* keep the navbar tidy on phones now that it has one more link */
   @media (max-width: 640px) { nav { flex-wrap: wrap; gap: .5rem; padding: .8rem 1.2rem; } nav ul { gap: 1rem; flex-wrap: wrap; } }
 </style>
