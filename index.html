@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* Apply the saved site theme before the page paints. Shared with the tools pages. */
+(function () {
+  var t = 'dark';
+  try { if (localStorage.getItem('tools-theme') === 'light') t = 'light'; } catch (e) {}
+  document.documentElement.setAttribute('data-theme', t);
+  document.documentElement.style.colorScheme = t;
+})();
+</script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Xian (Shawn) Li</title>
@@ -220,41 +229,43 @@
   #themeToggle:hover { border-color: rgba(255,255,255,.7); }
 
   /* ── Dark mode ── */
-  body.dark {
+  html[data-theme="dark"] body {
     background: #121212;
     color: #E0E0E0;
   }
-  body.dark nav { background: #1a1a1a; }
-  body.dark .hero-text h1 { color: var(--white); }
-  body.dark .hero-text .subtitle { color: #E85A5A; }
-  body.dark .hero-text .subtitle a { color: #E85A5A; }
-  body.dark .bio { color: #BDBDBD; }
-  body.dark .bio a { color: #E85A5A; }
-  body.dark .contact-line { color: #BDBDBD; }
-  body.dark .contact-line a { color: #E85A5A; }
-  body.dark .section h2 { color: var(--white); border-bottom-color: #E85A5A; }
-  body.dark .tag {
+  html[data-theme="dark"] body nav { background: #1a1a1a; }
+  html[data-theme="dark"] body .hero-text h1 { color: var(--white); }
+  html[data-theme="dark"] body .hero-text .subtitle { color: #E85A5A; }
+  html[data-theme="dark"] body .hero-text .subtitle a { color: #E85A5A; }
+  html[data-theme="dark"] body .bio { color: #BDBDBD; }
+  html[data-theme="dark"] body .bio a { color: #E85A5A; }
+  html[data-theme="dark"] body .contact-line { color: #BDBDBD; }
+  html[data-theme="dark"] body .contact-line a { color: #E85A5A; }
+  html[data-theme="dark"] body .section h2 { color: var(--white); border-bottom-color: #E85A5A; }
+  html[data-theme="dark"] body .tag {
     background: #1E1E1E;
     border-color: #333;
     color: #E0E0E0;
   }
-  body.dark .tag:hover {
+  html[data-theme="dark"] body .tag:hover {
     background: var(--red);
     color: var(--white);
     border-color: var(--red);
   }
-  body.dark .edu-details .degree { color: var(--white); }
-  body.dark .edu-details .school { color: #BDBDBD; }
-  body.dark .edu-icon { color: var(--gold); }
-  body.dark .hero-photo { border-color: #333; background: #1E1E1E; }
-  body.dark .socials a { color: #E0E0E0; }
-  body.dark .socials a:hover { color: #E85A5A; }
-  body.dark footer { border-top-color: #333; color: #666; }
-  body.dark footer a { color: #E85A5A; }
-  body.dark::before { background: #E85A5A; }
+  html[data-theme="dark"] body .edu-details .degree { color: var(--white); }
+  html[data-theme="dark"] body .edu-details .school { color: #BDBDBD; }
+  html[data-theme="dark"] body .edu-icon { color: var(--gold); }
+  html[data-theme="dark"] body .hero-photo { border-color: #333; background: #1E1E1E; }
+  html[data-theme="dark"] body .socials a { color: #E0E0E0; }
+  html[data-theme="dark"] body .socials a:hover { color: #E85A5A; }
+  html[data-theme="dark"] body footer { border-top-color: #333; color: #666; }
+  html[data-theme="dark"] body footer a { color: #E85A5A; }
+  html[data-theme="dark"] body::before { background: #E85A5A; }
+  /* keep the navbar tidy on phones now that it has one more link */
+  @media (max-width: 640px) { nav { flex-wrap: wrap; gap: .5rem; padding: .8rem 1.2rem; } nav ul { gap: 1rem; flex-wrap: wrap; } }
 </style>
 </head>
-<body class="dark">
+<body>
 
 <!-- Navbar -->
 <nav>
@@ -263,6 +274,7 @@
     <li><a href="index.html" class="active">Home</a></li>
     <li><a href="research/index.html">Research</a></li>
     <li><a href="teaching/index.html">Teaching</a></li>
+    <li><a href="resources/index.html">Resources</a></li>
     <li><a href="mailto:x.li1@northeastern.edu">Contact</a></li>
     <li>
       <button id="themeToggle" aria-label="Toggle dark mode">
@@ -379,16 +391,30 @@
 </footer>
 
 <script>
-const toggle = document.getElementById('themeToggle');
-const moon = toggle.querySelector('.icon-moon');
-const sun = toggle.querySelector('.icon-sun');
-
-toggle.addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  const isDark = document.body.classList.contains('dark');
-  moon.style.display = isDark ? 'none' : 'block';
-  sun.style.display = isDark ? 'block' : 'none';
-});
+/* Theme toggle. Uses the same saved setting as the tools pages,
+   so the choice stays the same across the whole site. */
+(function () {
+  var KEY = 'tools-theme', root = document.documentElement;
+  var btn = document.getElementById('themeToggle');
+  var moon = btn.querySelector('.icon-moon'), sun = btn.querySelector('.icon-sun');
+  function read() { try { return localStorage.getItem(KEY) === 'light' ? 'light' : 'dark'; } catch (e) { return 'dark'; } }
+  function apply(t) {
+    var dark = t === 'dark';
+    root.setAttribute('data-theme', t); root.style.colorScheme = t;
+    moon.style.display = dark ? 'none' : 'block';
+    sun.style.display = dark ? 'block' : 'none';
+    btn.setAttribute('aria-label', dark ? 'Switch to bright theme' : 'Switch to dark theme');
+    btn.title = btn.getAttribute('aria-label');
+  }
+  btn.addEventListener('click', function () {
+    var t = read() === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem(KEY, t); } catch (e) {}
+    apply(t);
+  });
+  window.addEventListener('storage', function (e) { if (e.key === KEY) apply(read()); });
+  window.addEventListener('pageshow', function () { apply(read()); });
+  apply(read());
+})();
 </script>
 </body>
 </html>
