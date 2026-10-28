@@ -1,0 +1,9 @@
+newmtl steel
+Kd 0.62 0.66 0.72
+Ks 0.3 0.3 0.3
+Ns 40
+
+newmtl orange
+Kd 0.95 0.55 0.15
+Ks 0.2 0.2 0.2
+Ns 20

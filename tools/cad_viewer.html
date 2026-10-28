@@ -30,6 +30,7 @@ header .back:hover{color:var(--accent)}
 .btn{font:inherit;font-size:12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);
   border-radius:6px;padding:7px 12px;cursor:pointer;white-space:nowrap}
 .btn:hover{border-color:var(--accent)}
+select.sample{font-size:12px;padding:7px 8px;border-radius:6px;cursor:pointer}
 .btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:500}
 .btn.on{border-color:var(--accent);color:var(--accent)}
 .btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -83,6 +84,7 @@ input[type=range]{flex:1}
   <h1>CAD Viewer</h1>
   <div class="sub">Open CAD, mesh, and drawing files in the browser. Files never leave your computer.</div>
   <input type="file" id="fileInput" multiple class="hidden">
+  <select class="sample" id="sampleSel" aria-label="Try a sample file"></select>
   <button class="btn primary" id="openBtn">Open file</button>
 </header>
 
@@ -146,7 +148,10 @@ input[type=range]{flex:1}
       <div class="drop" id="drop">
         <h3>Drop a drawing or model here</h3>
         <p>You can also click Open file. For OBJ with materials or glTF with separate buffers, select all the related files together.</p>
-        <button class="btn primary" id="openBtn2">Choose files</button>
+        <div class="row" style="align-items:center">
+          <button class="btn primary" id="openBtn2">Choose files</button>
+          <select class="sample" id="sampleSel2" aria-label="Try a sample file"></select>
+        </div>
         <div class="fmt">
           <div><b>Drawings</b><span>DWG (R13 to 2018), DXF, SVG</span></div>
           <div><b>Solid CAD</b><span>STEP / STP, IGES / IGS, BREP</span></div>
@@ -234,8 +239,10 @@ async function openFiles(files) {
   var main = files.find(function (f) { return FORMATS[ext(f.name)]; });
   if (!main) {
     var p = files.map(function (f) { return PROPRIETARY[ext(f.name)]; }).find(Boolean);
+    var side = SIDE.indexOf(ext(files[0].name)) >= 0;
     setInfo([['File', files[0].name], ['Size', fmtBytes(files[0].size)]]);
-    setMsg(p ? p + ' files use a closed format that cannot be read in the browser. Export the model as STEP, STL, or DXF from the original program, then open that file here.'
+    setMsg(side ? 'This is a supporting file (material, texture, or buffer). Select it together with its model file, for example the .obj and .mtl at the same time.'
+         : p ? p + ' files use a closed format that cannot be read in the browser. Export the model as STEP, STL, or DXF from the original program, then open that file here.'
              : 'This file type is not supported. Supported types are listed in the drop area.', 'warn');
     return;
   }
@@ -1077,6 +1084,49 @@ $('invert2').onclick = function () { D.invert = !D.invert; this.classList.toggle
 $('showText').onchange = draw2D;
 $('lyAll').onclick = function () { Object.keys(D.layers).forEach(function (n) { D.layers[n].visible = true; }); renderLayers(); draw2D(); };
 $('lyNone').onclick = function () { Object.keys(D.layers).forEach(function (n) { D.layers[n].visible = false; }); renderLayers(); draw2D(); };
+
+/* ================= sample files ================= */
+var SAMPLE_DIR = 'samples/cad/';
+var SAMPLES = [
+  ['Drawings', [['Mounting plate (DXF)', ['mounting_plate.dxf']], ['Plate drawing (SVG)', ['plate_drawing.svg']]]],
+  ['Solid CAD', [['Box (STEP)', ['box_40x30x20.step']], ['Box (IGES)', ['box_50x30x20.igs']]]],
+  ['Meshes', [['L-bracket (STL, ASCII)', ['bracket_ascii.stl']], ['Cylinder (STL, binary)', ['cylinder_binary.stl']],
+              ['Post on plate (OBJ + MTL)', ['post_on_plate.obj', 'post_on_plate.mtl']], ['Colored sphere (PLY)', ['sphere_colors.ply']],
+              ['Hex prism (3MF)', ['hex_prism.3mf']], ['Pyramid (AMF)', ['pyramid.amf']], ['Torus (OFF)', ['torus.off']]]],
+  ['Scenes', [['Torus (glTF)', ['torus_embedded.gltf']], ['Sphere (GLB)', ['sphere.glb']], ['L-bracket (DAE)', ['bracket.dae']], ['Cylinder (VRML)', ['cylinder.wrl']]]],
+  ['Point clouds and other', [['Helix (PCD)', ['helix.pcd']], ['Terrain (XYZ)', ['terrain.xyz']], ['Torus (VTK)', ['torus.vtk']], ['Square cup (G-code)', ['square_cup.gcode']]]]
+];
+['sampleSel', 'sampleSel2'].forEach(function (id) {
+  var sel = $(id), html = '<option value="">Try a sample</option>', n = 0;
+  SAMPLES.forEach(function (grp) {
+    html += '<optgroup label="' + grp[0] + '">';
+    grp[1].forEach(function (it) { html += '<option value="' + n++ + '">' + it[0] + '</option>'; });
+    html += '</optgroup>';
+  });
+  sel.innerHTML = html;
+  sel.onchange = function () {
+    var i = +sel.value; sel.value = '';
+    if (sel.selectedIndex < 0 || isNaN(i)) return;
+    var flat = [].concat.apply([], SAMPLES.map(function (g) { return g[1]; }));
+    if (flat[i]) openSample(flat[i][1]);
+  };
+});
+async function openSample(names) {
+  if (location.protocol === 'file:') {
+    setMsg('Samples load from the website. Open this page at shawnlinu.github.io/tools, or download the sample zip and open the files directly.', 'warn');
+    return;
+  }
+  setLoading('Downloading sample');
+  try {
+    var files = await Promise.all(names.map(async function (n) {
+      var r = await fetch(SAMPLE_DIR + n);
+      if (!r.ok) throw new Error(n + ' not found (HTTP ' + r.status + ')');
+      return new File([await r.blob()], n);
+    }));
+    setLoading(null);
+    await openFiles(files);
+  } catch (err) { setLoading(null); setMsg('Could not load the sample: ' + err.message, 'err'); }
+}
 
 /* ================= shared ================= */
 $('shot').onclick = function () {
