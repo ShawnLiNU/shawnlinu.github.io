@@ -14,6 +14,7 @@ tools/
 ├── README.md                     ← this file
 ├── theme.js                      ← shared bright/dark theme toggle
 ├── apple_health_viewer.html
+├── cad_viewer.html
 ├── flip_clock.html
 ├── kalman_filter_visualizer.html
 ├── robot_kinematics.html
