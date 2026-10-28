@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="theme.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Year Progress + Flip Clock</title>
@@ -23,7 +25,7 @@
     --row-w: min(90vw, 600px);
 }
 
-.light {
+html[data-theme="light"] {
     --bg:        #f5f4f0;
     --surface:   #ebebeb;
     --border:    rgba(0,0,0,0.08);
@@ -522,7 +524,7 @@ function toggleFullscreen() {
 
 /* ── THEME ── */
 function toggleTheme() {
-    document.body.classList.toggle("light");
+    ToolsTheme.toggle();
 }
 
 /* ── DESKTOP KEYS ── */

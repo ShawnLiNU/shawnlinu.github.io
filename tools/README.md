@@ -12,6 +12,7 @@ Live at: **[shawnlinu.github.io/tools/](https://shawnlinu.github.io/tools/)**
 tools/
 ├── index.html                    ← this page (tools gallery)
 ├── README.md                     ← this file
+├── theme.js                      ← shared bright/dark theme toggle
 ├── apple_health_viewer.html
 ├── flip_clock.html
 ├── kalman_filter_visualizer.html

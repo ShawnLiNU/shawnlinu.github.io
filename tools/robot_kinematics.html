@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="theme.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Robot Kinematics Calculator &mdash; EECE 5554</title>
@@ -255,6 +257,7 @@ header{animation-delay:0s;}
   h1{font-size:1.4rem;}
 }
 </style>
+<style>html[data-theme="light"]{--bg:#f2f6f9;--panel:#ffffff;--surface:#f7fafc;--surface2:#e8eff4;--border:#d0dce5;--border2:#bfcfdb;--cyan:#0088b8;--cyan-dim:rgba(0,136,184,0.10);--cyan-glow:rgba(0,136,184,0.2);--green:#0e9a5c;--amber:#b27a00;--red:#d03848;--blue:#2f6fd0;--violet:#7a3fd0;--text:#15252f;--muted:#5c7385;--muted2:#a3b6c4;}</style>
 </head>
 <body>
 <div class="app">
@@ -670,7 +673,7 @@ function draw2D(){
   ctx2.clearRect(0,0,W,H);
 
   /* background */
-  ctx2.fillStyle='#060a0d'; ctx2.fillRect(0,0,W,H);
+  ctx2.fillStyle=(document.documentElement.dataset.theme==='light')?'#f7fafc':'#060a0d'; ctx2.fillRect(0,0,W,H);
   drawGrid2D(ctx2,W,H);
 
   if(frames.length<2){
@@ -808,7 +811,7 @@ function initThree(){
   renderer=new THREE.WebGLRenderer({canvas:canvas3,antialias:true,alpha:true});
   renderer.setPixelRatio(dpr);
   renderer.setSize(W,H);
-  renderer.setClearColor(0x060a0d,1);
+  renderer.setClearColor(document.documentElement.dataset.theme==='light'?0xf7fafc:0x060a0d,1);
 
   scene=new THREE.Scene();
   camera=new THREE.PerspectiveCamera(45,W/H,1,50000);
@@ -1025,5 +1028,6 @@ document.head.appendChild(s);
 
 })();
 </script>
+<script>window.addEventListener('themechange',function(t){try{if(typeof renderer!=='undefined'&&renderer)renderer.setClearColor(t.detail==='light'?0xf7fafc:0x060a0d,1);draw2D();if(typeof draw3D==='function'&&threeLoaded)draw3D();}catch(e){}});</script>
 </body>
 </html>

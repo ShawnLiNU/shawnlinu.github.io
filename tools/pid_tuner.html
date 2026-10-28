@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="theme.js"></script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PID Controller Tuner &mdash; EECE 5580</title>
@@ -139,6 +141,7 @@ canvas.chart{width:100%;display:block;}
 .app>*{animation:fadeUp 0.35s ease both;}
 header{animation-delay:0s;}.main-grid{animation-delay:0.07s;}
 </style>
+<style>html[data-theme="light"]{--bg:#f6f5f9;--panel:#ffffff;--surface:#f9f8fc;--surface2:#eeecf3;--border:#dcd8e5;--border2:#ccc6d8;--amber:#b86e00;--amber-dim:rgba(184,110,0,0.12);--amber-glow:rgba(184,110,0,0.2);--green:#119a5c;--green-dim:rgba(17,154,92,0.10);--red:#d03848;--red-dim:rgba(208,56,72,0.10);--blue:#2f6fd0;--blue-dim:rgba(47,111,208,0.10);--violet:#7a3fd0;--text:#1e1828;--muted:#6c6380;--muted2:#b2abc2;}</style>
 </head>
 <body>
 <div class="app">
@@ -690,7 +693,7 @@ function draw(){
 }
 
 function drawBg(W,H){
-  ctx.fillStyle='#07060a'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--panel').trim()||'#07060a'; ctx.fillRect(0,0,W,H);
   ctx.strokeStyle='rgba(240,160,48,0.04)'; ctx.lineWidth=1;
   var step=50;
   for(var x=0;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
@@ -863,5 +866,6 @@ loadPreset('first');
 
 })();
 </script>
+<script>window.addEventListener('themechange',function(){try{draw();}catch(e){}});</script>
 </body>
 </html>
