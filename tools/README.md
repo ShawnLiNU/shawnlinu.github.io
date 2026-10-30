@@ -18,6 +18,7 @@ tools/
 ├── flip_clock.html
 ├── kalman_filter_visualizer.html
 ├── robot_kinematics.html
+├── scad_viewer.html
 ├── pid_tuner.html
 ├── serial_logger.html
 ├── md2pdf.html
