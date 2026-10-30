@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SCAD Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Fraunces:opsz,wght@9..144,300;9..144,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0e14; --surface:#111720; --surface2:#171e2a; --border:#1f2d3d;
+  --accent:#4af0a0; --red:#f06040; --blue:#40a0f0; --amber:#f0c040;
+  --text:#d4e4f4; --muted:#6a80a0; --view:#0d121a; --grid:#1c2836;
+  --code-bg:#0b1018; --c-kw:#c792ea; --c-fn:#82aaff; --c-num:#f78c6c; --c-str:#c3e88d; --c-com:#5c6f86; --c-var:#ffcb6b;
+  --left-w:46%;
+}
+html[data-theme="light"] {
+  --bg:#f4f7fa; --surface:#ffffff; --surface2:#eaf0f5; --border:#d3dde7;
+  --accent:#0f9d63; --red:#c8442a; --blue:#1f78c8; --amber:#b8860b;
+  --text:#16222e; --muted:#5d7187; --view:#fbfcfd; --grid:#dbe3ea;
+  --code-bg:#fbfcfe; --c-kw:#8e3fc4; --c-fn:#1f5fc0; --c-num:#b5521b; --c-str:#2f7d32; --c-com:#8796a8; --c-var:#a26b00;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'DM Mono',ui-monospace,Menlo,Consolas,monospace;background:var(--bg);color:var(--text);display:flex;flex-direction:column;font-size:13px}
+a{color:var(--accent)}
+header{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+header h1{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:22px;letter-spacing:-.01em}
+header .sub{color:var(--muted);font-size:12px;flex:1;min-width:180px}
+header .back{color:var(--muted);text-decoration:none;font-size:12px}
+header .back:hover{color:var(--accent)}
+.btn{font:inherit;font-size:12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 11px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:500}
+.btn.on{border-color:var(--accent);color:var(--accent)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+select,input[type=text],input[type=number]{font:inherit;font-size:12px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:5px 7px}
+input[type=range],input[type=checkbox]{accent-color:var(--accent)}
+main{flex:1;display:flex;min-height:0}
+#left{width:var(--left-w);min-width:280px;display:flex;flex-direction:column;border-right:1px solid var(--border);min-height:0}
+#split{width:6px;cursor:col-resize;background:transparent;flex-shrink:0;margin-left:-3px;margin-right:-3px;z-index:2}
+#split:hover{background:var(--border)}
+.tabs{display:flex;gap:2px;padding:8px 10px 0;border-bottom:1px solid var(--border);align-items:flex-end;flex-wrap:wrap}
+.tab{font:inherit;font-size:12px;background:none;border:1px solid transparent;border-bottom:none;color:var(--muted);padding:7px 12px;border-radius:6px 6px 0 0;cursor:pointer}
+.tab.on{color:var(--text);border-color:var(--border);background:var(--surface);margin-bottom:-1px}
+.tabs .spacer{flex:1}
+.tabs .fname{color:var(--muted);font-size:11.5px;padding:0 4px 7px;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pane{flex:1;min-height:0;display:none;flex-direction:column}
+.pane.on{display:flex}
+.toolbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1px solid var(--border);align-items:center}
+.toolbar label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer}
+/* code editor */
+.ed{flex:1;display:flex;min-height:0;background:var(--code-bg);position:relative}
+.gutter{width:46px;flex-shrink:0;overflow:hidden;position:relative;border-right:1px solid var(--border);color:var(--muted);user-select:none}
+.gutter .gin{position:absolute;left:0;right:0;top:0}
+.gutter .ln{position:absolute;left:0;right:8px;text-align:right}
+.edwrap{flex:1;position:relative;overflow:hidden}
+.edwrap pre,.edwrap textarea{position:absolute;inset:0;margin:0;padding:10px 12px;font-family:'DM Mono',ui-monospace,Menlo,Consolas,monospace;font-size:13px;line-height:20px;white-space:pre;tab-size:2;border:0;letter-spacing:0}
+.edwrap pre{pointer-events:none;color:var(--text);overflow:visible;inset:auto;left:0;top:0;min-width:100%}
+.edwrap textarea{background:transparent;color:transparent;caret-color:var(--text);resize:none;outline:none;overflow:auto}
+.edwrap textarea::selection{background:color-mix(in srgb,var(--blue) 35%,transparent);color:transparent}
+.errbar{position:absolute;left:0;right:0;height:20px;background:color-mix(in srgb,var(--red) 18%,transparent);border-left:3px solid var(--red);pointer-events:none;display:none}
+.t-kw{color:var(--c-kw)} .t-fn{color:var(--c-fn)} .t-num{color:var(--c-num)} .t-str{color:var(--c-str)} .t-com{color:var(--c-com);font-style:italic} .t-var{color:var(--c-var)}
+/* console */
+#console{height:150px;flex-shrink:0;border-top:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface)}
+#console .head{display:flex;align-items:center;gap:8px;padding:5px 10px;border-bottom:1px solid var(--border);font-size:11.5px;color:var(--muted)}
+#console .head b{color:var(--text);font-weight:500}
+#log{flex:1;overflow:auto;padding:6px 10px;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+#log .e{color:var(--red)} #log .w{color:var(--amber)} #log .ec{color:var(--blue)} #log .ok{color:var(--accent)} #log .m{color:var(--muted)}
+/* customizer */
+.scroll{flex:1;overflow:auto;padding:12px 14px}
+details.grp{border:1px solid var(--border);border-radius:8px;margin-bottom:10px;background:var(--surface)}
+details.grp summary{padding:8px 12px;cursor:pointer;font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:14px}
+.prm{display:grid;grid-template-columns:minmax(110px,38%) 1fr;gap:4px 12px;padding:8px 12px;border-top:1px solid var(--border);align-items:center}
+.prm .lbl{font-size:12px}
+.prm .lbl small{display:block;color:var(--muted);font-size:11px;line-height:1.4;margin-top:2px}
+.prm .lbl.mod::after{content:" \2022";color:var(--accent)}
+.prm .ctl{display:flex;align-items:center;gap:8px;min-width:0}
+.prm .ctl input[type=range]{flex:1;min-width:60px}
+.prm .ctl input[type=number]{width:84px}
+.prm .ctl input[type=text]{flex:1;min-width:0}
+.prm .ctl select{flex:1;min-width:0}
+.vec{display:flex;gap:4px;flex-wrap:wrap}.vec input{width:64px!important}
+.note{font-size:11.5px;color:var(--muted);line-height:1.55}
+.note.warn{color:var(--amber)} .note.err{color:var(--red)}
+.files .f{display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;background:var(--surface);font-size:12px}
+.files .f .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.files .f .s{color:var(--muted)}
+/* viewer */
+#right{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+#vbar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 10px;border-bottom:1px solid var(--border);align-items:center}
+#vbar .sep{width:1px;height:20px;background:var(--border);margin:0 2px}
+#vbar label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer}
+#viewport{flex:1;position:relative;background:var(--view);min-height:0;overflow:hidden}
+#c3{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#svg2d{position:absolute;inset:0;display:none;align-items:center;justify-content:center;overflow:hidden;cursor:grab;background:var(--view)}
+#svg2d img{max-width:88%;max-height:88%;transform-origin:center;background:#fff;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,.25);user-select:none;-webkit-user-drag:none}
+#info{position:absolute;left:12px;top:12px;background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:11.5px;line-height:1.6;pointer-events:none;max-width:260px}
+#info b{font-weight:500}
+#info .k{color:var(--muted)}
+#busy{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:color-mix(in srgb,var(--view) 55%,transparent)}
+#busy .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;display:flex;align-items:center;gap:14px}
+.spin{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+#status{position:absolute;left:0;right:0;bottom:0;padding:7px 64px 7px 14px;font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;gap:12px;pointer-events:none;background:linear-gradient(transparent,var(--view) 45%)}
+.menu{position:relative}
+.menu .list{position:absolute;top:calc(100% + 4px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px;display:none;z-index:20;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.menu.open .list{display:block}
+.menu .list button{display:block;width:100%;text-align:left;font:inherit;font-size:12px;background:none;border:0;color:var(--text);padding:7px 10px;border-radius:5px;cursor:pointer}
+.menu .list button:hover{background:var(--surface2)}
+.menu .list .h{font-size:10.5px;color:var(--muted);padding:6px 10px 2px;text-transform:uppercase;letter-spacing:.08em}
+#help{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+#help .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 26px;max-width:560px;width:100%;max-height:85vh;overflow:auto}
+#help h3{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:18px;margin-bottom:10px}
+#help table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
+#help td{padding:5px 0;border-bottom:1px solid var(--border)}
+#help td:first-child{color:var(--accent);white-space:nowrap;padding-right:16px}
+kbd{font:inherit;font-size:11px;border:1px solid var(--border);border-radius:4px;padding:0 4px;background:var(--surface2)}
+.hidden{display:none!important}
+@media (max-width:900px){
+  main{flex-direction:column}
+  #left{width:auto;min-width:0;height:52vh;border-right:none;border-bottom:1px solid var(--border)}
+  #split{display:none}
+  #right{min-height:60vh}
+  #console{height:110px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="back" href="index.html">&larr; Tools</a>
+  <h1>SCAD Viewer</h1>
+  <div class="sub">Edit, render, customize, and export OpenSCAD models in the browser. Your files stay on your computer.</div>
+  <input type="file" id="fileInput" accept=".scad,.json,.stl,.off,.dxf,.svg,.png,.dat,.csv,.txt" multiple class="hidden">
+  <button class="btn" id="openBtn" title="Open .scad files, plus any libraries or files they include">Open</button>
+  <div class="menu" id="exMenu"><button class="btn" id="exBtn">Examples &#9662;</button><div class="list" id="exList"></div></div>
+  <div class="menu" id="expMenu"><button class="btn" id="expBtn">Export &#9662;</button><div class="list" id="expList"></div></div>
+  <button class="btn" id="shareBtn" title="Copy a link that contains this code">Share link</button>
+  <button class="btn" id="helpBtn" title="Keyboard shortcuts and tips">?</button>
+  <button class="btn primary" id="renderBtn" title="Render (F5 or Ctrl/Cmd+Enter)">Render</button>
+</header>
+
+<main>
+  <section id="left">
+    <div class="tabs">
+      <button class="tab on" data-pane="paneCode">Editor</button>
+      <button class="tab" data-pane="paneCust">Customizer <span id="pCount" class="note"></span></button>
+      <button class="tab" data-pane="paneFiles">Files <span id="fCount" class="note"></span></button>
+      <span class="spacer"></span>
+      <span class="fname" id="fname">untitled.scad</span>
+    </div>
+
+    <div class="pane on" id="paneCode">
+      <div class="toolbar">
+        <label><input type="checkbox" id="autoRender" checked> Auto render</label>
+        <label title="Overrides $fn for the whole model. Default keeps the file's own setting.">Detail
+          <select id="fnSel"><option value="">File default</option><option value="16">Draft ($fn 16)</option><option value="32">Medium ($fn 32)</option><option value="64">Fine ($fn 64)</option><option value="128">Very fine ($fn 128)</option></select></label>
+        <label title="Manifold is much faster for most models. If your file fails, try turning it off."><input type="checkbox" id="manifold" checked> Fast engine</label>
+        <span style="flex:1"></span>
+        <button class="btn" id="fmtBtn" title="Re-indent the code by brace depth">Tidy</button>
+        <button class="btn" id="saveBtn" title="Download the .scad file (Ctrl/Cmd+S)">Save .scad</button>
+      </div>
+      <div class="ed">
+        <div class="gutter" id="gutter"></div>
+        <div class="edwrap" id="edwrap">
+          <pre id="hl" aria-hidden="true"></pre>
+          <div class="errbar" id="errbar"></div>
+          <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off" aria-label="OpenSCAD code"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="paneCust">
+      <div class="toolbar">
+        <select id="presetSel" title="Saved parameter sets"><option value="">Presets</option></select>
+        <button class="btn" id="presetSave">Save preset</button>
+        <button class="btn" id="presetDel">Delete</button>
+        <button class="btn" id="presetExport" title="Download presets as OpenSCAD customizer JSON">Export JSON</button>
+        <button class="btn" id="presetImport" title="Load an OpenSCAD customizer JSON file">Import JSON</button>
+        <span style="flex:1"></span>
+        <button class="btn" id="custReset">Reset all</button>
+        <button class="btn" id="custWrite" title="Write the current values into the code">Apply to code</button>
+      </div>
+      <div class="scroll" id="custBody"></div>
+    </div>
+
+    <div class="pane" id="paneFiles">
+      <div class="toolbar">
+        <button class="btn" id="addFiles">Add files</button>
+        <span class="note">Libraries for <kbd>include</kbd> and <kbd>use</kbd>, plus files for <kbd>import()</kbd> and <kbd>surface()</kbd>.</span>
+      </div>
+      <div class="scroll files" id="fileList"></div>
+    </div>
+
+    <div id="console">
+      <div class="head"><b>Console</b><span id="conSum"></span><span style="flex:1"></span><button class="btn" id="conClear" style="padding:2px 8px">Clear</button></div>
+      <div id="log"></div>
+    </div>
+  </section>
+
+  <div id="split" title="Drag to resize"></div>
+
+  <section id="right">
+    <div id="vbar">
+      <button class="btn" data-view="iso">Iso</button>
+      <button class="btn" data-view="top">Top</button>
+      <button class="btn" data-view="front">Front</button>
+      <button class="btn" data-view="right">Right</button>
+      <button class="btn" data-view="back">Back</button>
+      <button class="btn" data-view="left">Left</button>
+      <button class="btn" data-view="bottom">Bottom</button>
+      <button class="btn" id="fitBtn">Fit</button>
+      <span class="sep"></span>
+      <label><input type="checkbox" id="ortho"> Ortho</label>
+      <label><input type="checkbox" id="wire"> Wire</label>
+      <label><input type="checkbox" id="edges" checked> Edges</label>
+      <label><input type="checkbox" id="gridT" checked> Grid</label>
+      <label><input type="checkbox" id="axesT" checked> Axes</label>
+      <label><input type="checkbox" id="bboxT"> Box</label>
+      <label><input type="checkbox" id="spin"> Spin</label>
+      <label><input type="checkbox" id="keepView" checked> Keep view</label>
+      <span class="sep"></span>
+      <select id="colorSel" title="Model color">
+        <option value="#f9d72c">OpenSCAD yellow</option><option value="#9fb4c8">Steel</option><option value="#c8102e">Red</option>
+        <option value="#e8e8e8">White</option><option value="#3f7fd8">Blue</option><option value="#45b36b">Green</option><option value="#333840">Black</option>
+      </select>
+      <span class="sep"></span>
+      <label><input type="checkbox" id="secOn"> Section</label>
+      <select id="secAxis"><option value="x">X</option><option value="y">Y</option><option value="z" selected>Z</option></select>
+      <input type="range" id="secPos" min="0" max="1000" value="500" style="width:90px" title="Section position">
+      <button class="btn" id="measureBtn">Measure</button>
+    </div>
+    <div id="viewport">
+      <canvas id="c3"></canvas>
+      <div id="svg2d"><img id="svgImg" alt="2D render"></div>
+      <div id="info"><span class="k">Press Render or edit the code to build the model.</span></div>
+      <div id="busy"><div class="card"><div class="spin"></div><div><div id="busyText">Rendering</div><div class="note" id="busyTime"></div></div><button class="btn danger" id="cancelBtn">Cancel</button></div></div>
+      <div id="status"><span id="stL"></span><span id="stR"></span></div>
+    </div>
+  </section>
+</main>
+
+<div id="help"><div class="card">
+  <h3>Shortcuts and tips</h3>
+  <table>
+    <tr><td><kbd>F5</kbd> or <kbd>Ctrl/Cmd</kbd>+<kbd>Enter</kbd></td><td>Render</td></tr>
+    <tr><td><kbd>Ctrl/Cmd</kbd>+<kbd>S</kbd></td><td>Download the .scad file</td></tr>
+    <tr><td><kbd>Ctrl/Cmd</kbd>+<kbd>/</kbd></td><td>Comment or uncomment selected lines</td></tr>
+    <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>Indent or outdent</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>Cancel a running render</td></tr>
+    <tr><td>Mouse</td><td>Drag to rotate, right drag to pan, scroll to zoom</td></tr>
+  </table>
+  <p class="note" style="margin-bottom:8px"><b>Customizer:</b> top level variables before the first module become controls. Use comments such as <kbd>// [0:5:100]</kbd> for a slider, <kbd>// [a, b, c]</kbd> for a menu, and <kbd>/* [Group] */</kbd> for sections. Variables under <kbd>/* [Hidden] */</kbd> stay hidden.</p>
+  <p class="note" style="margin-bottom:8px"><b>Libraries:</b> add .scad library files in the Files tab so <kbd>include &lt;file.scad&gt;</kbd> and <kbd>use &lt;file.scad&gt;</kbd> can find them. STL, DXF, and SVG files there work with <kbd>import()</kbd>.</p>
+  <p class="note" style="margin-bottom:14px"><b>Limits:</b> <kbd>text()</kbd> needs fonts, which this web build may not include. Colors set with <kbd>color()</kbd> are not kept, because the model is shown as a single mesh. The rendering engine is OpenSCAD compiled to WebAssembly (about 14 MB, downloaded once and then cached by your browser).</p>
+  <button class="btn primary" id="helpClose">Close</button>
+</div></div>
+
+<script>
+/* ================= basics ================= */
+var $ = function (id) { return document.getElementById(id); };
+var T3 = 'https://cdn.jsdelivr.net/npm/three@0.147.0/';
+var OSCAD_URLS = ['https://cdn.jsdelivr.net/npm/openscad-wasm@0.0.4/openscad.js', 'https://unpkg.com/openscad-wasm@0.0.4/openscad.js'];
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function fmtL(v) { var a = Math.abs(v); return a >= 1000 ? v.toFixed(1) : a >= 10 ? v.toFixed(2) : v.toFixed(3); }
+function fmtN(n) { return Number(n).toLocaleString('en-US'); }
+function fmtBytes(b) { return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(1) + ' KB' : (b / 1048576).toFixed(2) + ' MB'; }
+function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+function download(name, data, type) {
+  var a = document.createElement('a'); a.download = name;
+  a.href = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: type || 'application/octet-stream' }));
+  a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+}
+var scripts = {};
+function loadScript(u) {
+  return scripts[u] || (scripts[u] = new Promise(function (res, rej) {
+    var s = document.createElement('script'); s.src = u; s.onload = res; s.onerror = function () { rej(new Error('Could not load ' + u)); }; document.head.appendChild(s);
+  }));
+}
+function baseName() { return (state.fileName || 'untitled.scad').replace(/\.scad$/i, ''); }
+
+/* ================= examples ================= */
+var EXAMPLES = {
+'Parametric box with lid': [
+'// Parametric box with lid',
+'',
+'/* [Size] */',
+'// Inside width (mm)',
+'width = 60; // [20:5:150]',
+'// Inside depth (mm)',
+'depth = 40; // [20:5:150]',
+'// Inside height (mm)',
+'height = 30; // [10:5:100]',
+'',
+'/* [Style] */',
+'// Wall thickness (mm)',
+'wall = 2; // [1:0.5:5]',
+'corner_radius = 4; // [1:1:15]',
+'// Which parts to show',
+'part = "both"; // [box, lid, both]',
+'show_lid_lip = true;',
+'',
+'/* [Hidden] */',
+'$fn = 48;',
+'lid_h = 4;',
+'gap = 0.2;',
+'',
+'module rounded_box(w, d, h, r) {',
+'  hull()',
+'    for (x = [r, w - r], y = [r, d - r])',
+'      translate([x, y, 0]) cylinder(r = r, h = h);',
+'}',
+'',
+'module box() {',
+'  difference() {',
+'    rounded_box(width + 2 * wall, depth + 2 * wall, height + wall, corner_radius);',
+'    translate([wall, wall, wall])',
+'      rounded_box(width, depth, height + 1, max(corner_radius - wall, 0.5));',
+'  }',
+'}',
+'',
+'module lid() {',
+'  rounded_box(width + 2 * wall, depth + 2 * wall, wall, corner_radius);',
+'  if (show_lid_lip)',
+'    translate([wall + gap, wall + gap, wall])',
+'      difference() {',
+'        rounded_box(width - 2 * gap, depth - 2 * gap, lid_h, max(corner_radius - wall, 0.5));',
+'        translate([wall, wall, -1])',
+'          rounded_box(width - 2 * gap - 2 * wall, depth - 2 * gap - 2 * wall, lid_h + 2, 0.5);',
+'      }',
+'}',
+'',
+'if (part == "box" || part == "both") box();',
+'if (part == "lid" || part == "both") translate([0, depth + 2 * wall + 10, 0]) lid();',
+''].join('\n'),
+'Spur gear': [
+'// Simple spur gear (approximate tooth shape)',
+'',
+'/* [Gear] */',
+'// Number of teeth',
+'teeth = 20; // [8:1:60]',
+'// Gear module (mm per tooth)',
+'gear_module = 2; // [0.5:0.25:5]',
+'thickness = 6; // [2:1:20]',
+'// Center hole diameter (mm)',
+'bore = 5; // [0:0.5:20]',
+'',
+'/* [Hidden] */',
+'$fn = 64;',
+'pitch_r = teeth * gear_module / 2;',
+'outer_r = pitch_r + gear_module;',
+'root_r = pitch_r - 1.25 * gear_module;',
+'tooth_w = PI * gear_module / 2;',
+'',
+'module tooth() {',
+'  polygon([[root_r * 0.98, -tooth_w * 0.75], [outer_r, -tooth_w * 0.3],',
+'           [outer_r, tooth_w * 0.3], [root_r * 0.98, tooth_w * 0.75]]);',
+'}',
+'',
+'linear_extrude(height = thickness)',
+'  difference() {',
+'    union() {',
+'      circle(r = root_r);',
+'      for (i = [0 : teeth - 1]) rotate(i * 360 / teeth) tooth();',
+'    }',
+'    if (bore > 0) circle(d = bore);',
+'  }',
+'',
+'echo(str("Pitch diameter: ", 2 * pitch_r, " mm"));',
+''].join('\n'),
+'Twisted vase': [
+'// Twisted vase made with linear_extrude',
+'',
+'height = 80; // [30:5:200]',
+'radius = 25; // [10:1:60]',
+'// Total twist (degrees)',
+'twist = 120; // [0:10:360]',
+'// Number of sides',
+'sides = 6; // [3:1:12]',
+'wall = 1.6; // [0.8:0.2:4]',
+'// Top size relative to bottom',
+'flare = 1.3; // [0.5:0.05:2]',
+'',
+'module shell(r, k = 1) {',
+'  linear_extrude(height = height * k, twist = twist * k, slices = 64, scale = 1 + (flare - 1) * k)',
+'    circle(r = r, $fn = sides);',
+'}',
+'',
+'difference() {',
+'  shell(radius);',
+'  difference() {',
+'    shell(radius - wall, 1.02);',
+'    translate([-500, -500, -1]) cube([1000, 1000, wall + 1]);',
+'  }',
+'}',
+''].join('\n'),
+'Angle bracket': [
+'// L-shaped mounting bracket',
+'',
+'length = 50; // [20:5:120]',
+'width = 20; // [10:2:60]',
+'thickness = 4; // [2:0.5:10]',
+'height = 30; // [10:5:100]',
+'hole_d = 5; // [2:0.5:10]',
+'fillet = true;',
+'',
+'/* [Hidden] */',
+'$fn = 40;',
+'',
+'difference() {',
+'  union() {',
+'    cube([length, width, thickness]);',
+'    cube([thickness, width, height]);',
+'    if (fillet)',
+'      translate([thickness, width, thickness]) rotate([90, 0, 0])',
+'        difference() {',
+'          cube([6, 6, width]);',
+'          translate([6, 6, -1]) cylinder(r = 6, h = width + 2);',
+'        }',
+'  }',
+'  for (x = [length * 0.45, length * 0.8])',
+'    translate([x, width / 2, -1]) cylinder(d = hole_d, h = thickness + 2);',
+'  translate([-1, width / 2, height * 0.65]) rotate([0, 90, 0])',
+'    cylinder(d = hole_d, h = thickness + 2);',
+'}',
+''].join('\n'),
+'2D laser-cut plate': [
+'// 2D design. Export it as SVG or DXF for laser cutting.',
+'',
+'w = 120; // [40:10:300]',
+'h = 80; // [40:10:300]',
+'corner = 6; // [0:1:20]',
+'hole = 4; // [2:0.5:10]',
+'',
+'/* [Hidden] */',
+'$fn = 48;',
+'',
+'difference() {',
+'  offset(r = corner) offset(delta = -corner) square([w, h]);',
+'  for (x = [10, w - 10], y = [10, h - 10]) translate([x, y]) circle(d = hole);',
+'  translate([w / 2, h / 2]) circle(d = min(w, h) * 0.4);',
+'  for (i = [0 : 3]) translate([w * 0.12 + i * 8, h / 2 - 10]) square([4, 20]);',
+'}',
+''].join('\n')
+};
+
+/* ================= state ================= */
+var state = { fileName: 'untitled.scad', files: {}, params: [], values: {}, lastSrc: null, is2D: false, lastStl: null, firstView: true };
+
+/* ================= editor ================= */
+var ta = $('code'), hl = $('hl'), gutter = $('gutter'), errbar = $('errbar');
+var LH = 20, PAD = 10;
+var KW = /^(module|function|if|else|for|let|each|include|use|intersection_for|assert|echo|true|false|undef|return)$/;
+var FN = /^(cube|sphere|cylinder|polyhedron|square|circle|polygon|text|translate|rotate|scale|resize|mirror|multmatrix|color|offset|hull|minkowski|union|difference|intersection|linear_extrude|rotate_extrude|import|surface|projection|render|children|len|concat|lookup|str|chr|ord|search|version|version_num|norm|cross|sin|cos|tan|asin|acos|atan|atan2|abs|ceil|floor|round|sqrt|pow|exp|ln|log|min|max|rands|sign|is_undef|is_bool|is_num|is_string|is_list|is_function|parent_module|PI)$/;
+function highlight(src) {
+  var re = /(\/\*[\s\S]*?(?:\*\/|$)|\/\/[^\n]*)|("(?:\\.|[^"\\\n])*"?)|(\$[A-Za-z_]\w*)|(\b\d+\.?\d*(?:[eE][+-]?\d+)?\b|\.\d+\b)|([A-Za-z_]\w*)/g;
+  var out = '', last = 0, m;
+  while ((m = re.exec(src))) {
+    out += esc(src.slice(last, m.index));
+    var t = m[0], cls = m[1] ? 't-com' : m[2] ? 't-str' : m[3] ? 't-var' : m[4] ? 't-num' : (KW.test(t) ? 't-kw' : FN.test(t) ? 't-fn' : '');
+    out += cls ? '<span class="' + cls + '">' + esc(t) + '</span>' : esc(t);
+    last = re.lastIndex;
+  }
+  return out + esc(src.slice(last)) + '\n';
+}
+var lineCount = 0;
+function refreshEditor() {
+  hl.innerHTML = highlight(ta.value);
+  var n = ta.value.split('\n').length;
+  if (n !== lineCount) {
+    lineCount = n;
+    var h = '<div class="gin" id="gin">';
+    for (var i = 1; i <= n; i++) h += '<div class="ln" style="top:' + (PAD + (i - 1) * LH) + 'px">' + i + '</div>';
+    gutter.innerHTML = h + '</div>';
+  }
+  syncScroll();
+}
+function syncScroll() {
+  hl.style.transform = 'translate(' + (-ta.scrollLeft) + 'px,' + (-ta.scrollTop) + 'px)';
+  var gin = $('gin'); if (gin) gin.style.transform = 'translateY(' + (-ta.scrollTop) + 'px)';
+  if (state.errLine) errbar.style.top = (PAD + (state.errLine - 1) * LH - ta.scrollTop) + 'px';
+}
+ta.addEventListener('scroll', syncScroll);
+function setErrLine(n) {
+  state.errLine = n;
+  errbar.style.display = n ? 'block' : 'none';
+  if (n) {
+    errbar.style.top = (PAD + (n - 1) * LH - ta.scrollTop) + 'px';
+    var y = PAD + (n - 1) * LH;
+    if (y < ta.scrollTop || y > ta.scrollTop + ta.clientHeight - LH * 2) ta.scrollTop = Math.max(0, y - ta.clientHeight / 3);
+  }
+}
+var editTimer = null;
+ta.addEventListener('input', function () {
+  refreshEditor(); setErrLine(0);
+  store('scad-viewer-code', ta.value);
+  clearTimeout(editTimer);
+  editTimer = setTimeout(function () { parseCustomizer(); if ($('autoRender').checked) render(); }, 900);
+});
+function replaceSel(start, end, text, selStart, selEnd) {
+  ta.setRangeText(text, start, end, 'end');
+  if (selStart != null) { ta.selectionStart = selStart; ta.selectionEnd = selEnd; }
+  ta.dispatchEvent(new Event('input'));
+}
+function lineBounds() {
+  var v = ta.value, s = v.lastIndexOf('\n', ta.selectionStart - 1) + 1, e = v.indexOf('\n', ta.selectionEnd - (ta.selectionEnd > ta.selectionStart && v[ta.selectionEnd - 1] === '\n' ? 1 : 0));
+  if (e < 0) e = v.length;
+  return [s, e];
+}
+ta.addEventListener('keydown', function (e) {
+  var mod = e.ctrlKey || e.metaKey, v = ta.value;
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    if (ta.selectionStart === ta.selectionEnd && !e.shiftKey) { replaceSel(ta.selectionStart, ta.selectionEnd, '  '); return; }
+    var b = lineBounds(), block = v.slice(b[0], b[1]);
+    var nb = e.shiftKey ? block.replace(/^ {1,2}/gm, '') : block.replace(/^/gm, '  ');
+    replaceSel(b[0], b[1], nb, b[0], b[0] + nb.length);
+  } else if (e.key === 'Enter' && !mod) {
+    e.preventDefault();
+    var ls = v.lastIndexOf('\n', ta.selectionStart - 1) + 1, ind = /^[ \t]*/.exec(v.slice(ls))[0];
+    if (/[{(\[]\s*$/.test(v.slice(ls, ta.selectionStart))) ind += '  ';
+    replaceSel(ta.selectionStart, ta.selectionEnd, '\n' + ind);
+  } else if (e.key === '}' && !mod) {
+    var ls2 = v.lastIndexOf('\n', ta.selectionStart - 1) + 1, before = v.slice(ls2, ta.selectionStart);
+    if (/^\s+$/.test(before) && ta.selectionStart === ta.selectionEnd) { e.preventDefault(); var nb2 = before.replace(/ {1,2}$/, '') + '}'; replaceSel(ls2, ta.selectionStart, nb2); }
+  } else if (mod && e.key === '/') {
+    e.preventDefault();
+    var b2 = lineBounds(), blk = v.slice(b2[0], b2[1]), lines = blk.split('\n');
+    var allC = lines.every(function (l) { return /^\s*\/\//.test(l) || !l.trim(); });
+    var nl = lines.map(function (l) { return allC ? l.replace(/^(\s*)\/\/ ?/, '$1') : (l.trim() ? l.replace(/^(\s*)/, '$1// ') : l); }).join('\n');
+    replaceSel(b2[0], b2[1], nl, b2[0], b2[0] + nl.length);
+  }
+});
+function setCode(src, name) {
+  ta.value = src; if (name) setFileName(name);
+  ta.scrollTop = 0; refreshEditor(); setErrLine(0);
+  store('scad-viewer-code', src);
+  state.values = {}; state.firstView = true;
+  parseCustomizer(); render();
+}
+function setFileName(n) { state.fileName = n; $('fname').textContent = n; store('scad-viewer-name', n); refreshPresets(); }
+$('fmtBtn').onclick = function () {
+  var depth = 0, out = ta.value.split('\n').map(function (l) {
+    var t = l.trim(), clean = t.replace(/"(?:\\.|[^"\\])*"/g, '').replace(/\/\/.*$/, '');
+    var opens = (clean.match(/[{\[(]/g) || []).length, closes = (clean.match(/[}\])]/g) || []).length;
+    var lead = /^[}\])]/.test(t) ? 1 : 0;
+    var line = t ? '  '.repeat(Math.max(0, depth - lead)) + t : '';
+    depth = Math.max(0, depth + opens - closes);
+    return line;
+  });
+  replaceSel(0, ta.value.length, out.join('\n'));
+};
+$('saveBtn').onclick = function () { download(state.fileName || 'untitled.scad', ta.value, 'text/plain'); };
+
+/* ================= tabs, split, menus ================= */
+document.querySelectorAll('.tab').forEach(function (t) {
+  t.onclick = function () {
+    document.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x === t); });
+    document.querySelectorAll('.pane').forEach(function (p) { p.classList.toggle('on', p.id === t.dataset.pane); });
+    if (t.dataset.pane === 'paneCode') refreshEditor();
+  };
+});
+(function () {
+  var sp = $('split'), drag = false;
+  sp.addEventListener('pointerdown', function (e) { drag = true; sp.setPointerCapture(e.pointerId); });
+  sp.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var w = Math.min(Math.max(e.clientX, 280), window.innerWidth - 320);
+    document.documentElement.style.setProperty('--left-w', w + 'px');
+  });
+  sp.addEventListener('pointerup', function () { drag = false; store('scad-viewer-split', getComputedStyle(document.documentElement).getPropertyValue('--left-w')); });
+  var saved = store('scad-viewer-split'); if (saved) document.documentElement.style.setProperty('--left-w', saved);
+})();
+function menu(btnId, menuId) {
+  $(btnId).onclick = function (e) { e.stopPropagation(); document.querySelectorAll('.menu').forEach(function (m) { if (m.id !== menuId) m.classList.remove('open'); }); $(menuId).classList.toggle('open'); };
+}
+menu('exBtn', 'exMenu'); menu('expBtn', 'expMenu');
+document.addEventListener('click', function () { document.querySelectorAll('.menu').forEach(function (m) { m.classList.remove('open'); }); });
+$('exList').innerHTML = Object.keys(EXAMPLES).map(function (k) { return '<button data-ex="' + esc(k) + '">' + esc(k) + '</button>'; }).join('');
+$('exList').onclick = function (e) {
+  var k = e.target.dataset.ex; if (!k) return;
+  setCode(EXAMPLES[k], k.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') + '.scad');
+};
+$('helpBtn').onclick = function () { $('help').style.display = 'flex'; };
+$('helpClose').onclick = $('help').onclick = function (e) { if (e.target === $('help') || e.target === $('helpClose')) $('help').style.display = 'none'; };
+
+/* ================= console ================= */
+var counts = { e: 0, w: 0 };
+function log(text, cls) {
+  var d = document.createElement('div');
+  if (!cls) cls = /^ERROR|^Parser error|^Assertion|error:/i.test(text) ? 'e' : /^WARNING|^DEPRECATED/i.test(text) ? 'w' : /^ECHO/.test(text) ? 'ec' : '';
+  if (cls === 'e') counts.e++; if (cls === 'w') counts.w++;
+  d.className = cls; d.textContent = text;
+  $('log').appendChild(d);
+  if ($('log').children.length > 600) $('log').removeChild($('log').firstChild);
+  $('log').scrollTop = $('log').scrollHeight;
+  $('conSum').textContent = (counts.e ? counts.e + ' error' + (counts.e > 1 ? 's' : '') + '  ' : '') + (counts.w ? counts.w + ' warning' + (counts.w > 1 ? 's' : '') : '');
+}
+$('conClear').onclick = function () { $('log').innerHTML = ''; counts = { e: 0, w: 0 }; $('conSum').textContent = ''; };
+
+/* ================= OpenSCAD worker ================= */
+var WORKER_SRC = [
+'let mod = null;',
+'async function loadMod(urls) {',
+'  let last;',
+'  for (const u of urls) { try { return await import(u); } catch (e) { last = e; } }',
+'  throw last;',
+'}',
+'self.onmessage = async (e) => {',
+'  const { urls, code, files, args, outName } = e.data;',
+'  try {',
+'    if (!mod) { self.postMessage({ type: "stage", text: "Downloading OpenSCAD engine (first time only)" }); mod = await loadMod(urls); }',
+'    self.postMessage({ type: "stage", text: "Rendering" });',
+'    const create = mod.createOpenSCAD || (mod.default && mod.default.createOpenSCAD);',
+'    if (!create) throw new Error("openscad-wasm did not export createOpenSCAD");',
+'    const inst = await create({ noInitialRun: true,',
+'      print: (t) => self.postMessage({ type: "log", text: t }),',
+'      printErr: (t) => self.postMessage({ type: "log", text: t }) });',
+'    const os = inst.getInstance ? inst.getInstance() : inst;',
+'    if (mod.addFonts) { try { mod.addFonts(os); } catch (x) {} }',
+'    if (mod.addMCAD) { try { mod.addMCAD(os); } catch (x) {} }',
+'    const FS = os.FS;',
+'    try { FS.mkdir("/work"); } catch (x) {}',
+'    for (const name in files) FS.writeFile("/work/" + name, files[name]);',
+'    FS.writeFile("/work/main.scad", code);',
+'    const t0 = performance.now();',
+'    let rc = 0;',
+'    try { rc = os.callMain(["/work/main.scad", "-o", "/work/" + outName].concat(args)); }',
+'    catch (err) { rc = (err && typeof err.status === "number") ? err.status : 1; if (!(err && err.name === "ExitStatus")) self.postMessage({ type: "log", text: "ERROR: " + (err && err.message || err) }); }',
+'    let out = null;',
+'    try { out = FS.readFile("/work/" + outName).slice(); } catch (x) {}',
+'    self.postMessage({ type: "done", rc, ms: performance.now() - t0, out }, out ? [out.buffer] : []);',
+'  } catch (err) {',
+'    self.postMessage({ type: "fatal", message: String(err && err.message || err) });',
+'  }',
+'};'
+].join('\n');
+var worker = null, job = null, useMainThread = false;
+/* Same steps as the worker, used when the browser cannot start a module worker. It blocks the page while rendering. */
+var mainMod = null;
+async function runMainThread(code, outName, args, onLog) {
+  if (!mainMod) {
+    $('busyText').textContent = 'Downloading OpenSCAD engine (first time only)';
+    var last; for (var i = 0; i < OSCAD_URLS.length && !mainMod; i++) { try { mainMod = await import(OSCAD_URLS[i]); } catch (e) { last = e; } }
+    if (!mainMod) throw last || new Error('Could not download the OpenSCAD engine');
+  }
+  $('busyText').textContent = 'Rendering';
+  await new Promise(function (r) { setTimeout(r, 30); });
+  var create = mainMod.createOpenSCAD || (mainMod.default && mainMod.default.createOpenSCAD);
+  var inst = await create({ noInitialRun: true, print: onLog, printErr: onLog });
+  var os = inst.getInstance ? inst.getInstance() : inst, FS = os.FS;
+  if (mainMod.addFonts) { try { mainMod.addFonts(os); } catch (x) {} }
+  try { FS.mkdir('/work'); } catch (x) {}
+  Object.keys(state.files).forEach(function (n) { FS.writeFile('/work/' + n, state.files[n]); });
+  FS.writeFile('/work/main.scad', code);
+  var t0 = performance.now(), rc = 0, out = null;
+  try { rc = os.callMain(['/work/main.scad', '-o', '/work/' + outName].concat(args)); }
+  catch (err) { rc = (err && typeof err.status === 'number') ? err.status : 1; if (!(err && err.name === 'ExitStatus')) onLog('ERROR: ' + (err && err.message || err)); }
+  try { out = FS.readFile('/work/' + outName).slice(); } catch (x) {}
+  return { rc: rc, ms: performance.now() - t0, out: out };
+}
+function getWorker() {
+  if (!worker) worker = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: 'text/javascript' })), { type: 'module' });
+  return worker;
+}
+function runOpenSCAD(code, outName, extraArgs, quiet) {
+  if (job) cancelJob(true);
+  if (useMainThread) {
+    var logs0 = [];
+    return runMainThread(code, outName, extraArgs, function (t) { logs0.push(t); if (!quiet) log(t); }).then(function (d) { d.logs = logs0; return d; });
+  }
+  return new Promise(function (resolve, reject) {
+    var w, logs = [], heard = false;
+    try { w = getWorker(); } catch (e) { useMainThread = true; return runOpenSCAD(code, outName, extraArgs, quiet).then(resolve, reject); }
+    job = { reject: reject };
+    w.onmessage = function (e) {
+      var d = e.data; heard = true;
+      if (d.type === 'log') { logs.push(d.text); if (!quiet) log(d.text); }
+      else if (d.type === 'stage') { $('busyText').textContent = d.text; }
+      else if (d.type === 'done') { job = null; d.logs = logs; resolve(d); }
+      else if (d.type === 'fatal') { job = null; reject(new Error(d.message)); }
+    };
+    w.onerror = function (e) {
+      job = null;
+      if (!heard) {   /* the worker never started: fall back to the main thread */
+        e.preventDefault && e.preventDefault();
+        worker = null; useMainThread = true;
+        log('Background rendering is not available here, so the page may pause while it renders.', 'w');
+        runOpenSCAD(code, outName, extraArgs, quiet).then(resolve, reject);
+      } else reject(new Error(e.message || 'The rendering worker stopped unexpectedly.'));
+    };
+    var files = {}; Object.keys(state.files).forEach(function (k) { files[k] = state.files[k]; });
+    w.postMessage({ urls: OSCAD_URLS, code: code, files: files, args: extraArgs, outName: outName });
+  });
+}
+function cancelJob(silent) {
+  if (worker) { worker.terminate(); worker = null; }
+  if (job) { var j = job; job = null; j.reject(new Error('cancelled')); }
+  if (!silent) { setBusy(false); log('Render cancelled.', 'w'); }
+}
+$('cancelBtn').onclick = function () { cancelJob(false); };
+
+/* build the -D overrides from the customizer and detail setting */
+function lit(v) {
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  if (typeof v === 'number') return String(v);
+  if (Array.isArray(v)) return '[' + v.map(lit).join(',') + ']';
+  return JSON.stringify(String(v));
+}
+function defineArgs() {
+  var a = [];
+  Object.keys(state.values).forEach(function (k) { a.push('-D', k + '=' + lit(state.values[k])); });
+  if ($('fnSel').value) a.push('-D', '$fn=' + $('fnSel').value);
+  return a;
+}
+var manifoldOK = true;
+function engineArgs() { return ($('manifold').checked && manifoldOK) ? ['--backend=manifold'] : []; }
+
+var busyT0 = 0, busyTimer = null;
+function setBusy(on, text) {
+  $('busy').style.display = on ? 'flex' : 'none';
+  $('renderBtn').disabled = !!on;
+  clearInterval(busyTimer);
+  if (on) {
+    $('busyText').textContent = text || 'Rendering'; busyT0 = performance.now();
+    busyTimer = setInterval(function () { $('busyTime').textContent = ((performance.now() - busyT0) / 1000).toFixed(1) + ' s'; }, 100);
+  }
+}
+
+function findErrorLine(logs) {
+  for (var i = 0; i < logs.length; i++) {
+    var l = logs[i];
+    if (/ERROR|Parser error/i.test(l)) {
+      var m = /main\.scad["',]*\s*(?:,\s*)?line\s*(\d+)/i.exec(l) || /line\s*(\d+)/i.exec(l);
+      if (m) return +m[1];
+    }
+  }
+  return 0;
+}
+
+async function render() {
+  var src = ta.value;
+  if (!src.trim()) return;
+  setBusy(true, 'Rendering');
+  log('Rendering ' + state.fileName + (Object.keys(state.values).length ? ' with ' + Object.keys(state.values).length + ' customized value(s)' : '') + '...', 'm');
+  try {
+    var optErr = function (res) { return !res.out && res.logs.some(function (l) { return /unrecogni[sz]ed|unknown option|invalid option|backend/i.test(l); }); };
+    var r = await runOpenSCAD(src, 'out.stl', ['--export-format=binstl'].concat(engineArgs(), defineArgs()));
+    /* older OpenSCAD builds may not know these options: retry without them */
+    if (optErr(r) && engineArgs().length) {
+      manifoldOK = false; log('The fast engine is not available in this build. Using the standard engine.', 'w');
+      r = await runOpenSCAD(src, 'out.stl', ['--export-format=binstl'].concat(defineArgs()));
+    }
+    if (optErr(r)) r = await runOpenSCAD(src, 'out.stl', defineArgs());
+    var not3d = r.logs.some(function (l) { return /not a 3D object|top level object is a 2D/i.test(l); });
+    if (!r.out && not3d) {
+      var s = await runOpenSCAD(src, 'out.svg', engineArgs().concat(defineArgs()), true);
+      if (s.out) { show2D(s.out, r.ms + s.ms); log('2D design rendered in ' + ((r.ms + s.ms) / 1000).toFixed(2) + ' s. Export it as SVG or DXF.', 'ok'); setErrLine(0); return; }
+    }
+    if (!r.out || !r.out.length) {
+      var empty = r.logs.some(function (l) { return /empty|no top level geometry/i.test(l); });
+      log(empty ? 'The model is empty. Nothing was drawn.' : 'Render failed. See the messages above.', empty ? 'w' : 'e');
+      setErrLine(findErrorLine(r.logs));
+      return;
+    }
+    setErrLine(0);
+    state.lastStl = r.out;
+    show3D(r.out, r.ms);
+    log('Rendered in ' + (r.ms / 1000).toFixed(2) + ' s.', 'ok');
+  } catch (err) {
+    if (err.message !== 'cancelled') log('Could not run OpenSCAD: ' + err.message, 'e');
+  } finally { if (!job) setBusy(false); }
+}
+$('renderBtn').onclick = render;
+$('fnSel').onchange = $('manifold').onchange = function () { if (this.id === 'manifold') manifoldOK = true; render(); };
+
+/* ================= customizer ================= */
+function parseValue(s) {
+  s = s.trim();
+  if (/^-?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s)) return { t: 'num', v: parseFloat(s) };
+  if (s === 'true' || s === 'false') return { t: 'bool', v: s === 'true' };
+  if (/^"(?:\\.|[^"\\])*"$/.test(s)) return { t: 'str', v: JSON.parse(s) };
+  if (/^\[\s*-?[\d.]+(\s*,\s*-?[\d.]+)*\s*\]$/.test(s)) return { t: 'vec', v: JSON.parse(s) };
+  return null;
+}
+function parseSpec(spec, type) {
+  if (!spec) return {};
+  var m = /^\[(.*)\]/.exec(spec.trim()); if (!m) return {};
+  var inner = m[1].trim();
+  if (inner.indexOf(',') < 0 && /^-?[\d.]+(\s*:\s*-?[\d.]+){0,2}$/.test(inner) && type !== 'str') {
+    var p = inner.split(':').map(Number);
+    if (p.length === 1) return { min: 0, max: p[0] };
+    if (p.length === 2) return { min: p[0], max: p[1] };
+    return { min: p[0], step: p[1], max: p[2] };
+  }
+  var opts = inner.split(',').map(function (o) {
+    o = o.trim(); var i = o.indexOf(':');
+    var val = i >= 0 ? o.slice(0, i).trim() : o, label = i >= 0 ? o.slice(i + 1).trim() : o;
+    val = val.replace(/^"(.*)"$/, '$1');
+    return { v: type === 'num' ? Number(val) : val, label: label.replace(/^"(.*)"$/, '$1') };
+  });
+  return { options: opts };
+}
+function parseCustomizer() {
+  var lines = ta.value.split('\n'), out = [], group = 'Parameters', depth = 0, prev = null;
+  for (var i = 0; i < lines.length; i++) {
+    var raw = lines[i], t = raw.trim();
+    if (depth === 0) {
+      var g = /^\/\*\s*\[([^\]]+)\]\s*\*\/$/.exec(t);
+      if (g) { group = g[1].trim(); prev = null; continue; }
+      if (/^(module|function)\b/.test(t)) break;
+      var m = /^([A-Za-z_][\w]*)\s*=\s*([^;]+);\s*(?:\/\/\s*(.*))?$/.exec(t);
+      if (m && !/^hidden$/i.test(group)) {
+        var pv = parseValue(m[2]);
+        if (pv) {
+          var spec = parseSpec(m[3], pv.t);
+          out.push({ name: m[1], type: pv.t, def: pv.v, spec: spec, desc: prev, group: group, line: i });
+        }
+      }
+      prev = /^\/\/(.*)$/.test(t) && !/^\/\/\s*\[/.test(t) ? t.replace(/^\/\/\s?/, '') : null;
+    }
+    var noStr = raw.replace(/"(?:\\.|[^"\\])*"/g, '').replace(/\/\/.*$/, '');
+    for (var k = 0; k < noStr.length; k++) { var ch = noStr[k]; if (ch === '{') depth++; else if (ch === '}') depth = Math.max(0, depth - 1); }
+  }
+  state.params = out;
+  /* drop overrides for parameters that no longer exist */
+  Object.keys(state.values).forEach(function (k) { if (!out.some(function (p) { return p.name === k; })) delete state.values[k]; });
+  buildCustomizer();
+}
+function humanize(n) { return n.replace(/_/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); }); }
+function buildCustomizer() {
+  var body = $('custBody'); body.innerHTML = '';
+  $('pCount').textContent = state.params.length ? '(' + state.params.length + ')' : '';
+  if (!state.params.length) {
+    body.innerHTML = '<p class="note">No customizable parameters found. Put variables like <kbd>size = 10; // [1:50]</kbd> at the top of the file, before the first module.</p>';
+    return;
+  }
+  var groups = {};
+  state.params.forEach(function (p) { (groups[p.group] = groups[p.group] || []).push(p); });
+  Object.keys(groups).forEach(function (gname) {
+    var d = document.createElement('details'); d.className = 'grp'; d.open = true;
+    d.innerHTML = '<summary>' + esc(gname) + '</summary>';
+    groups[gname].forEach(function (p) { d.appendChild(paramRow(p)); });
+    body.appendChild(d);
+  });
+}
+var custTimer = null;
+function setParam(p, v, immediate) {
+  if (JSON.stringify(v) === JSON.stringify(p.def)) delete state.values[p.name]; else state.values[p.name] = v;
+  var lbl = document.querySelector('[data-lbl="' + p.name + '"]'); if (lbl) lbl.classList.toggle('mod', p.name in state.values);
+  clearTimeout(custTimer);
+  if ($('autoRender').checked) custTimer = setTimeout(render, immediate ? 50 : 500);
+}
+function paramRow(p) {
+  var row = document.createElement('div'); row.className = 'prm';
+  var cur = (p.name in state.values) ? state.values[p.name] : p.def;
+  var lbl = document.createElement('div'); lbl.className = 'lbl' + ((p.name in state.values) ? ' mod' : ''); lbl.dataset.lbl = p.name;
+  lbl.innerHTML = esc(humanize(p.name)) + (p.desc ? '<small>' + esc(p.desc) + '</small>' : '');
+  var ctl = document.createElement('div'); ctl.className = 'ctl';
+  if (p.spec.options) {
+    var sel = document.createElement('select');
+    p.spec.options.forEach(function (o, i) { var op = document.createElement('option'); op.value = i; op.textContent = o.label; if (String(o.v) === String(cur)) op.selected = true; sel.appendChild(op); });
+    sel.onchange = function () { setParam(p, p.spec.options[sel.value].v, true); };
+    ctl.appendChild(sel);
+  } else if (p.type === 'bool') {
+    var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!cur;
+    cb.onchange = function () { setParam(p, cb.checked, true); };
+    ctl.appendChild(cb);
+  } else if (p.type === 'num') {
+    var num = document.createElement('input'); num.type = 'number'; num.value = cur;
+    if (p.spec.max != null) {
+      var rg = document.createElement('input'); rg.type = 'range';
+      rg.min = p.spec.min; rg.max = p.spec.max;
+      rg.step = p.spec.step || (Number.isInteger(p.spec.min) && Number.isInteger(p.spec.max) && Number.isInteger(p.def) ? 1 : 0.1);
+      rg.value = cur; num.step = rg.step;
+      rg.oninput = function () { num.value = rg.value; setParam(p, Number(rg.value)); };
+      ctl.appendChild(rg);
+      num.oninput = function () { if (num.value !== '') { rg.value = num.value; setParam(p, Number(num.value)); } };
+    } else {
+      num.step = 'any';
+      num.oninput = function () { if (num.value !== '') setParam(p, Number(num.value)); };
+    }
+    ctl.appendChild(num);
+  } else if (p.type === 'vec') {
+    var wrap = document.createElement('div'); wrap.className = 'vec';
+    var vals = cur.slice();
+    vals.forEach(function (x, i) {
+      var inp = document.createElement('input'); inp.type = 'number'; inp.step = 'any'; inp.value = x;
+      inp.oninput = function () { if (inp.value !== '') { vals[i] = Number(inp.value); setParam(p, vals.slice()); } };
+      wrap.appendChild(inp);
+    });
+    ctl.appendChild(wrap);
+  } else {
+    var tx = document.createElement('input'); tx.type = 'text'; tx.value = cur;
+    tx.oninput = function () { setParam(p, tx.value); };
+    ctl.appendChild(tx);
+  }
+  row.appendChild(lbl); row.appendChild(ctl);
+  return row;
+}
+$('custReset').onclick = function () { state.values = {}; buildCustomizer(); render(); };
+$('custWrite').onclick = function () {
+  var lines = ta.value.split('\n');
+  state.params.forEach(function (p) {
+    if (!(p.name in state.values)) return;
+    lines[p.line] = lines[p.line].replace(/=(\s*)([^;]+);/, '=$1' + lit(state.values[p.name]).replace(/\$/g, '$$$$') + ';');
+  });
+  state.values = {};
+  var top = ta.scrollTop;
+  ta.value = lines.join('\n'); ta.scrollTop = top;
+  refreshEditor(); store('scad-viewer-code', ta.value); parseCustomizer();
+  log('Customized values were written into the code.', 'ok');
+};
+/* presets, stored per file name, compatible with OpenSCAD customizer JSON */
+function presetKey() { return 'scad-presets:' + state.fileName; }
+function getPresets() { try { return JSON.parse(store(presetKey()) || '{}'); } catch (e) { return {}; } }
+function refreshPresets() {
+  var ps = getPresets(), sel = $('presetSel');
+  sel.innerHTML = '<option value="">Presets (' + Object.keys(ps).length + ')</option>' + Object.keys(ps).map(function (k) { return '<option>' + esc(k) + '</option>'; }).join('');
+}
+$('presetSel').onchange = function () {
+  var ps = getPresets(), set = ps[this.value]; if (!set) return;
+  state.values = {};
+  state.params.forEach(function (p) {
+    if (!(p.name in set)) return;
+    var raw = set[p.name], v = raw;
+    if (p.type === 'num') v = Number(raw); else if (p.type === 'bool') v = raw === true || raw === 'true'; else if (p.type === 'vec') v = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (JSON.stringify(v) !== JSON.stringify(p.def)) state.values[p.name] = v;
+  });
+  buildCustomizer(); render();
+};
+$('presetSave').onclick = function () {
+  var name = prompt('Preset name', 'preset ' + (Object.keys(getPresets()).length + 1)); if (!name) return;
+  var ps = getPresets(), set = {};
+  state.params.forEach(function (p) { var v = (p.name in state.values) ? state.values[p.name] : p.def; set[p.name] = Array.isArray(v) ? lit(v) : String(v); });
+  ps[name] = set; store(presetKey(), JSON.stringify(ps)); refreshPresets(); $('presetSel').value = name;
+};
+$('presetDel').onclick = function () {
+  var n = $('presetSel').value; if (!n) return;
+  var ps = getPresets(); delete ps[n]; store(presetKey(), JSON.stringify(ps)); refreshPresets();
+};
+$('presetExport').onclick = function () {
+  download(baseName() + '.json', JSON.stringify({ parameterSets: getPresets(), fileFormatVersion: '1' }, null, 2), 'application/json');
+};
+$('presetImport').onclick = function () { $('fileInput').dataset.mode = 'json'; $('fileInput').click(); };
+
+/* ================= files ================= */
+function renderFiles() {
+  var names = Object.keys(state.files);
+  $('fCount').textContent = names.length ? '(' + names.length + ')' : '';
+  $('fileList').innerHTML = names.length ? '' : '<p class="note">No extra files yet. Open several files at once, or add them here.</p>';
+  names.forEach(function (n) {
+    var d = document.createElement('div'); d.className = 'f';
+    d.innerHTML = '<span class="n"></span><span class="s"></span>';
+    d.querySelector('.n').textContent = n; d.querySelector('.s').textContent = fmtBytes(state.files[n].length);
+    if (/\.scad$/i.test(n)) {
+      var o = document.createElement('button'); o.className = 'btn'; o.textContent = 'Edit as main';
+      o.onclick = function () {
+        var cur = ta.value, curName = state.fileName;
+        var src = new TextDecoder().decode(state.files[n]);
+        delete state.files[n];
+        state.files[curName] = new TextEncoder().encode(cur);
+        renderFiles(); setCode(src, n);
+      };
+      d.appendChild(o);
+    }
+    var x = document.createElement('button'); x.className = 'btn'; x.textContent = 'Remove';
+    x.onclick = function () { delete state.files[n]; renderFiles(); };
+    d.appendChild(x);
+    $('fileList').appendChild(d);
+  });
+}
+$('openBtn').onclick = function () { $('fileInput').dataset.mode = 'open'; $('fileInput').click(); };
+$('addFiles').onclick = function () { $('fileInput').dataset.mode = 'add'; $('fileInput').click(); };
+$('fileInput').onchange = async function () {
+  var fl = Array.from(this.files), mode = this.dataset.mode; this.value = '';
+  await takeFiles(fl, mode);
+};
+async function takeFiles(fl, mode) {
+  if (!fl.length) return;
+  var bufs = await Promise.all(fl.map(function (f) { return f.arrayBuffer().then(function (b) { return { name: f.name, data: new Uint8Array(b) }; }); }));
+  var json = bufs.find(function (b) { return /\.json$/i.test(b.name); });
+  if (json) {
+    try {
+      var o = JSON.parse(new TextDecoder().decode(json.data)), ps = getPresets();
+      Object.assign(ps, o.parameterSets || {}); store(presetKey(), JSON.stringify(ps)); refreshPresets();
+      log('Imported ' + Object.keys(o.parameterSets || {}).length + ' preset(s).', 'ok');
+    } catch (e) { log('That JSON file is not an OpenSCAD customizer preset file.', 'e'); }
+    bufs = bufs.filter(function (b) { return b !== json; });
+  }
+  var main = mode === 'add' ? null : bufs.find(function (b) { return /\.scad$/i.test(b.name); });
+  bufs.forEach(function (b) { if (b !== main) state.files[b.name] = b.data; });
+  renderFiles();
+  if (main) setCode(new TextDecoder().decode(main.data), main.name);
+  else if (bufs.length && $('autoRender').checked) render();
+}
+['dragover', 'dragenter'].forEach(function (ev) { window.addEventListener(ev, function (e) { e.preventDefault(); }); });
+window.addEventListener('drop', function (e) { e.preventDefault(); if (e.dataTransfer.files.length) takeFiles(Array.from(e.dataTransfer.files), 'open'); });
+
+/* ================= 3D viewer ================= */
+var R = null;
+async function init3D() {
+  if (R) return;
+  await loadScript(T3 + 'build/three.min.js');
+  await loadScript(T3 + 'examples/js/controls/OrbitControls.js');
+  var renderer = new THREE.WebGLRenderer({ canvas: $('c3'), antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(window.devicePixelRatio || 1);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.localClippingEnabled = true;
+  var scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x556677, 0.8));
+  var key = new THREE.DirectionalLight(0xffffff, 0.8); key.position.set(1, 2, 1.4);
+  var fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-1.4, -0.6, -1);
+  scene.add(key, fill);
+  var root = new THREE.Group(); root.rotation.x = -Math.PI / 2; scene.add(root); /* OpenSCAD is Z up */
+  R = { renderer: renderer, scene: scene, root: root, persp: new THREE.PerspectiveCamera(40, 1, 0.01, 1e7),
+        ortho: new THREE.OrthographicCamera(-1, 1, 1, -1, -1e7, 1e7), grid: null, axes: null, bbox: null,
+        mesh: null, edges: null, box: null, marks: new THREE.Group(), clip: new THREE.Plane(new THREE.Vector3(0, 0, -1), 0) };
+  R.root.add(R.marks);
+  R.cam = R.persp;
+  makeControls();
+  applyBg();
+  new ResizeObserver(resize3).observe($('viewport'));
+  resize3();
+  (function loop() {
+    requestAnimationFrame(loop);
+    if ($('spin').checked && R.mesh) { R.controls.autoRotate = true; R.controls.autoRotateSpeed = 2; } else R.controls.autoRotate = false;
+    R.controls.update(); renderer.render(scene, R.cam);
+  })();
+  setupMeasure();
+}
+function makeControls() {
+  var tgt = R.controls ? R.controls.target.clone() : new THREE.Vector3();
+  if (R.controls) R.controls.dispose();
+  R.controls = new THREE.OrbitControls(R.cam, $('c3'));
+  R.controls.target.copy(tgt); R.controls.enableDamping = true; R.controls.dampingFactor = 0.12; R.controls.screenSpacePanning = true;
+}
+function resize3() {
+  if (!R) return;
+  var w = $('viewport').clientWidth, h = $('viewport').clientHeight;
+  if (!w || !h) return;
+  R.renderer.setSize(w, h, false);
+  R.persp.aspect = w / h; R.persp.updateProjectionMatrix();
+  var hh = (R.orthoH || 50) / 2;
+  R.ortho.left = -hh * w / h; R.ortho.right = hh * w / h; R.ortho.top = hh; R.ortho.bottom = -hh; R.ortho.updateProjectionMatrix();
+}
+function applyBg() {
+  if (!R) return;
+  R.scene.background = new THREE.Color(cssVar('--view') || '#0d121a');
+  if (R.box) buildHelpers();
+  if (R.edges) R.edges.material.color.set(cssVar('--text'));
+}
+
+function parseSTL(u8) {
+  var dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  var isAscii = u8.length < 84 || (84 + dv.getUint32(80, true) * 50 !== u8.length && /^\s*solid/.test(new TextDecoder().decode(u8.slice(0, 80))));
+  var pos;
+  if (!isAscii) {
+    var n = dv.getUint32(80, true); pos = new Float32Array(n * 9);
+    for (var i = 0; i < n; i++) { var o = 84 + i * 50 + 12; for (var k = 0; k < 9; k++) pos[i * 9 + k] = dv.getFloat32(o + k * 4, true); }
+  } else {
+    var txt = new TextDecoder().decode(u8), re = /vertex\s+([-+\d.eE]+)\s+([-+\d.eE]+)\s+([-+\d.eE]+)/g, arr = [], m;
+    while ((m = re.exec(txt))) arr.push(+m[1], +m[2], +m[3]);
+    pos = new Float32Array(arr);
+  }
+  var g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  return g;
+}
+function meshStats(pos) {
+  var vol = 0, area = 0, edges = new Map(), keyOf = function (i) { return Math.round(pos[i] * 1e4) + ',' + Math.round(pos[i + 1] * 1e4) + ',' + Math.round(pos[i + 2] * 1e4); };
+  var n = pos.length / 9, vid = new Map(), next = 0;
+  var id = function (i) { var k = keyOf(i); var v = vid.get(k); if (v === undefined) { v = next++; vid.set(k, v); } return v; };
+  for (var t = 0; t < n; t++) {
+    var a = t * 9, b = a + 3, c = a + 6;
+    var ax = pos[a], ay = pos[a + 1], az = pos[a + 2], bx = pos[b], by = pos[b + 1], bz = pos[b + 2], cx = pos[c], cy = pos[c + 1], cz = pos[c + 2];
+    vol += (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6;
+    var ux = bx - ax, uy = by - ay, uz = bz - az, vx = cx - ax, vy = cy - ay, vz = cz - az;
+    area += Math.sqrt(Math.pow(uy * vz - uz * vy, 2) + Math.pow(uz * vx - ux * vz, 2) + Math.pow(ux * vy - uy * vx, 2)) / 2;
+    if (n < 400000) {
+      var ia = id(a), ib = id(b), ic = id(c);
+      [[ia, ib], [ib, ic], [ic, ia]].forEach(function (e) { var k = e[0] < e[1] ? e[0] + '_' + e[1] : e[1] + '_' + e[0]; edges.set(k, (edges.get(k) || 0) + 1); });
+    }
+  }
+  var open = 0; edges.forEach(function (c) { if (c !== 2) open++; });
+  return { vol: Math.abs(vol), area: area, tris: n, verts: next, open: n < 400000 ? open : null };
+}
+
+async function show3D(u8, ms) {
+  $('svg2d').style.display = 'none'; $('c3').style.display = 'block'; state.is2D = false;
+  await init3D();
+  var g = parseSTL(u8);
+  if (R.mesh) { R.root.remove(R.mesh); R.mesh.geometry.dispose(); }
+  if (R.edges) { R.root.remove(R.edges); R.edges.geometry.dispose(); R.edges = null; }
+  var mat = new THREE.MeshStandardMaterial({ color: $('colorSel').value, metalness: 0.05, roughness: 0.55, side: THREE.DoubleSide, wireframe: $('wire').checked,
+    polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  R.mesh = new THREE.Mesh(g, mat); R.root.add(R.mesh);
+  if ($('edges').checked) buildEdges();
+  g.computeBoundingBox(); R.box = g.boundingBox.clone();
+  buildHelpers(); applyClip();
+  if (state.firstView || !$('keepView').checked) { setView(state.lastView || 'iso'); state.firstView = false; }
+  var st = meshStats(g.attributes.position.array), s = R.box.getSize(new THREE.Vector3());
+  state.stats = st;
+  $('info').innerHTML =
+    '<div><span class="k">Size</span> <b>' + fmtL(s.x) + ' \u00d7 ' + fmtL(s.y) + ' \u00d7 ' + fmtL(s.z) + '</b></div>' +
+    '<div><span class="k">Volume</span> ' + fmtL(st.vol) + ' <span class="k">Area</span> ' + fmtL(st.area) + '</div>' +
+    '<div><span class="k">Triangles</span> ' + fmtN(st.tris) + ' <span class="k">Vertices</span> ' + fmtN(st.verts) + '</div>' +
+    '<div><span class="k">Solid</span> ' + (st.open === null ? 'not checked (large mesh)' : st.open === 0 ? 'watertight' : '<span style="color:var(--amber)">' + fmtN(st.open) + ' open edges</span>') + '</div>' +
+    '<div><span class="k">Render</span> ' + (ms / 1000).toFixed(2) + ' s</div>';
+  $('stR').textContent = 'Grid cell ' + fmtL(R.unit) + ' mm';
+}
+function buildEdges() {
+  if (!R.mesh) return;
+  R.edges = new THREE.LineSegments(new THREE.EdgesGeometry(R.mesh.geometry, 28),
+    new THREE.LineBasicMaterial({ color: cssVar('--text') || 0x222222, transparent: true, opacity: 0.45, clippingPlanes: $('secOn').checked ? [R.clip] : [] }));
+  R.root.add(R.edges);
+}
+function buildHelpers() {
+  if (R.grid) R.scene.remove(R.grid);
+  if (R.axes) R.root.remove(R.axes);
+  if (R.bbox) R.root.remove(R.bbox);
+  var b = R.box, s = b.getSize(new THREE.Vector3()), m = Math.max(s.x, s.y, s.z, 1);
+  var step = Math.pow(10, Math.floor(Math.log10(m / 2))), size = Math.ceil(Math.max(Math.abs(b.min.x), Math.abs(b.max.x), Math.abs(b.min.y), Math.abs(b.max.y), m) * 2.4 / step) * step;
+  var gc = cssVar('--grid') || '#1c2836';
+  R.grid = new THREE.GridHelper(size, Math.round(size / step), gc, gc);   /* lies on the model's Z = 0 plane */
+  R.grid.visible = $('gridT').checked; R.scene.add(R.grid);
+  R.axes = new THREE.AxesHelper(m * 0.35); R.axes.visible = $('axesT').checked; R.root.add(R.axes);
+  R.bbox = new THREE.Box3Helper(b, new THREE.Color(cssVar('--blue') || '#40a0f0')); R.bbox.visible = $('bboxT').checked; R.root.add(R.bbox);
+  R.unit = step;
+}
+function worldBox() { var bb = R.box.clone(); bb.applyMatrix4(R.root.matrixWorld); return bb; }
+function setView(v) {
+  if (!R || !R.box) return;
+  state.lastView = v;
+  R.root.updateMatrixWorld(true);
+  var b = worldBox(), c = b.getCenter(new THREE.Vector3()), r = b.getSize(new THREE.Vector3()).length() / 2 || 1;
+  /* world Y is model Z, world -Z is model Y */
+  var dirs = { iso: [1, 0.8, 1.15], top: [0, 1, 0.0001], bottom: [0, -1, 0.0001], front: [0, 0, 1], back: [0, 0, -1], right: [1, 0, 0], left: [-1, 0, 0] };
+  var d = new THREE.Vector3().fromArray(dirs[v] || dirs.iso).normalize();
+  var dist = r / Math.sin(THREE.MathUtils.degToRad(R.persp.fov / 2)) * 1.05;
+  [R.persp, R.ortho].forEach(function (cam) { cam.position.copy(c).addScaledVector(d, dist); cam.up.set(0, 1, 0); cam.lookAt(c); });
+  R.persp.near = dist / 1000; R.persp.far = dist * 100; R.persp.updateProjectionMatrix();
+  R.orthoH = r * 2.2; R.ortho.zoom = 1; resize3();
+  R.controls.target.copy(c); R.controls.update();
+}
+document.querySelectorAll('[data-view]').forEach(function (b) { b.onclick = function () { setView(b.dataset.view); }; });
+$('fitBtn').onclick = function () { setView(state.lastView || 'iso'); };
+$('ortho').onchange = function () { if (!R) return; R.cam = this.checked ? R.ortho : R.persp; makeControls(); setView(state.lastView || 'iso'); };
+$('wire').onchange = function () { if (R && R.mesh) R.mesh.material.wireframe = this.checked; };
+$('edges').onchange = function () { if (!R) return; if (this.checked) buildEdges(); else if (R.edges) { R.root.remove(R.edges); R.edges = null; } };
+$('gridT').onchange = function () { if (R && R.grid) R.grid.visible = this.checked; };
+$('axesT').onchange = function () { if (R && R.axes) R.axes.visible = this.checked; };
+$('bboxT').onchange = function () { if (R && R.bbox) R.bbox.visible = this.checked; };
+$('colorSel').onchange = function () { if (R && R.mesh) R.mesh.material.color.set(this.value); store('scad-viewer-color', this.value); };
+(function () { var c = store('scad-viewer-color'); if (c) $('colorSel').value = c; })();
+
+/* section plane in model coordinates */
+function applyClip() {
+  if (!R || !R.box) return;
+  R.root.updateMatrixWorld(true);
+  var on = $('secOn').checked, ax = $('secAxis').value, b = R.box, t = $('secPos').value / 1000;
+  var v = b.min[ax] + (b.max[ax] - b.min[ax]) * t;
+  var n = new THREE.Vector3(ax === 'x' ? -1 : 0, ax === 'y' ? -1 : 0, ax === 'z' ? -1 : 0);
+  var plane = new THREE.Plane(n, v).applyMatrix4(R.root.matrixWorld);
+  R.clip.copy(plane);
+  var planes = on ? [R.clip] : [];
+  if (R.mesh) { R.mesh.material.clippingPlanes = planes; R.mesh.material.needsUpdate = true; }
+  if (R.edges) { R.edges.material.clippingPlanes = planes; R.edges.material.needsUpdate = true; }
+  if (on) $('stL').textContent = 'Section at ' + ax.toUpperCase() + ' = ' + fmtL(v);
+  else if (!measuring) $('stL').textContent = '';
+}
+['secOn', 'secAxis'].forEach(function (id) { $(id).onchange = applyClip; });
+$('secPos').oninput = applyClip;
+
+/* point to point measurement */
+var measuring = false, mPts = [];
+function setupMeasure() {
+  var c = $('c3'), down = null;
+  c.addEventListener('pointerdown', function (e) { down = [e.clientX, e.clientY]; });
+  c.addEventListener('pointerup', function (e) {
+    if (!measuring || !down || !R.mesh || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4) return;
+    var r = c.getBoundingClientRect();
+    var ndc = new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1);
+    var rc = new THREE.Raycaster(); rc.setFromCamera(ndc, R.cam);
+    var hit = rc.intersectObject(R.mesh, false)[0];
+    if (!hit) { $('stL').textContent = 'No surface under the cursor'; return; }
+    if (mPts.length === 2) clearMeasure();
+    var p = R.root.worldToLocal(hit.point.clone()); mPts.push(p);
+    var sz = R.box.getSize(new THREE.Vector3()).length() / 150;
+    var dot = new THREE.Mesh(new THREE.SphereGeometry(sz, 12, 8), new THREE.MeshBasicMaterial({ color: cssVar('--red') || 0xf06040, depthTest: false }));
+    dot.position.copy(p); dot.renderOrder = 10; R.marks.add(dot);
+    if (mPts.length === 2) {
+      var ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(mPts), new THREE.LineBasicMaterial({ color: cssVar('--red') || 0xf06040, depthTest: false }));
+      ln.renderOrder = 10; R.marks.add(ln);
+      var d = mPts[1].clone().sub(mPts[0]);
+      $('stL').textContent = 'Distance ' + fmtL(d.length()) + '   dX ' + fmtL(d.x) + '   dY ' + fmtL(d.y) + '   dZ ' + fmtL(d.z);
+    } else $('stL').textContent = 'Point ' + fmtL(p.x) + ', ' + fmtL(p.y) + ', ' + fmtL(p.z) + '. Pick the second point.';
+  });
+}
+function clearMeasure() { mPts = []; if (R) R.marks.clear(); }
+$('measureBtn').onclick = function () {
+  measuring = !measuring; this.classList.toggle('on', measuring);
+  $('stL').textContent = measuring ? 'Click a point on the model' : '';
+  if (!measuring) clearMeasure();
+};
+
+/* ================= 2D display ================= */
+var z2 = { s: 1, x: 0, y: 0 };
+function show2D(u8, ms) {
+  state.is2D = true; state.lastSvg = u8;
+  $('c3').style.display = 'none'; $('svg2d').style.display = 'flex';
+  var img = $('svgImg'); if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);
+  var url = URL.createObjectURL(new Blob([u8], { type: 'image/svg+xml' })); img.dataset.url = url; img.src = url;
+  z2 = { s: 1, x: 0, y: 0 }; applyZ2();
+  var txt = new TextDecoder().decode(u8), w = /width="([\d.]+)mm"/.exec(txt), h = /height="([\d.]+)mm"/.exec(txt);
+  $('info').innerHTML = '<div><b>2D design</b></div>' + (w && h ? '<div><span class="k">Size</span> <b>' + fmtL(+w[1]) + ' \u00d7 ' + fmtL(+h[1]) + '</b></div>' : '') +
+    '<div><span class="k">Render</span> ' + (ms / 1000).toFixed(2) + ' s</div><div class="k">Export as SVG or DXF</div>';
+  $('stR').textContent = 'Scroll to zoom, drag to pan, double click to reset';
+}
+function applyZ2() { $('svgImg').style.transform = 'translate(' + z2.x + 'px,' + z2.y + 'px) scale(' + z2.s + ')'; }
+(function () {
+  var el = $('svg2d'), last = null;
+  el.addEventListener('wheel', function (e) { e.preventDefault(); z2.s = Math.min(40, Math.max(0.1, z2.s * Math.exp(-e.deltaY * 0.0015))); applyZ2(); }, { passive: false });
+  el.addEventListener('pointerdown', function (e) { last = [e.clientX, e.clientY]; el.setPointerCapture(e.pointerId); });
+  el.addEventListener('pointermove', function (e) { if (!last) return; z2.x += e.clientX - last[0]; z2.y += e.clientY - last[1]; last = [e.clientX, e.clientY]; applyZ2(); });
+  el.addEventListener('pointerup', function () { last = null; });
+  el.addEventListener('dblclick', function () { z2 = { s: 1, x: 0, y: 0 }; applyZ2(); });
+})();
+
+/* ================= export ================= */
+var EXPORTS = [
+  ['3D model', null],
+  ['STL (binary)', 'stl'], ['STL (ASCII)', 'stla'], ['OBJ', 'obj'], ['PLY', 'ply'], ['OFF (from OpenSCAD)', 'off'], ['AMF (from OpenSCAD)', 'amf'], ['3MF (from OpenSCAD)', '3mf'],
+  ['2D design', null],
+  ['SVG', 'svg'], ['DXF', 'dxf'],
+  ['Other', null],
+  ['PNG image of the view', 'png'], ['OpenSCAD source (.scad)', 'scad'], ['Echo output (.txt)', 'echo']
+];
+$('expList').innerHTML = EXPORTS.map(function (e) { return e[1] ? '<button data-exp="' + e[1] + '">' + esc(e[0]) + '</button>' : '<div class="h">' + esc(e[0]) + '</div>'; }).join('');
+$('expList').onclick = function (e) { var f = e.target.dataset.exp; if (f) doExport(f); };
+function meshPositions() { return R && R.mesh ? R.mesh.geometry.attributes.position.array : null; }
+async function doExport(f) {
+  var b = baseName();
+  try {
+    if (f === 'scad') return download(b + '.scad', ta.value, 'text/plain');
+    if (f === 'png') {
+      if (state.is2D) { var im = $('svgImg'), cv = document.createElement('canvas'); cv.width = im.naturalWidth * 2 || 800; cv.height = im.naturalHeight * 2 || 600; var cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height); return cv.toBlob(function (bl) { download(b + '.png', bl); }); }
+      if (!R) throw new Error('Render a model first');
+      R.renderer.render(R.scene, R.cam); return $('c3').toBlob(function (bl) { download(b + '.png', bl); });
+    }
+    if (f === 'echo') {
+      var lines = Array.from($('log').children).map(function (d) { return d.textContent; }).filter(function (t) { return /^ECHO/.test(t); });
+      return download(b + '_echo.txt', lines.join('\n') + '\n', 'text/plain');
+    }
+    if (['svg', 'dxf', 'off', 'amf', '3mf'].indexOf(f) >= 0) {
+      if (f === 'svg' && state.is2D && state.lastSvg) return download(b + '.svg', state.lastSvg, 'image/svg+xml');
+      setBusy(true, 'Exporting ' + f.toUpperCase());
+      try {
+        var r = await runOpenSCAD(ta.value, 'out.' + f, engineArgs().concat(defineArgs()), true);
+        if (!r.out || !r.out.length) {
+          var why = r.logs.filter(function (l) { return /ERROR|not a 2D|not a 3D|not supported|unknown/i.test(l); }).pop();
+          throw new Error(why || ('OpenSCAD could not export ' + f.toUpperCase()));
+        }
+        download(b + '.' + f, r.out);
+      } finally { setBusy(false); }
+      return;
+    }
+    if (state.is2D) throw new Error('This is a 2D design. Export it as SVG or DXF.');
+    var pos = meshPositions(); if (!pos) throw new Error('Render a model first');
+    if (f === 'stl') return download(b + '.stl', state.lastStl, 'model/stl');
+    var n = pos.length / 9, out = [];
+    var nrm = function (t) {
+      var a = t * 9, ux = pos[a + 3] - pos[a], uy = pos[a + 4] - pos[a + 1], uz = pos[a + 5] - pos[a + 2], vx = pos[a + 6] - pos[a], vy = pos[a + 7] - pos[a + 1], vz = pos[a + 8] - pos[a + 2];
+      var x = uy * vz - uz * vy, y = uz * vx - ux * vz, z = ux * vy - uy * vx, l = Math.hypot(x, y, z) || 1; return [x / l, y / l, z / l];
+    };
+    if (f === 'stla') {
+      out.push('solid ' + b);
+      for (var t = 0; t < n; t++) {
+        var nn = nrm(t); out.push(' facet normal ' + nn.join(' ') + '\n  outer loop');
+        for (var k = 0; k < 3; k++) out.push('   vertex ' + pos[t * 9 + k * 3] + ' ' + pos[t * 9 + k * 3 + 1] + ' ' + pos[t * 9 + k * 3 + 2]);
+        out.push('  endloop\n endfacet');
+      }
+      out.push('endsolid ' + b); return download(b + '_ascii.stl', out.join('\n') + '\n', 'model/stl');
+    }
+    /* shared vertex welding for OBJ and PLY */
+    var map = new Map(), verts = [], idx = new Uint32Array(n * 3);
+    for (var i = 0; i < n * 3; i++) {
+      var key = pos[i * 3] + ',' + pos[i * 3 + 1] + ',' + pos[i * 3 + 2], v = map.get(key);
+      if (v === undefined) { v = verts.length / 3; map.set(key, v); verts.push(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]); }
+      idx[i] = v;
+    }
+    if (f === 'obj') {
+      out.push('# ' + b + ' exported from SCAD Viewer', 'o ' + b);
+      for (var j = 0; j < verts.length; j += 3) out.push('v ' + verts[j] + ' ' + verts[j + 1] + ' ' + verts[j + 2]);
+      for (var q = 0; q < n; q++) out.push('f ' + (idx[q * 3] + 1) + ' ' + (idx[q * 3 + 1] + 1) + ' ' + (idx[q * 3 + 2] + 1));
+      return download(b + '.obj', out.join('\n') + '\n', 'text/plain');
+    }
+    if (f === 'ply') {
+      out.push('ply', 'format ascii 1.0', 'comment exported from SCAD Viewer', 'element vertex ' + verts.length / 3, 'property float x', 'property float y', 'property float z', 'element face ' + n, 'property list uchar int vertex_indices', 'end_header');
+      for (var j2 = 0; j2 < verts.length; j2 += 3) out.push(verts[j2] + ' ' + verts[j2 + 1] + ' ' + verts[j2 + 2]);
+      for (var q2 = 0; q2 < n; q2++) out.push('3 ' + idx[q2 * 3] + ' ' + idx[q2 * 3 + 1] + ' ' + idx[q2 * 3 + 2]);
+      return download(b + '.ply', out.join('\n') + '\n', 'text/plain');
+    }
+  } catch (err) { if (err.message !== 'cancelled') log('Export failed: ' + err.message, 'e'); }
+}
+
+/* ================= share link ================= */
+async function packCode(s) {
+  var cs = new CompressionStream('deflate-raw'), w = cs.writable.getWriter(); w.write(new TextEncoder().encode(s)); w.close();
+  var buf = new Uint8Array(await new Response(cs.readable).arrayBuffer()), bin = '';
+  for (var i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function unpackCode(s) {
+  var bin = atob(s.replace(/-/g, '+').replace(/_/g, '/')), u = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+  var ds = new DecompressionStream('deflate-raw'), w = ds.writable.getWriter(); w.write(u); w.close();
+  return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer());
+}
+$('shareBtn').onclick = async function () {
+  try {
+    var url = location.href.split('#')[0] + '#code=' + await packCode(ta.value);
+    await navigator.clipboard.writeText(url);
+    log('Share link copied to the clipboard (' + fmtN(url.length) + ' characters). Anyone who opens it sees this code.', 'ok');
+  } catch (e) { log('Could not copy the link: ' + e.message, 'e'); }
+};
+
+/* ================= shortcuts, theme, start ================= */
+document.addEventListener('keydown', function (e) {
+  var mod = e.ctrlKey || e.metaKey;
+  if (e.key === 'F5' || e.key === 'F6' || (mod && e.key === 'Enter')) { e.preventDefault(); render(); }
+  else if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); $('saveBtn').click(); }
+  else if (e.key === 'Escape') { if (job) cancelJob(false); $('help').style.display = 'none'; }
+});
+window.addEventListener('themechange', function () { applyBg(); refreshEditor(); });
+window.addEventListener('beforeunload', function () { store('scad-viewer-code', ta.value); });
+
+(async function start() {
+  var src = null, name = store('scad-viewer-name') || 'untitled.scad';
+  var m = /#code=([\w-]+)/.exec(location.hash);
+  if (m) { try { src = await unpackCode(m[1]); name = 'shared.scad'; history.replaceState(null, '', location.pathname + location.search); } catch (e) { log('The shared link could not be read.', 'e'); } }
+  if (!src) src = store('scad-viewer-code');
+  if (!src) { src = EXAMPLES['Parametric box with lid']; name = 'parametric_box_with_lid.scad'; }
+  setFileName(name);
+  renderFiles();
+  log('Ready. The OpenSCAD engine (about 14 MB) downloads on the first render and is cached afterwards.', 'm');
+  setCode(src);
+})();
+</script>
+</body>
+</html>
